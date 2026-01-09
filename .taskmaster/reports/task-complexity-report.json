@@ -1,0 +1,133 @@
+{
+	"meta": {
+		"generatedAt": "2025-11-13T20:58:58.975Z",
+		"tasksAnalyzed": 15,
+		"totalTasks": 21,
+		"analysisCount": 15,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 7,
+			"taskTitle": "Create Production Run Pydantic Schemas",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Pydantic schema creation into: 1) Base schemas for ProductionRun (Create/Update/Response), 2) Nested schemas for ProductionRunItem operations, 3) Nested schemas for ProductionRunMaterial operations, 4) Computed field implementations and status validation logic. Focus on proper Pydantic v2 patterns with computed fields and comprehensive validation rules.",
+			"reasoning": "Medium complexity - requires understanding of existing ProductionRun model structure, implementing Pydantic v2 computed fields for variance calculations, and creating comprehensive validation including status transitions. The nested schemas and validation logic add complexity but follows established patterns in the codebase."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Implement Production Run Service Layer",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Split the service implementation into: 1) Basic CRUD operations (create, update, delete), 2) Run number generation logic with tenant integration, 3) Inventory transaction integration for completion workflow, 4) Variance calculation methods, 5) Async SQLAlchemy query implementations with tenant isolation, 6) OpenTelemetry instrumentation and error handling. Each subtask should focus on specific business logic areas.",
+			"reasoning": "High complexity - involves complex business logic including inventory transactions, run number generation, variance calculations, and tenant isolation. Requires integration with existing tenant and inventory systems, proper async database operations, and comprehensive error handling. The inventory integration adds significant complexity."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Create Production Run API Endpoints",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Organize the API implementation into: 1) Main CRUD endpoints (POST, GET list, GET detail, PUT, DELETE), 2) Completion endpoint with inventory transaction logic, 3) Nested endpoints for items management, 4) Nested endpoints for materials management, 5) Query parameter implementation for filtering and pagination. Follow existing API patterns and include proper error handling.",
+			"reasoning": "Medium-high complexity - standard REST API implementation but with nested resources and complex filtering. The completion endpoint involves business logic for inventory transactions. Follows established FastAPI patterns in the codebase but requires careful handling of nested resources and transaction logic."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Implement Inventory Transaction Integration",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down inventory integration into: 1) InventoryTransactionService creation with basic transaction CRUD, 2) Production run completion transaction logic, 3) Rollback mechanism for status changes, 4) Weight validation and insufficient inventory checks, 5) Atomic database transaction handling and audit logging. Focus on data consistency and error recovery.",
+			"reasoning": "High complexity - involves critical business logic for inventory management with atomic transactions, rollback capabilities, and data consistency requirements. Requires careful handling of database transactions, weight validations, and audit trails. The rollback mechanism and atomicity requirements significantly increase complexity."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Create Analytics and Variance Endpoints",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Structure analytics implementation as: 1) Basic variance report endpoint with aggregation queries, 2) Product production history endpoint with performance optimization, 3) Spool usage tracking endpoint, 4) Redis caching implementation for expensive queries and OpenTelemetry metrics integration. Focus on query performance and caching strategies.",
+			"reasoning": "Medium-high complexity - involves SQLAlchemy aggregation functions, performance optimization with Redis caching, and OpenTelemetry metrics. The variance calculations and aggregations require careful SQL query design. Caching adds complexity but is necessary for performance."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Add Production Run Backend Testing",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Organize testing into: 1) Unit tests for service layer business logic (run number generation, variance calculations), 2) Integration tests for API endpoints with tenant isolation validation, 3) Database transaction and inventory integration tests, 4) Test fixtures and mock setup for complex scenarios. Aim for 80%+ coverage with focus on business logic validation.",
+			"reasoning": "Medium complexity - comprehensive testing suite following established pytest patterns in the project. Requires creating fixtures for complex production run scenarios, testing async operations, and validating tenant isolation. The business logic testing for variance calculations adds complexity."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Create Production Run Frontend Routing",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Structure routing implementation as: 1) Route definitions with TanStack Router v1.133+ patterns following existing App.tsx structure, 2) Navigation menu integration and breadcrumb setup, 3) Route guards, lazy loading, and TypeScript safety configuration. Follow the established patterns from products routing.",
+			"reasoning": "Low-medium complexity - follows established TanStack Router patterns already implemented in App.tsx for products. The routing structure is straightforward, but requires proper TypeScript integration and lazy loading setup. Authentication guards follow existing patterns."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Build Production Run List Page with Filters",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the list page into: 1) Basic table component with shadcn/ui Table and status badges, 2) Variance visualization with color coding logic, 3) Filter implementation (status, date range, product/spool selectors), 4) Search and pagination with TanStack Query integration, 5) Loading states and responsive design implementation. Follow existing SpoolList patterns.",
+			"reasoning": "Medium-high complexity - comprehensive data table with multiple filtering options, color-coded variance display, and TanStack Query integration. The filtering logic and pagination add complexity. Color coding for variance requires business logic understanding. Similar to existing SpoolList but more complex filtering."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Create Multi-Step Production Run Form",
+			"complexityScore": 9,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Structure the multi-step form as: 1) Wizard infrastructure with step navigation and validation, 2) Step 1 - Basic info form with auto-generated previews, 3) Step 2 - Items selection with product multi-select and cost estimation, 4) Step 3 - Materials selection with spool filtering and weight estimation, 5) Step 4 - Review and validation summary, 6) Form state management with localStorage draft saving and submission logic.",
+			"reasoning": "High complexity - multi-step form wizard with complex state management, draft saving, step-by-step validation, and integration with product/spool data. Requires React Hook Form with Zod validation, localStorage integration, and preview calculations. The cost estimation and material filtering add significant complexity."
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Build Production Run Detail Page",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Organize the detail page into: 1) Header section with status badges and metadata display, 2) Run overview card with printer/slicer information and quality rating, 3) Items printed table with success rates and cost calculations, 4) Materials usage table with variance visualization, 5) Quick actions implementation and Recharts integration for variance summary. Follow existing ProductDetail patterns.",
+			"reasoning": "Medium-high complexity - comprehensive detail page with multiple data sections, Recharts integration for variance visualization, and action buttons. Requires data fetching with TanStack Query, color-coded variance display, and integration with existing UI patterns. The Recharts integration and variance calculations add complexity."
+		},
+		{
+			"taskId": 17,
+			"taskTitle": "Create Production Run Completion Form",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Structure the completion form as: 1) Weight input options implementation (estimate, before/after, manual), 2) Item quantity tracking with validation logic, 3) Quality rating and notes interface with Radix UI components, 4) Variance preview calculations with color-coded warnings, 5) Optimistic updates with TanStack Query and confirmation dialogs for high variance scenarios.",
+			"reasoning": "High complexity - complex form with multiple input methods for weight tracking, real-time variance calculations, optimistic updates, and validation logic. The three different weight input methods and variance preview calculations require sophisticated state management and business logic."
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Implement Edit Production Run Form",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Structure the edit form as: 1) Form pre-population with existing data and status-based field disabling, 2) Dynamic items and materials management (add/remove functionality), 3) Unsaved changes warning and form validation, 4) Optimistic updates with error handling and rollback mechanisms. Focus on status-based form behavior.",
+			"reasoning": "Medium complexity - edit form with pre-population, dynamic add/remove functionality, and status-based validation. The unsaved changes detection and optimistic updates add complexity. Status-based form disabling requires careful state management but follows React patterns."
+		},
+		{
+			"taskId": 19,
+			"taskTitle": "Add Recharts for Variance Visualization",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Organize Recharts integration as: 1) Package installation and reusable chart component creation, 2) Line chart implementation for estimated vs actual trends, 3) Bar chart for variance by product analysis, 4) Data transformation utilities and CSV export functionality. Focus on responsive design and data preparation.",
+			"reasoning": "Medium complexity - involves adding new dependency (Recharts 2.8.0), creating reusable chart components, and implementing data transformation utilities. The variance analysis charts require understanding of business logic. CSV export and responsive design add moderate complexity."
+		},
+		{
+			"taskId": 20,
+			"taskTitle": "Integrate Production History in Product Pages",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Structure the integration as: 1) Tab component integration in existing ProductDetail.tsx following established patterns, 2) ProductionHistoryTable component with data fetching and filtering, 3) Cost variance summary calculations and navigation links to production run details. Leverage existing product page structure.",
+			"reasoning": "Medium complexity - integration into existing product detail page following established tab patterns. Requires TanStack Query for data fetching, table component creation, and cost variance calculations. The integration with existing pages is straightforward but requires careful component design."
+		},
+		{
+			"taskId": 21,
+			"taskTitle": "Add Production Usage to Spool Pages",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Structure the spool integration as: 1) Tab integration in existing SpoolDetail.tsx with usage table, 2) SpoolUsageChart component with Recharts for usage over time, 3) Usage trend analysis and remaining life estimation calculations, 4) Filtering implementation and navigation links. Focus on trend analysis logic.",
+			"reasoning": "Medium complexity - similar to product integration but includes trend analysis charts and remaining life estimation. The usage trend calculations and chart implementation with Recharts add complexity. Filtering and date range functionality require careful state management."
+		}
+	]
+}

@@ -1,0 +1,143 @@
+# Authentication & Landing Pages Feature - PRD
+
+## Project Overview
+Implement complete authentication system for Nozzly.app using Authentik (self-hosted OAuth2/OIDC provider) with landing page, signup, and login flows.
+
+## Current State
+- Backend has auth middleware stubs (TenantContextMiddleware, get_current_user, get_current_tenant)
+- Backend currently in development mode (bypasses auth)
+- Frontend has no landing page or auth UI
+- Authentik configured in docker-compose.yml for local dev
+- No Authentik deployment for k3s production cluster
+
+## Goals
+1. Deploy Authentik to k3s cluster
+2. Configure Authentik OAuth2 application for nozzly.app
+3. Implement production authentication in FastAPI backend
+4. Create landing page for unauthenticated users
+5. Create signup and login UI flows
+6. Wire up end-to-end OIDC authentication
+
+## Technical Requirements
+
+### Infrastructure (Authentik on k3s)
+- Deploy Authentik PostgreSQL StatefulSet with persistent storage
+- Deploy Authentik Redis for caching
+- Deploy Authentik server (ghcr.io/goauthentik/server) with 1 replica
+- Deploy Authentik worker for background tasks
+- Add Cloudflare Tunnel ingress rule: auth.nozzly.app → authentik-server:9000
+- Configure DNS CNAME for auth.nozzly.app
+
+### Authentik Configuration
+- Access Authentik admin at https://auth.nozzly.app
+- Create OAuth2/OIDC Provider application
+- Configure redirect URIs: https://nozzly.app/auth/callback
+- Set scopes: openid, profile, email
+- Generate client ID and client secret
+- Configure user enrollment flow (signup)
+- Configure authentication flow (login)
+
+### Backend Implementation (FastAPI)
+File: backend/app/auth/dependencies.py
+- Implement production OAuth2 token validation
+- Parse Authorization: Bearer <token> header
+- Validate JWT signature with Authentik's JWKS endpoint
+- Extract user info from JWT claims (sub, email, name)
+- Auto-create/update User in database on first login
+- Set tenant context from user's tenants
+
+File: backend/app/auth/middleware.py
+- Implement RLS session variable setting
+- Execute SET app.current_tenant_id = '<uuid>' for each request
+- Handle missing tenant context gracefully
+
+File: backend/app/config.py
+- Add settings: AUTHENTIK_BASE_URL, AUTHENTIK_CLIENT_ID, AUTHENTIK_CLIENT_SECRET
+- Add JWKS_URL for token validation
+
+File: backend/app/api/v1/auth.py (new)
+- POST /auth/callback - Handle OAuth2 callback, exchange code for token
+- GET /auth/me - Get current user info
+- POST /auth/logout - Logout endpoint
+
+### Frontend Implementation (React)
+
+File: frontend/src/pages/Landing.tsx (new)
+- Hero section: "Manage Your 3D Printing Business"
+- Features showcase: Inventory, Costing, Pricing, Analytics
+- Call-to-action buttons: "Sign Up" and "Login"
+- Responsive design (mobile + desktop)
+- Use shadcn/ui components
+
+File: frontend/src/components/auth/AuthProvider.tsx (new)
+- React context for auth state
+- Store tokens in memory (not localStorage for security)
+- Provide login(), logout(), user state to app
+- Auto-refresh tokens before expiry
+- Redirect to /auth/login when unauthenticated
+
+File: frontend/src/pages/Login.tsx (new)
+- Redirect to Authentik login page with OIDC params
+- Handle callback with authorization code
+- Exchange code for tokens via backend /auth/callback
+- Store tokens and redirect to dashboard
+
+File: frontend/src/pages/Signup.tsx (new)
+- Redirect to Authentik enrollment flow
+- Similar callback handling as Login
+
+File: frontend/src/App.tsx (modify)
+- Wrap app in AuthProvider
+- Add route protection: redirect unauthenticated users to /landing
+- Add public routes: /landing, /login, /signup, /auth/callback
+- Protected routes: /dashboard, /inventory, etc.
+
+File: frontend/src/lib/api/client.ts (modify)
+- Add Authorization: Bearer <token> header to all API requests
+- Handle 401 responses (redirect to login)
+
+### Testing Requirements
+- Verify Authentik accessible at https://auth.nozzly.app
+- Create test user in Authentik admin
+- Test signup flow: new user → Authentik → callback → dashboard
+- Test login flow: existing user → Authentik → callback → dashboard
+- Test token refresh (simulate expiry)
+- Test logout flow
+- Test unauthorized API access (401 response)
+- Test multi-tenant access (user with multiple tenants)
+
+## Success Criteria
+- Landing page accessible at https://nozzly.app (unauthenticated)
+- Signup button redirects to Authentik enrollment
+- Login button redirects to Authentik login
+- Successful authentication redirects to dashboard
+- Backend validates JWT tokens in production mode
+- API endpoints return 401 for unauthenticated requests
+- Users can access only their tenant's data (RLS enforced)
+- Logout clears session and redirects to landing page
+
+## Security Considerations
+- Tokens stored in memory (not localStorage)
+- HTTPS enforced for all auth flows (via Cloudflare)
+- JWT signature validation against Authentik JWKS
+- CSRF protection (SameSite cookies)
+- Row-Level Security enforced at database level
+
+## Dependencies
+- ghcr.io/goauthentik/server:latest (Authentik)
+- authlib (Python library for OAuth2/OIDC)
+- @authlib/client or oidc-client-ts (JavaScript OIDC client)
+
+## Timeline Estimate
+- Phase 1: Infrastructure (Authentik deployment) - 2-3 hours
+- Phase 2: Backend authentication - 3-4 hours
+- Phase 3: Frontend landing & auth flows - 4-5 hours
+- Phase 4: Testing & refinement - 2-3 hours
+Total: 11-15 hours
+
+## Non-Goals (Future Work)
+- Social login (Google, GitHub) - Phase 2+
+- Two-factor authentication (2FA) - Use Authentik's built-in MFA
+- Password reset flow - Handled by Authentik
+- Email verification - Handled by Authentik
+- Session management UI (active sessions list) - Phase 2+

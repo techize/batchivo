@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-create-staging-bucket
+  namespace: nozzly
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: mc
+        image: minio/mc:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Configure mc alias
+          echo "Configuring MinIO client..."
+          mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+
+          # Create staging bucket
+          echo "Creating bucket nozzly-staging-images..."
+          mc mb myminio/nozzly-staging-images --ignore-existing
+
+          # Set public download policy for images
+          echo "Setting download policy..."
+          mc anonymous set download myminio/nozzly-staging-images
+
+          echo "Staging bucket created successfully!"
+          mc ls myminio/
+        env:
+        - name: MC_CONFIG_DIR
+          value: /tmp/.mc
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: MINIO_ROOT_USER
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: MINIO_ROOT_PASSWORD

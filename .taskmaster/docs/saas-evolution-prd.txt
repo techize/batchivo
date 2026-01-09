@@ -1,0 +1,428 @@
+# Nozzly SaaS Evolution PRD
+# Transform nozzly.app into Multi-Tenant SaaS Platform for Makers
+
+## Project Overview
+
+Transform nozzly.app from a 3D printing inventory/shop backend into a sophisticated multi-tenant SaaS platform serving diverse maker communities: 3D printing (Mystmereforge), hand knitting (Olive and Wool), and future craft verticals.
+
+### Technical Context
+- Existing codebase: FastAPI backend with 37 SQLAlchemy models
+- Already multi-tenant: All tables have tenant_id FK
+- Current tenant isolation: Application-level query filtering
+- Existing integrations: Square payments, Resend email, hardcoded Royal Mail rates
+- Current gap: No self-service signup, RLS not enforced, 3D print specific
+
+### Goals
+1. Phase 1: Self-service tenant onboarding with PostgreSQL RLS
+2. Phase 2: Launch "Olive and Wool" knitting vertical
+
+---
+
+## PHASE 1: MULTI-TENANT SAAS FOUNDATION
+
+### 1. Self-Service Tenant Signup System
+
+Create self-service registration and onboarding flow allowing new tenants to sign up without admin intervention.
+
+#### Requirements:
+- POST /api/v1/onboarding/register endpoint for new tenant registration
+- Email/password registration with email verification
+- OAuth signup support (Google, GitHub) - future enhancement
+- Auto-create tenant workspace on registration (extend existing pattern)
+- Generate unique tenant slug from business name
+
+#### Technical Implementation:
+- Create OnboardingService in backend/app/services/onboarding_service.py
+- Create schemas in backend/app/schemas/onboarding.py
+- Create endpoints in backend/app/api/v1/endpoints/onboarding.py
+- Extend existing auth/dependencies.py auto-workspace pattern
+- Add email verification token model and flow
+
+#### Acceptance Criteria:
+- User can register with email/password
+- Email verification sent on registration
+- Tenant created automatically with unique slug
+- User assigned as tenant owner
+- JWT tokens returned on successful registration
+
+### 2. Onboarding Wizard API
+
+Build 4-step onboarding wizard API to guide new tenants through initial setup.
+
+#### Requirements:
+- Step 1: Business info (name, slug, business type selection)
+- Step 2: Craft type selection (3D print, hand knitting, machine knitting, generic)
+- Step 3: Shop setup (display name, currency, shipping region, logo upload)
+- Step 4: First product (optional, can skip)
+- Track onboarding progress in tenant settings
+- Allow resuming incomplete onboarding
+
+#### Technical Implementation:
+- PUT /api/v1/onboarding/step/{step_number} endpoint
+- GET /api/v1/onboarding/status endpoint
+- Store onboarding_completed, onboarding_step in tenant.settings JSON
+- Handle logo file upload to existing storage system
+
+#### Acceptance Criteria:
+- Each step validates input and saves progress
+- User can skip steps and return later
+- Onboarding status tracked and retrievable
+- Final step marks tenant as onboarded
+
+### 3. Tenant Configuration Model
+
+Implement comprehensive tenant settings model supporting different craft types.
+
+#### Requirements:
+- TenantType enum: THREE_D_PRINT, HAND_KNITTING, MACHINE_KNITTING, GENERIC
+- TenantSettings Pydantic model for settings JSON validation
+- TenantFeatures model for feature flags based on tenant type
+- Localization settings (currency, timezone, locale)
+- Branding settings (logo_url, primary_color, accent_color)
+- Dynamic labels (material_singular, production_singular, etc.)
+
+#### Technical Implementation:
+- Create backend/app/schemas/tenant_settings.py with Pydantic models
+- Create TenantType enum in backend/app/models/tenant.py
+- Add factory methods for default features per tenant type
+- Update existing Tenant model to use new settings schema
+- Create migration for any schema changes
+
+#### Acceptance Criteria:
+- Tenant type determines which features are enabled
+- Settings validated on save
+- Default settings applied based on tenant type
+- Labels customizable per tenant type
+
+### 4. PostgreSQL Row-Level Security Implementation
+
+Implement database-level tenant isolation using PostgreSQL RLS policies.
+
+#### Requirements:
+- Create app_user database role without superuser privileges
+- Enable RLS on all tenant-scoped tables (20+ tables)
+- Create isolation policies for SELECT, INSERT, UPDATE, DELETE
+- Set tenant context via app.current_tenant_id session variable
+- Update TenantContextMiddleware to set session variable
+
+#### Technical Implementation:
+- Create migration enabling RLS on all tenant tables
+- Create RLS policies for each table
+- Update backend/app/middleware/tenant_context.py
+- Update database.py to use app_user role for connections
+- Create verification tests for RLS isolation
+
+#### Acceptance Criteria:
+- RLS enabled on all tenant-scoped tables
+- Cross-tenant data access impossible at DB level
+- Middleware sets tenant context on every request
+- Comprehensive tests verify isolation
+
+### 5. Multi-Shop Frontend URL Routing
+
+Support multiple URL strategies for tenant shops: subdomain, path-based, and custom domains.
+
+#### Requirements:
+- Subdomain routing: {slug}.nozzly.shop
+- Path-based routing: shop.nozzly.app/{slug}
+- Custom domains: CNAME to {slug}.nozzly.shop
+- Single React app with dynamic tenant resolution
+- Theme/branding loaded from tenant settings
+
+#### Technical Implementation:
+- GET /api/v1/shop/tenant/{slug}/config endpoint for tenant config
+- GET /api/v1/shop/resolve-domain endpoint for custom domain lookup
+- Add custom_domain field to tenant settings
+- Wildcard SSL via Cloudflare for SaaS
+- Frontend useTenant hook for resolution
+
+#### Acceptance Criteria:
+- All three URL strategies work
+- Correct tenant resolved from any URL format
+- Branding applied dynamically
+- Invalid slugs return 404
+
+### 6. Module System Architecture
+
+Create dynamic module system to load features based on tenant type.
+
+#### Requirements:
+- BaseModule abstract class defining module interface
+- ModuleRegistry for registering and retrieving modules
+- Dynamic route registration based on tenant type
+- Module discovery API for frontend sidebar
+- Refactor existing 3D print endpoints as modules
+
+#### Technical Implementation:
+- Create backend/app/modules/ directory structure
+- Create backend/app/modules/base.py with BaseModule ABC
+- Create backend/app/modules/registry.py with ModuleRegistry
+- Create backend/app/modules/threed_print/ for 3D print modules
+- GET /api/v1/modules endpoint returning available modules
+
+#### Acceptance Criteria:
+- Modules dynamically loaded based on tenant type
+- 3D print features only shown for 3D print tenants
+- Frontend can discover available modules
+- Easy to add new modules for new verticals
+
+---
+
+## PHASE 2: OLIVE AND WOOL KNITTING VERTICAL
+
+### 7. Yarn Inventory Module
+
+Create yarn inventory management system parallel to existing spool tracking.
+
+#### Requirements:
+- YarnInventory model with: name, brand, weight_class, fiber_content, color, colorway, dye_lot
+- Quantity tracking: quantity_skeins, yardage_per_skein, weight_grams_per_skein, remaining_yardage
+- Cost tracking: purchase_price_pence, source
+- Standard yarn weight classes: lace, fingering, sport, dk, worsted, bulky, super_bulky, jumbo
+- CRUD endpoints for yarn inventory
+
+#### Technical Implementation:
+- Create yarn_inventory table migration
+- Create backend/app/models/yarn_inventory.py SQLAlchemy model
+- Create backend/app/schemas/yarn.py Pydantic schemas
+- Create backend/app/api/v1/endpoints/yarn.py endpoints
+- Create backend/app/modules/knitting/yarn.py module
+- Add yarn consumption tracking endpoint
+
+#### Acceptance Criteria:
+- Full CRUD for yarn inventory
+- Weight class validation
+- Yardage consumption tracking
+- Cost per yard calculation
+- Only visible to knitting tenants
+
+### 8. Needle Inventory Module
+
+Create needle/hook collection management for knitters.
+
+#### Requirements:
+- NeedleInventory model with: needle_type (knitting/crochet), style (straight/circular/dpn/interchangeable)
+- Size fields: size_metric (mm), size_us, size_uk, length
+- Details: material, brand, quantity, notes
+- Size conversion utilities
+
+#### Technical Implementation:
+- Create needle_inventory table migration
+- Create backend/app/models/needle_inventory.py
+- Create backend/app/schemas/needle.py
+- Create backend/app/api/v1/endpoints/needles.py
+- Create needle size conversion service
+
+#### Acceptance Criteria:
+- Full CRUD for needle inventory
+- Size conversion between metric/US/UK
+- Filter by type, style, size
+- Only visible to knitting tenants
+
+### 9. Pattern Library Module
+
+Create pattern library for storing and organizing knitting patterns.
+
+#### Requirements:
+- KnittingPattern model with: name, designer, source, external_link
+- Pattern file upload (PDF support)
+- Craft type, yarn weight, needle size suggestions
+- Difficulty level, notes
+- No Ravelry API integration initially (manual links only)
+
+#### Technical Implementation:
+- Create knitting_patterns table migration
+- Create backend/app/models/knitting_pattern.py
+- Create backend/app/schemas/pattern.py
+- Create backend/app/api/v1/endpoints/patterns.py
+- Handle PDF file upload to storage
+
+#### Acceptance Criteria:
+- Full CRUD for patterns
+- PDF upload and retrieval
+- External link support (Ravelry, etc.)
+- Search by name, designer, difficulty
+- Only visible to knitting tenants
+
+### 10. Knitting Project Tracking Module
+
+Create project tracking system parallel to production runs.
+
+#### Requirements:
+- KnittingProject model with: name, pattern_id (optional), status (queued/in_progress/finished/frogged)
+- Timeline: start_date, end_date
+- Material tracking: yarn_used (JSONB), needles_used (JSONB)
+- Manual time tracking: time_spent_minutes (not timer-based)
+- Link to product when complete
+
+#### Technical Implementation:
+- Create knitting_projects table migration
+- Create project_time_entries table for time logs
+- Create backend/app/models/knitting_project.py
+- Create backend/app/schemas/project.py
+- Create backend/app/api/v1/endpoints/projects.py
+- Endpoints for time entry logging
+- Project completion with yarn consumption
+
+#### Acceptance Criteria:
+- Full CRUD for projects
+- Time entry logging (manual hours)
+- Yarn consumption recorded on completion
+- Link project to product
+- Calculate total cost (yarn + time)
+- Only visible to knitting tenants
+
+### 11. Product Sizing System
+
+Add optional sizing variants to products for knitted items.
+
+#### Requirements:
+- Optional size_system field on products: none, accessory, baby_child, adult_general, custom
+- Size options per system: S/M/L, baby sizes, XS-3XL, custom measurements
+- Product variants auto-generated from size system
+- Each variant can have different yarn requirements
+
+#### Technical Implementation:
+- Create product_size_system enum
+- Add size_system, size_options to Product model
+- Create ProductVariant model for sized items
+- Update product endpoints to handle variants
+- Migration for new fields
+
+#### Acceptance Criteria:
+- Products can have optional sizing
+- Variants created for sized products
+- Each variant tracked separately for inventory
+- Non-sized products work as before (single variant)
+
+### 12. Knitting Dashboard Widgets
+
+Create knitting-specific dashboard widgets and analytics.
+
+#### Requirements:
+- WIP (Work in Progress) overview widget
+- Yarn usage analytics
+- Time investment per item
+- True cost calculation (materials + labor)
+- Project status summary
+
+#### Technical Implementation:
+- GET /api/v1/analytics/knitting/dashboard endpoint
+- Aggregate data from projects, yarn, time entries
+- Calculate metrics: avg time per item type, yarn usage trends
+- Return formatted dashboard data
+
+#### Acceptance Criteria:
+- Dashboard shows knitting-specific metrics
+- Accurate cost calculations
+- Time trends visible
+- Only shown to knitting tenants
+
+### 13. Olive and Wool Tenant Setup
+
+Set up Olive and Wool as first knitting tenant using self-service flow.
+
+#### Requirements:
+- Create tenant via Phase 1 signup process
+- Configure as hand_knitting tenant type
+- Seed initial yarn inventory
+- Create first products (hats, scarves)
+- Connect Square account
+- Configure UK shipping
+- Launch at oliveandwool.nozzly.shop
+
+#### Acceptance Criteria:
+- Tenant created via self-service signup
+- Knitting modules enabled and functional
+- Products visible in shop
+- Full checkout flow working
+- Shipping calculated correctly
+
+---
+
+## CROSS-CUTTING CONCERNS
+
+### 14. Frontend Admin Dashboard Module System
+
+Update admin dashboard to dynamically show modules based on tenant type.
+
+#### Requirements:
+- DynamicSidebar component reading from /api/v1/modules
+- Lazy-loaded routes for each module
+- Module icons and labels from tenant settings
+- Hide 3D print modules for knitting tenants and vice versa
+
+#### Technical Implementation:
+- Create ModuleRegistry in frontend
+- Implement React.lazy for module routes
+- Update sidebar to read from API
+- Create knitting module views (YarnInventory, NeedleCollection, Projects, Patterns)
+
+#### Acceptance Criteria:
+- Sidebar shows correct modules per tenant
+- Routes load correct components
+- 404 for accessing wrong tenant type modules
+- Smooth transitions between modules
+
+### 15. Landing Page and Marketing Site
+
+Create nozzly.app landing page for new tenant acquisition.
+
+#### Requirements:
+- Hero section with value proposition
+- Feature overview for different craft types
+- "Start Your Shop" CTA leading to signup
+- Pricing information (free tier initially)
+- Links to existing shops (mystmereforge, future oliveandwool)
+
+#### Technical Implementation:
+- Create landing page in frontend or separate static site
+- Responsive design
+- SEO optimization
+- Analytics integration
+
+#### Acceptance Criteria:
+- Clear value proposition
+- Easy path to signup
+- Mobile responsive
+- Fast loading
+
+---
+
+## SUCCESS METRICS
+
+- Tenant self-signup completion rate: >80%
+- Time to first product listed: <10 minutes
+- Cross-tenant data isolation: 100% verified
+- API response time (p95): <200ms
+
+## TIMELINE ESTIMATE
+
+- Phase 1: 4-6 weeks (6 major tasks)
+- Phase 2: 3-4 weeks (7 major tasks)
+- Total: 7-10 weeks for full implementation
+
+## TECHNICAL NOTES
+
+### Database Tables to Add
+- yarn_inventory
+- needle_inventory
+- knitting_patterns
+- knitting_projects
+- project_time_entries
+- product_size_system enum
+
+### Existing Tables to Modify
+- tenants: Enhanced settings JSONB schema
+- products: Add size_system, size_options fields
+
+### API Endpoints to Add
+- /api/v1/onboarding/* (register, step, status)
+- /api/v1/modules (discovery)
+- /api/v1/shop/tenant/{slug}/config
+- /api/v1/shop/resolve-domain
+- /api/v1/inventory/yarn/*
+- /api/v1/inventory/needles/*
+- /api/v1/patterns/*
+- /api/v1/production/projects/*
+- /api/v1/analytics/knitting/dashboard

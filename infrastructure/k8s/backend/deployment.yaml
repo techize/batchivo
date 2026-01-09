@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: nozzly
+data:
+  # NOTE: DATABASE_URL is now constructed from postgres-secret values
+  # See deployment env vars below for how it's assembled
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "nozzly"
+  REDIS_URL: "redis://redis:6379/0"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  ENABLE_TRACING: "false"  # Disable until observability stack is deployed
+  ACCESS_TOKEN_EXPIRE_MINUTES: "1440"  # 24 hours
+  CORS_ORIGINS: '["https://nozzly.app", "https://www.nozzly.app", "https://mystmereforge.co.uk", "https://www.mystmereforge.co.uk"]'
+  # S3/MinIO storage configuration
+  STORAGE_TYPE: "s3"
+  STORAGE_S3_BUCKET: "nozzly-images"
+  STORAGE_S3_REGION: "us-east-1"
+  STORAGE_S3_ENDPOINT: "http://minio:9000"
+  # Row-Level Security (RLS) configuration
+  # Set to "true" after RLS policies are deployed and tested
+  RLS_ENABLED: "false"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: nozzly
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: nozzly
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      imagePullSecrets:
+      - name: harbor-creds
+      initContainers:
+      - name: run-migrations
+        image: registry.techize.co.uk/nozzly/nozzly-backend:9c10b8866abaec50ec3a51ef5462dc0ced0c03ab
+        imagePullPolicy: Always
+        command: ["alembic", "upgrade", "head"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secrets
+        env:
+        # Construct DATABASE_URL from postgres-secret (password not in repo)
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DATABASE_URL
+          value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+      containers:
+      - name: backend
+        image: registry.techize.co.uk/nozzly/nozzly-backend:9c10b8866abaec50ec3a51ef5462dc0ced0c03ab
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secrets
+        - secretRef:
+            name: square-credentials
+        - secretRef:
+            name: resend-credentials
+        - secretRef:
+            name: rls-credentials
+            optional: true  # Allow deployment without RLS secret initially
+        env:
+        # Construct DATABASE_URL from postgres-secret (password not in repo)
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DATABASE_URL
+          value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+        - name: STORAGE_S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: MINIO_ROOT_USER
+        - name: STORAGE_S3_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: MINIO_ROOT_PASSWORD
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5

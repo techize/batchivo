@@ -1,0 +1,78 @@
+# NOTE: Frontend requires a staging-specific build with VITE_API_URL=https://api.staging.nozzly.app
+# The CI/CD pipeline (bead ez9) should build separate images for staging/production
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: nozzly-staging
+data:
+  # This is baked into the image at build time, but kept for documentation
+  VITE_API_URL: "https://api.staging.nozzly.app"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: nozzly-staging
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: nozzly-staging
+spec:
+  replicas: 1  # Single replica for staging
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        environment: staging
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      imagePullSecrets:
+      - name: harbor-creds
+      containers:
+      - name: frontend
+        # Uses staging-specific image built with VITE_API_URL for staging
+        image: registry.techize.co.uk/nozzly/nozzly-frontend-staging:latest
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5

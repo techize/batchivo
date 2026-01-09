@@ -1,0 +1,153 @@
+---
+# PostgreSQL Automated Backup CronJob
+# Runs daily at 3am, stores backups in MinIO with 30-day retention
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts
+  namespace: nozzly
+data:
+  backup.sh: |
+    #!/bin/sh
+    set -e
+
+    # Configuration
+    BACKUP_DATE=$(date +%Y%m%d-%H%M%S)
+    BACKUP_FILE="nozzly-backup-${BACKUP_DATE}.sql.gz"
+    BUCKET="nozzly-backups"
+    RETENTION_DAYS=30
+
+    echo "Starting PostgreSQL backup at $(date)"
+    echo "Backup file: ${BACKUP_FILE}"
+
+    # Create backup directory
+    mkdir -p /tmp/backup
+
+    # Run pg_dump and compress
+    echo "Running pg_dump..."
+    PGPASSWORD="${DB_PASSWORD}" pg_dump \
+      -h postgres \
+      -U "${DB_USER}" \
+      -d "${DB_NAME}" \
+      --no-owner \
+      --no-acl \
+      | gzip > "/tmp/backup/${BACKUP_FILE}"
+
+    BACKUP_SIZE=$(du -h "/tmp/backup/${BACKUP_FILE}" | cut -f1)
+    echo "Backup created successfully: ${BACKUP_SIZE}"
+
+    # Configure MinIO client
+    echo "Configuring MinIO client..."
+    mc alias set minio http://minio:9000 "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}"
+
+    # Create bucket if it doesn't exist
+    mc mb --ignore-existing minio/${BUCKET}
+
+    # Upload backup
+    echo "Uploading backup to MinIO..."
+    mc cp "/tmp/backup/${BACKUP_FILE}" "minio/${BUCKET}/"
+
+    echo "Backup uploaded successfully"
+
+    # Cleanup old backups (older than RETENTION_DAYS)
+    echo "Cleaning up backups older than ${RETENTION_DAYS} days..."
+    CUTOFF_DATE=$(date -d "-${RETENTION_DAYS} days" +%Y%m%d 2>/dev/null || date -v-${RETENTION_DAYS}d +%Y%m%d)
+
+    mc ls minio/${BUCKET}/ | while read -r line; do
+      FILE=$(echo "$line" | awk '{print $NF}')
+      if [ -n "$FILE" ]; then
+        # Extract date from filename (nozzly-backup-YYYYMMDD-HHMMSS.sql.gz)
+        FILE_DATE=$(echo "$FILE" | grep -oE '[0-9]{8}' | head -1)
+        if [ -n "$FILE_DATE" ] && [ "$FILE_DATE" -lt "$CUTOFF_DATE" ]; then
+          echo "Deleting old backup: $FILE"
+          mc rm "minio/${BUCKET}/${FILE}"
+        fi
+      fi
+    done
+
+    echo "Backup completed successfully at $(date)"
+
+    # Cleanup local temp file
+    rm -f "/tmp/backup/${BACKUP_FILE}"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: nozzly
+spec:
+  # Run daily at 3am UTC
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: postgres:16-alpine
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                # Install MinIO client
+                apk add --no-cache wget
+                wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /tmp/mc
+                chmod +x /tmp/mc
+                export PATH=$PATH:/tmp
+
+                # Run backup script
+                sh /scripts/backup.sh
+            env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DB_NAME
+              value: "nozzly"
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: backup-scripts
+              defaultMode: 0755
+---
+# Manual backup Job (run with: kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n nozzly)
+# This is just a reference - the CronJob handles automatic backups

@@ -1,0 +1,865 @@
+{
+  "info": {
+    "name": "Nozzly API",
+    "description": "Complete API collection for Nozzly 3D Print Business Management Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.nozzly.app/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\",\n  \"full_name\": \"John Doe\",\n  \"tenant_name\": \"My 3D Print Shop\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "pm.collectionVariables.set('refresh_token', jsonData.refresh_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', jsonData.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/auth/refresh"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Spools",
+      "item": [
+        {
+          "name": "List Spools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/spools?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["spools"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "is_active", "value": "true", "disabled": true },
+                { "key": "low_stock_only", "value": "false", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Spool",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"material_type_id\": \"{{material_type_id}}\",\n  \"brand\": \"Bambu Lab\",\n  \"color\": \"Matte Black\",\n  \"diameter_mm\": 1.75,\n  \"initial_weight_g\": 1000,\n  \"current_weight_g\": 1000,\n  \"cost_per_kg\": 25.99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/spools"
+          }
+        },
+        {
+          "name": "Get Spool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/spools/{{spool_id}}"
+          }
+        },
+        {
+          "name": "Update Spool",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_weight_g\": 750,\n  \"location\": \"Printer 1\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/spools/{{spool_id}}"
+          }
+        },
+        {
+          "name": "Delete Spool",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/spools/{{spool_id}}"
+          }
+        },
+        {
+          "name": "List Material Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/spools/material-types"
+          }
+        },
+        {
+          "name": "Export Spools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/spools/export?format=csv"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products?skip=0&limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "limit", "value": "100" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "is_active", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"PROD-001\",\n  \"name\": \"Dragon Miniature\",\n  \"description\": \"Detailed dragon figurine\",\n  \"is_active\": true,\n  \"shop_visible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/products"
+          }
+        },
+        {
+          "name": "Get Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/products/{{product_id}}"
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dragon Miniature - Large\",\n  \"units_in_stock\": 15\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/products/{{product_id}}"
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/products/{{product_id}}"
+          }
+        },
+        {
+          "name": "Add Model to Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"{{model_id}}\",\n  \"quantity\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/products/{{product_id}}/models"
+          }
+        },
+        {
+          "name": "Add Pricing to Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sales_channel_id\": \"{{sales_channel_id}}\",\n  \"list_price\": 29.99,\n  \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/products/{{product_id}}/pricing"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Models",
+      "item": [
+        {
+          "name": "List Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/models"
+          }
+        },
+        {
+          "name": "Create Model",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"MDL-DRAGON-001\",\n  \"name\": \"Dragon Miniature\",\n  \"category\": \"Miniatures\",\n  \"print_time_minutes\": 180,\n  \"prints_per_plate\": 4\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/models"
+          }
+        },
+        {
+          "name": "Get Model",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/models/{{model_id}}"
+          }
+        },
+        {
+          "name": "Get Production Defaults",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/models/{{model_id}}/production-defaults"
+          }
+        },
+        {
+          "name": "Add Material to BOM",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spool_id\": \"{{spool_id}}\",\n  \"weight_grams\": 25.5,\n  \"cost_per_gram\": 0.026\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/models/{{model_id}}/materials"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Production Runs",
+      "item": [
+        {
+          "name": "List Production Runs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/production-runs?status_filter=in_progress",
+              "host": ["{{base_url}}"],
+              "path": ["production-runs"],
+              "query": [
+                { "key": "status_filter", "value": "in_progress" },
+                { "key": "skip", "value": "0", "disabled": true },
+                { "key": "limit", "value": "100", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Production Run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Dragon miniatures batch\",\n  \"items\": [\n    {\n      \"model_id\": \"{{model_id}}\",\n      \"quantity\": 5\n    }\n  ],\n  \"materials\": [\n    {\n      \"spool_id\": \"{{spool_id}}\",\n      \"estimated_model_weight_grams\": 150,\n      \"estimated_flushed_grams\": 10,\n      \"estimated_tower_grams\": 25\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/production-runs"
+          }
+        },
+        {
+          "name": "Get Production Run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/production-runs/{{run_id}}"
+          }
+        },
+        {
+          "name": "Complete Production Run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/production-runs/{{run_id}}/complete"
+          }
+        },
+        {
+          "name": "Cancel Production Run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancel_mode\": \"full_reversal\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/production-runs/{{run_id}}/cancel"
+          }
+        },
+        {
+          "name": "Fail Production Run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"failure_reason\": \"layer_adhesion\",\n  \"waste_materials\": [\n    {\n      \"spool_id\": \"{{spool_id}}\",\n      \"grams\": 75\n    }\n  ],\n  \"notes\": \"Failed at layer 50\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/production-runs/{{run_id}}/fail"
+          }
+        },
+        {
+          "name": "Get Failure Reasons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/production-runs/failure-reasons"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders?status=pending&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["orders"],
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order Counts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/orders/counts"
+          }
+        },
+        {
+          "name": "Get Order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/orders/{{order_id}}"
+          }
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"processing\",\n  \"internal_notes\": \"Priority order\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/orders/{{order_id}}"
+          }
+        },
+        {
+          "name": "Ship Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tracking_number\": \"RM123456789GB\",\n  \"tracking_url\": \"https://tracking.royalmail.com/RM123456789GB\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/orders/{{order_id}}/ship"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/summary"
+          }
+        },
+        {
+          "name": "Get Active Production",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/active-production"
+          }
+        },
+        {
+          "name": "Get Low Stock Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/low-stock?threshold_percent=10"
+          }
+        },
+        {
+          "name": "Get Recent Activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/recent-activity?limit=20"
+          }
+        },
+        {
+          "name": "Get Performance Charts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/performance-charts?days=7"
+          }
+        },
+        {
+          "name": "Get Failure Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/failure-analytics?days=30"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Variance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/analytics/variance-report?days=30"
+          }
+        },
+        {
+          "name": "Get Product Production History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/analytics/products/{{product_id}}/production-history?days=90"
+          }
+        },
+        {
+          "name": "Get Spool Production Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/analytics/spools/{{spool_id}}/production-usage?days=90"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales Channels",
+      "item": [
+        {
+          "name": "List Sales Channels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sales-channels"
+          }
+        },
+        {
+          "name": "Create Sales Channel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Etsy Shop\",\n  \"platform_type\": \"etsy\",\n  \"base_fee_percent\": 6.5,\n  \"payment_processing_percent\": 3.0,\n  \"listing_fee\": 0.20\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/sales-channels"
+          }
+        },
+        {
+          "name": "Get Sales Channel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sales-channels/{{channel_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/categories"
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Miniatures\",\n  \"description\": \"Tabletop gaming miniatures\",\n  \"display_order\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/categories"
+          }
+        },
+        {
+          "name": "Get Category Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/categories/{{category_id}}/products"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Designers",
+      "item": [
+        {
+          "name": "List Designers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/designers"
+          }
+        },
+        {
+          "name": "Create Designer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Epic Miniatures\",\n  \"website_url\": \"https://epicminiatures.com\",\n  \"membership_cost\": 15.00\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/designers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consumables",
+      "item": [
+        {
+          "name": "List Consumable Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/consumables/types"
+          }
+        },
+        {
+          "name": "Create Consumable Type",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"PKG-BOX-SM\",\n  \"name\": \"Small Shipping Box\",\n  \"category\": \"Packaging\",\n  \"unit_of_measure\": \"each\",\n  \"current_cost_per_unit\": 0.45,\n  \"quantity_on_hand\": 100,\n  \"reorder_point\": 50\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/consumables/types"
+          }
+        },
+        {
+          "name": "Get Low Stock Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/consumables/alerts/low-stock"
+          }
+        },
+        {
+          "name": "Record Purchase",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consumable_type_id\": \"{{consumable_id}}\",\n  \"quantity_purchased\": 200,\n  \"total_cost\": 90.00,\n  \"supplier\": \"Uline\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/consumables/purchases"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Printers",
+      "item": [
+        {
+          "name": "List Printers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/printers"
+          }
+        },
+        {
+          "name": "Create Printer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bambu Lab X1 Carbon\",\n  \"model\": \"X1 Carbon\",\n  \"manufacturer\": \"Bambu Lab\",\n  \"build_volume_x\": 256,\n  \"build_volume_y\": 256,\n  \"build_volume_z\": 256,\n  \"hourly_rate\": 2.50\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/printers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipping",
+      "item": [
+        {
+          "name": "Get Shipping Rates",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postcode\": \"SW1A 1AA\",\n  \"weight_grams\": 500,\n  \"cart_total_pence\": 2500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/shipping/rates"
+          }
+        },
+        {
+          "name": "Validate Postcode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/shipping/validate-postcode/SW1A1AA"
+          }
+        },
+        {
+          "name": "List Shipping Methods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/shipping/methods"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "List Event Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/webhooks/event-types"
+          }
+        },
+        {
+          "name": "List Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/webhooks/subscriptions"
+          }
+        },
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Order Notifications\",\n  \"url\": \"https://my-server.com/webhooks/nozzly\",\n  \"events\": [\"order.created\", \"order.paid\", \"order.shipped\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/webhooks/subscriptions"
+          }
+        },
+        {
+          "name": "Test Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/webhooks/subscriptions/{{subscription_id}}/test"
+          }
+        },
+        {
+          "name": "List Deliveries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/webhooks/deliveries"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Tenant Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/settings/tenant"
+          }
+        },
+        {
+          "name": "Update Tenant Settings",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My 3D Print Shop\",\n  \"description\": \"Premium 3D printed products\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/settings/tenant"
+          }
+        },
+        {
+          "name": "Get Square Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/settings/square"
+          }
+        },
+        {
+          "name": "Test Square Connection",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/settings/square/test"
+          }
+        }
+      ]
+    }
+  ]
+}

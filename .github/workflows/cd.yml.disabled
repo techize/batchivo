@@ -1,0 +1,76 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to k3s
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update image tags in manifests
+        run: |
+          # Get the SHA from the triggering workflow
+          SHA=${{ github.event.workflow_run.head_sha }}
+
+          # Update backend deployment
+          sed -i "s|image: ghcr.io/.*/backend:.*|image: ghcr.io/${{ github.repository }}/backend:${SHA}|g" \
+            infrastructure/k8s/backend/deployment.yaml
+
+          # Update frontend deployment
+          sed -i "s|image: ghcr.io/.*/frontend:.*|image: ghcr.io/${{ github.repository }}/frontend:${SHA}|g" \
+            infrastructure/k8s/frontend/deployment.yaml
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy to k3s
+        run: |
+          # Apply namespace first
+          kubectl apply -f infrastructure/k8s/namespace/ || true
+
+          # Apply core infrastructure
+          kubectl apply -f infrastructure/k8s/postgres/ || true
+          kubectl apply -f infrastructure/k8s/redis/ || true
+
+          # Apply application deployments
+          kubectl apply -f infrastructure/k8s/backend/
+          kubectl apply -f infrastructure/k8s/frontend/
+
+          # Apply ingress
+          kubectl apply -f infrastructure/k8s/ingress/ || true
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/nozzly-backend -n nozzly --timeout=300s
+          kubectl rollout status deployment/nozzly-frontend -n nozzly --timeout=300s
+
+      - name: Run smoke tests
+        run: |
+          # Wait for services to be ready
+          sleep 30
+
+          # Test backend health endpoint
+          kubectl run curl-test --image=curlimages/curl --rm -i --restart=Never -n nozzly -- \
+            curl -sf http://nozzly-backend:8000/health || exit 1
+
+          echo "Smoke tests passed!"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Check the logs above for details."
+          # Add Slack/Discord notification here if configured

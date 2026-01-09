@@ -1,0 +1,93 @@
+# NOTE: This template contains placeholder values.
+# Create the actual secret manually with:
+#   kubectl create secret generic postgres-secret -n nozzly \
+#     --from-literal=POSTGRES_USER=nozzly \
+#     --from-literal=POSTGRES_PASSWORD=<YOUR_SECURE_PASSWORD> \
+#     --from-literal=POSTGRES_DB=nozzly
+#
+# Or apply a local secrets file (not committed to git):
+#   kubectl apply -f postgres-secret.local.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: nozzly
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  clusterIP: None  # Headless service for StatefulSet
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: nozzly
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70  # postgres user in alpine
+        runAsGroup: 70
+        fsGroup: 70
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        ports:
+        - containerPort: 5432
+          name: postgres
+        envFrom:
+        - secretRef:
+            name: postgres-secret
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - nozzly
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - nozzly
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi

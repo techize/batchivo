@@ -1,0 +1,425 @@
+# Nozzly.app - Next Phase Development PRD
+
+## Status Assessment (as of 2025-12-13)
+
+### ✅ COMPLETE
+- **Backend Core Features**:
+  - Multi-tenant architecture with RLS
+  - Authentication (JWT-based register/login)
+  - Inventory management (spools/consumables)
+  - Products and 3D models
+  - Production runs with material tracking
+  - Orders and sales channels
+  - Costing calculations
+  - Rate limiting and security headers
+
+- **Frontend Core Features**:
+  - Landing page
+  - Login/Signup/Password reset flows
+  - Dashboard with all entity management pages
+  - Responsive UI with shadcn/ui components
+  - TanStack Query for data fetching
+  - Auth context and protected routes
+
+- **Infrastructure**:
+  - k3s cluster deployment
+  - ArgoCD GitOps (auto-sync enabled)
+  - Cloudflare Tunnel ingress
+  - Docker multi-stage builds
+  - Local registry integration
+  - K8s secrets management
+
+- **Testing & CI/CD**:
+  - Backend: 60% coverage, 99 passing tests
+  - CI pipeline (lint, test, build, security scan)
+  - CD via ArgoCD (automated)
+  - Security hardening complete
+
+### ⚠️ INCOMPLETE / NEEDS WORK
+
+1. **Frontend Test Quality** (PRIORITY: HIGH)
+   - Infrastructure working but 15/18 tests failing
+   - Assertion logic needs fixes (use *AllBy* queries)
+   - Coverage target: 30%+ (currently unknown)
+
+2. **End-to-End User Flows** (PRIORITY: HIGH)
+   - No E2E tests with Playwright/Cypress
+   - Critical user journeys untested:
+     - Registration → Dashboard → Add Spool → Production Run
+     - Login → Browse Products → Create Order
+   - No visual regression testing
+
+3. **Production Observability** (PRIORITY: MEDIUM)
+   - OpenTelemetry instrumentation planned but not implemented
+   - No Prometheus/Grafana dashboards
+   - No distributed tracing (Tempo/Jaeger)
+   - Limited error monitoring
+
+4. **PWA Features** (PRIORITY: MEDIUM)
+   - Service worker configured but offline functionality limited
+   - No push notifications
+   - Install prompts not optimized
+   - Camera access for QR scanning not implemented
+
+5. **Payment Integration** (PRIORITY: LOW)
+   - Square credentials configured
+   - Payment service exists but not tested
+   - No checkout flow E2E tests
+   - No payment webhooks handling
+
+6. **Analytics Dashboard** (PRIORITY: LOW)
+   - Dashboard endpoint exists
+   - Analytics API exists
+   - Limited frontend visualization
+   - No real-time updates
+
+7. **Label Printing** (PRIORITY: LOW - Phase 6)
+   - Hardware documented (Nelko PM230)
+   - No BLE integration yet
+   - No QR code generation in app
+   - See docs/LABEL_PRINTING.md
+
+---
+
+## Phase 4: Production Readiness & User Experience
+
+### Objective
+Transform nozzly.app from "working prototype" to "production-ready SaaS platform" with comprehensive testing, observability, and polished UX.
+
+### Timeline: 2-3 weeks (flexible)
+
+---
+
+## Priority 1: Frontend Testing & Quality (Week 1)
+
+### Goal
+Achieve 30%+ frontend coverage with all tests passing and E2E tests for critical flows.
+
+### Tasks
+
+#### 1.1 Fix Failing Frontend Unit Tests
+**Estimated Time**: 2-3 hours
+
+- Fix SpoolList.test.tsx assertion errors (use `getAllByText` for duplicate IDs)
+- Update test expectations to match actual component behavior
+- Ensure all 18 unit tests pass
+- Generate coverage report
+
+**Acceptance Criteria**:
+- All frontend unit tests passing (18/18)
+- Coverage ≥ 30%
+- No skipped tests
+
+#### 1.2 Add E2E Test Suite with Playwright
+**Estimated Time**: 8-10 hours
+
+**Setup**:
+- Install Playwright + test dependencies
+- Configure test environments (dev, staging)
+- Create test fixtures and helpers
+- Set up CI integration
+
+**Critical User Flows to Test**:
+1. **Registration & Onboarding** (20 min)
+   - Navigate to landing page
+   - Click "Sign Up"
+   - Complete registration form
+   - Verify redirect to dashboard
+   - Verify workspace created
+
+2. **Inventory Management** (30 min)
+   - Login as existing user
+   - Navigate to Inventory
+   - Add new spool
+   - Update spool weight
+   - Search and filter spools
+   - Delete spool
+
+3. **Production Run Creation** (30 min)
+   - Create 3D model
+   - Create product using model
+   - Create production run
+   - Add materials
+   - Complete production run
+   - Verify inventory deducted
+
+4. **Order Flow** (20 min)
+   - Create sales channel
+   - Create order
+   - Add order items
+   - Process payment (mocked)
+   - Verify order completion
+
+**Acceptance Criteria**:
+- 4 critical flows tested end-to-end
+- Tests run in <5 minutes
+- CI integration complete
+- Screenshot/video on failure
+
+#### 1.3 Visual Regression Testing
+**Estimated Time**: 3-4 hours
+
+- Configure Percy or Chromatic
+- Capture baseline screenshots for all pages
+- Add visual diff checks to CI
+- Document acceptable variance thresholds
+
+---
+
+## Priority 2: Production Observability (Week 2)
+
+### Goal
+Implement comprehensive observability for production monitoring and debugging.
+
+### Tasks
+
+#### 2.1 OpenTelemetry Instrumentation
+**Estimated Time**: 6-8 hours
+
+**Backend** (4-5 hours):
+- Install opentelemetry-api, opentelemetry-sdk-python
+- Configure OTLP exporters (Tempo, Prometheus)
+- Auto-instrument FastAPI app
+- Add custom spans for:
+  - Database queries
+  - External API calls (Square)
+  - Background jobs
+- Add custom metrics:
+  - Request counts, latency
+  - Inventory operations
+  - Production run completions
+
+**Frontend** (2-3 hours):
+- Install @opentelemetry/web
+- Configure browser instrumentation
+- Track user interactions
+- Monitor API call performance
+- Capture errors and exceptions
+
+**Acceptance Criteria**:
+- Traces visible in Tempo/Jaeger
+- Metrics in Prometheus
+- End-to-end trace correlation (frontend → backend → db)
+
+#### 2.2 Grafana Dashboards
+**Estimated Time**: 4-6 hours
+
+**Dashboards to Create**:
+1. **Application Overview**
+   - Request rate, error rate, latency (RED metrics)
+   - Active users
+   - API endpoint breakdown
+
+2. **Business Metrics**
+   - New registrations per day
+   - Production runs created
+   - Inventory turnover
+   - Orders completed
+
+3. **Infrastructure Health**
+   - Pod CPU/memory usage
+   - Database connections
+   - Redis cache hit rate
+   - Container restart counts
+
+4. **Errors & Alerts**
+   - 4xx/5xx error trends
+   - Failed production runs
+   - Payment failures
+   - Low stock alerts
+
+**Acceptance Criteria**:
+- 4 Grafana dashboards deployed
+- Alert rules configured
+- Dashboard JSON exported to git
+
+#### 2.3 Structured Logging
+**Estimated Time**: 2-3 hours
+
+- Implement JSON structured logging
+- Add correlation IDs to all logs
+- Configure log levels (INFO in prod, DEBUG in dev)
+- Ship logs to Loki
+- Create log-based alerts
+
+---
+
+## Priority 3: PWA Enhancements (Week 2-3)
+
+### Goal
+Improve offline capabilities and mobile UX.
+
+### Tasks
+
+#### 3.1 Offline-First Inventory
+**Estimated Time**: 4-6 hours
+
+- Cache inventory data in IndexedDB
+- Queue weight updates when offline
+- Sync on reconnection
+- Show offline indicator in UI
+- Handle conflict resolution
+
+**Acceptance Criteria**:
+- Can view spools offline
+- Weight updates queued and synced
+- No data loss on offline operations
+
+#### 3.2 QR Code Scanning
+**Estimated Time**: 3-4 hours
+
+- Add camera permission request
+- Integrate QR scanner library (html5-qrcode)
+- Implement spool lookup by QR code
+- Quick-update spool weight via scan
+- Generate QR codes for new spools
+
+**Acceptance Criteria**:
+- Camera access on mobile
+- QR scan opens spool detail
+- QR codes generated and printable
+
+#### 3.3 Install Prompts & App Shell
+**Estimated Time**: 2-3 hours
+
+- Add custom install prompt
+- Improve app shell loading
+- Add splash screens (iOS + Android)
+- Configure app manifest icons
+- Test install flow on mobile
+
+---
+
+## Priority 4: Payment Integration Testing (Optional)
+
+### Goal
+Verify Square payment integration with end-to-end tests.
+
+### Tasks
+
+#### 4.1 Payment Flow Testing
+**Estimated Time**: 4-5 hours
+
+- Create checkout page UI
+- Implement Square Web Payments SDK
+- Add payment method form
+- Test sandbox transactions
+- Handle payment webhooks
+- Create payment integration tests
+
+**Acceptance Criteria**:
+- Can complete test payment in sandbox
+- Webhooks processed correctly
+- Payment errors handled gracefully
+- E2E test covers full checkout flow
+
+---
+
+## Priority 5: Analytics & Dashboard (Optional)
+
+### Goal
+Build comprehensive analytics dashboard with real-time data.
+
+### Tasks
+
+#### 5.1 Analytics API Enhancement
+**Estimated Time**: 3-4 hours
+
+- Add time-range filtering
+- Implement data aggregations
+- Add caching for expensive queries
+- Optimize database queries
+
+#### 5.2 Dashboard Visualizations
+**Estimated Time**: 4-6 hours
+
+- Production run trends (Recharts)
+- Inventory levels over time
+- Top products by volume
+- Revenue analytics
+- Export to CSV/PDF
+
+---
+
+## Non-Functional Requirements
+
+### Performance
+- Page load time <2s (LCP)
+- API response time <500ms (p95)
+- Frontend bundle size <500KB (gzipped)
+- Backend memory usage <512MB per pod
+
+### Accessibility
+- WCAG 2.1 AA compliance
+- Keyboard navigation
+- Screen reader compatible
+- Sufficient color contrast
+
+### Security
+- ✅ JWT tokens properly validated
+- ✅ Rate limiting on auth endpoints
+- ✅ Security headers configured
+- ✅ Secrets in K8s, not git
+- ⏳ CSRF protection (verify)
+- ⏳ Input validation (comprehensive)
+- ⏳ SQL injection prevention (verify)
+
+---
+
+## Success Metrics
+
+### Testing
+- ✅ Backend coverage: 60%+ (achieved)
+- ⏳ Frontend coverage: 30%+
+- ⏳ E2E tests: 4 critical flows
+- ⏳ Visual regression: baseline captured
+
+### Observability
+- ⏳ 95% of requests traced
+- ⏳ All errors logged with context
+- ⏳ Business metrics dashboards live
+- ⏳ Alert rules configured
+
+### User Experience
+- ⏳ Landing → Dashboard in <30s
+- ⏳ PWA installable on mobile
+- ⏳ Offline inventory viewing works
+- ⏳ QR scanning functional
+
+---
+
+## Out of Scope (Future Phases)
+
+- Label printing hardware integration (Phase 6)
+- Mobile native apps (Phase 7+)
+- Social login (Google, GitHub)
+- Multi-factor authentication
+- Team collaboration features
+- Public API for third-party integrations
+- White-label reseller platform
+
+---
+
+## Implementation Order
+
+**Week 1**: Testing & Quality
+1. Fix frontend unit tests (1 day)
+2. Set up Playwright E2E (2 days)
+3. Write critical flow tests (2 days)
+
+**Week 2**: Observability
+1. OpenTelemetry backend (2 days)
+2. OpenTelemetry frontend (1 day)
+3. Grafana dashboards (2 days)
+
+**Week 3**: PWA & Polish
+1. Offline inventory (2 days)
+2. QR code scanning (1 day)
+3. Install prompts (1 day)
+4. Analytics dashboard (optional)
+
+---
+
+**Total Estimated Time**: 40-60 hours over 2-3 weeks
+**Priority**: Production readiness before feature expansion
+**Risk**: Low (mostly additive, non-breaking changes)

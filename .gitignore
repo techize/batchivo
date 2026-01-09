@@ -1,0 +1,186 @@
+# Nozzly - .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+backend/lib/
+backend/lib64/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Poetry
+# poetry.lock should be committed for reproducible builds
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+*.coverage.*
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
+# Editor directories and files
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Keep example env files
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads / Storage
+uploads/
+storage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Alembic
+# Keep alembic/ directory but ignore generated stamp
+alembic/versions/*.py
+!alembic/versions/.gitkeep
+
+# Grafana data
+grafana_data/
+
+# Observability data
+tempo_data/
+prometheus_data/
+loki_data/
+
+# Kubernetes secrets (local overrides - not committed)
+*.secret.yaml
+*-secret.yaml
+*.local.yaml
+
+# Cloudflare tunnel credentials
+**/cloudflare/**/cert.json
+**/cloudflare/**/credentials.json
+
+# Test coverage reports
+coverage/
+.coverage.*
+
+# IDEs
+*.swp
+*.swo
+*~
+
+# Mac
+.AppleDouble
+.LSOverride
+
+# Ignore Redis dump
+dump.rdb
+
+# Ignore certificate files
+*.pem
+*.key
+*.crt
+
+# Ignore local configuration overrides
+local.yaml
+local.yml
+local.json
+
+# Ignore session files
+.python_history
+.bash_history
+
+logs
+dev-debug.log
+# Dependency directories
+.idea
+.vscode
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/
+cloudflare-api-token-secret.yaml
+backups/
+infrastructure/harbor/values.yaml

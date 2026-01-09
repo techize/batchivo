@@ -1,0 +1,36 @@
+# Weekly Dependabot PR Review Reminder
+# Runs every Monday at 9am UTC
+
+when:
+  - event: cron
+    cron: weekly-dependabot-review
+
+steps:
+  check-dependabot-prs:
+    image: alpine:latest
+    environment:
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - apk add --no-cache curl jq
+      - |
+        echo "========================================"
+        echo "  Dependabot PR Review - $(date +%Y-%m-%d)"
+        echo "========================================"
+        echo ""
+
+        # Fetch open Dependabot PRs
+        PRS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/repos/techize/nozzly.app/pulls?state=open" | \
+          jq -r '.[] | select(.user.login == "dependabot[bot]") | "- #\(.number): \(.title) (\(.created_at | split("T")[0]))"')
+
+        if [ -z "$PRS" ]; then
+          echo "No open Dependabot PRs - all caught up!"
+        else
+          COUNT=$(echo "$PRS" | wc -l)
+          echo "Found $COUNT open Dependabot PR(s):"
+          echo ""
+          echo "$PRS"
+          echo ""
+          echo "Review at: https://github.com/techize/nozzly.app/pulls?q=is%3Apr+is%3Aopen+author%3Aapp%2Fdependabot"
+        fi

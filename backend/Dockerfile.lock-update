@@ -1,0 +1,16 @@
+# Temporary Dockerfile to update poetry.lock
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install Poetry
+RUN pip install --no-cache-dir poetry==1.7.1
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock* ./
+
+# Update lock file
+RUN poetry lock --no-update
+
+# Output will be in /app/poetry.lock
+CMD ["cat", "poetry.lock"]

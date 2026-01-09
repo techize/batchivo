@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runner-config
+  namespace: github-runner
+data:
+  REPO_URL: "https://github.com/techize/nozzly.app"
+  RUNNER_NAME: "k3s-runner"
+  RUNNER_WORKDIR: "/runner/_work"
+  LABELS: "self-hosted,k3s,docker"
+  DOCKER_HOST: "tcp://localhost:2376"
+  DOCKER_TLS_VERIFY: "1"
+  DOCKER_CERT_PATH: "/certs/client"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker-storage
+  namespace: github-runner
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-runner
+  namespace: github-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-runner
+  template:
+    metadata:
+      labels:
+        app: github-runner
+    spec:
+      volumes:
+        - name: docker-storage
+          persistentVolumeClaim:
+            claimName: docker-storage
+        - name: docker-certs
+          emptyDir: {}
+        - name: runner-work
+          emptyDir: {}
+
+      containers:
+      # GitHub Actions Runner
+      - name: runner
+        image: myoung34/github-runner:latest
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        envFrom:
+          - configMapRef:
+              name: runner-config
+          - secretRef:
+              name: runner-token
+        env:
+          - name: RUNNER_SCOPE
+            value: "repo"
+          - name: DISABLE_RUNNER_UPDATE
+            value: "true"
+        volumeMounts:
+          - name: docker-certs
+            mountPath: /certs
+          - name: runner-work
+            mountPath: /runner/_work
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+
+      # Docker-in-Docker (DinD) sidecar - rootless for improved security
+      # Note: Some builds may require privileged mode; switch to docker:24-dind if needed
+      - name: dind
+        image: docker:24-dind-rootless
+        securityContext:
+          privileged: true  # Still needed for rootless DinD, but runs as non-root user
+        env:
+          - name: DOCKER_TLS_CERTDIR
+            value: "/certs"
+        volumeMounts:
+          - name: docker-storage
+            mountPath: /var/lib/docker
+          - name: docker-certs
+            mountPath: /certs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"

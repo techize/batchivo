@@ -1,0 +1,40 @@
+# Traefik IngressRoute for Nozzly Staging
+# Routes staging.nozzly.app traffic to staging backend
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: nozzly-staging
+  namespace: nozzly-staging
+spec:
+  entryPoints:
+  - web
+  - websecure
+  routes:
+  # API routes - backend
+  - kind: Rule
+    match: Host(`staging.nozzly.app`) && PathPrefix(`/api`)
+    priority: 100
+    services:
+    - name: backend
+      port: 8000
+  # Uploads route - backend
+  - kind: Rule
+    match: Host(`staging.nozzly.app`) && PathPrefix(`/uploads`)
+    priority: 100
+    services:
+    - name: backend
+      port: 8000
+  # Health check for backend directly
+  - kind: Rule
+    match: Host(`staging.nozzly.app`) && PathPrefix(`/health`)
+    priority: 100
+    services:
+    - name: backend
+      port: 8000
+  # Frontend (when available) - default route
+  - kind: Rule
+    match: Host(`staging.nozzly.app`)
+    priority: 1
+    services:
+    - name: backend  # Temporarily route to backend until frontend is deployed
+      port: 8000

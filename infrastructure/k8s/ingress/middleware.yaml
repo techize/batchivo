@@ -1,0 +1,8 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: body-size
+  namespace: nozzly
+spec:
+  buffering:
+    maxRequestBodyBytes: 15000000  # 15MB (allows for base64 encoding overhead)

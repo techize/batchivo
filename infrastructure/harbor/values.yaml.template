@@ -1,0 +1,104 @@
+# Harbor Registry Configuration for techize.co.uk
+# Deployed to k3s cluster with Traefik ingress
+#
+# To use: copy to values.yaml and fill in the passwords
+# Generate passwords with: openssl rand -base64 24 | tr -d '/+=' | head -c 24
+
+expose:
+  type: ingress
+  ingress:
+    hosts:
+      core: registry.techize.co.uk
+    className: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+  tls:
+    enabled: true
+    certSource: secret
+    secret:
+      secretName: wildcard-techize-co-uk-tls
+
+externalURL: https://registry.techize.co.uk
+
+# Persistence - using local-path storage class
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      storageClass: local-path
+      size: 100Gi
+    jobservice:
+      storageClass: local-path
+      size: 2Gi
+    trivy:
+      storageClass: local-path
+      size: 5Gi
+    chartmuseum:
+      storageClass: local-path
+      size: 5Gi
+
+# Database (internal PostgreSQL)
+database:
+  type: internal
+  internal:
+    password: "<GENERATE_PASSWORD>"
+  persistence:
+    size: 5Gi
+    storageClass: local-path
+
+# Redis (internal)
+redis:
+  type: internal
+  internal:
+    password: "<GENERATE_PASSWORD>"
+  persistence:
+    size: 2Gi
+    storageClass: local-path
+
+# Core settings
+harborAdminPassword: "<GENERATE_PASSWORD>"
+secretKey: "<GENERATE_32_HEX_CHARS>"  # openssl rand -hex 16
+
+# Trivy vulnerability scanner
+trivy:
+  enabled: true
+  gitHubToken: ""
+
+# ChartMuseum for Helm charts
+chartmuseum:
+  enabled: true
+
+# Notary (disabled - not needed for homelab)
+notary:
+  enabled: false
+
+# Metrics
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+# Resource requests (homelab-friendly)
+core:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+portal:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+registry:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+jobservice:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
