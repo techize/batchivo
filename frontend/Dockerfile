@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for React frontend with Vite
 
 # Stage 1: Builder
-FROM node:20-alpine as builder
+FROM node:25-alpine as builder
 
 WORKDIR /app
 
