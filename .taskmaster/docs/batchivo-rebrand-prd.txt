@@ -1,0 +1,272 @@
+# Batchivo Rebrand PRD
+
+## Executive Summary
+
+Rebrand the Nozzly platform to Batchivo - a production tracking and ecommerce platform for makers. This involves a complete rebrand including code, visual identity, and deployment infrastructure.
+
+## Background
+
+Nozzly started as a 3D print tracking system but has evolved into a comprehensive maker business platform covering:
+- Ecommerce & order management
+- Production tracking (3D printing, knitting, any craft)
+- Shipping & fulfillment
+- Billing & invoicing
+- Multi-tenant architecture
+- Inventory management
+
+The name "Nozzly" no longer reflects this broader scope. "Batchivo" (from "batch" - production batches) better represents the platform's focus on tracking production batches across all maker verticals.
+
+## Goals
+
+1. Complete code rebrand from "nozzly" to "batchivo"
+2. Implement new visual identity (colors, typography, logo)
+3. Deploy to production infrastructure
+4. Maintain zero downtime for existing nozzly.app users during transition
+
+## Non-Goals
+
+- Feature changes or new functionality (separate PRD)
+- Database migration (same schema, different branding)
+- User migration (handled separately)
+
+---
+
+## Phase 1: Repository & Infrastructure Setup
+
+### 1.1 GitHub Repository
+- [x] Create techize/batchivo repo
+- [x] Fork nozzly.app codebase
+- [x] Push initial commit
+
+### 1.2 Domain Setup
+- [x] Register batchivo.com (Cloudflare)
+- [x] Register batchivo.co.uk (Cloudflare)
+- [ ] Configure Cloudflare tunnel public hostname
+- [ ] SSL certificates (auto via Cloudflare)
+
+### 1.3 Social & Brand Assets
+- [ ] Secure @batchivo on Twitter/X
+- [ ] Secure @batchivo on Instagram
+- [ ] Create /batchivo GitHub org
+- [ ] Create LinkedIn company page
+
+---
+
+## Phase 2: Code Rebrand
+
+### 2.1 Backend (Python/FastAPI)
+
+**Files to modify:**
+
+| File | Change |
+|------|--------|
+| `backend/pyproject.toml` | name: nozzly-backend -> batchivo-backend |
+| `backend/app/core/config.py` | APP_NAME, default values |
+| `backend/app/` | Any hardcoded "nozzly" strings |
+| `.env.example` | Variable prefixes if any |
+
+**Search patterns:**
+- `nozzly` (case-insensitive)
+- `Nozzly` (proper case)
+- `NOZZLY` (uppercase)
+
+### 2.2 Frontend (React/TypeScript)
+
+**Files to modify:**
+
+| File | Change |
+|------|--------|
+| `frontend/package.json` | name field |
+| `frontend/index.html` | title, meta tags |
+| `frontend/src/` | App title, branding text |
+| `frontend/public/` | favicon, manifest.json |
+
+**Components to update:**
+- Header/Navbar logo
+- Footer branding
+- Login/Auth pages
+- Error pages
+- Email templates
+
+### 2.3 Docker & Infrastructure
+
+**Files to modify:**
+
+| File | Change |
+|------|--------|
+| `docker-compose.yml` | Service names, container names, volumes |
+| `docker-compose.*.yml` | Any override files |
+| `.github/workflows/` | Image names, deploy targets |
+| `.woodpecker/` | CI pipeline references |
+| `Makefile` | If present, any targets |
+
+### 2.4 Documentation
+
+| File | Change |
+|------|--------|
+| `README.md` | Full rebrand |
+| `CLAUDE.md` | Project context |
+| `CONTRIBUTING.md` | If present |
+| `docs/` | All documentation |
+
+---
+
+## Phase 3: Visual Rebrand
+
+### 3.1 Brand Colors
+
+**Primary Palette:**
+```
+Navy (Primary):     #1a365d
+Charcoal (Alt):     #2d3748
+Deep Teal (Alt):    #0d9488
+```
+
+**Accent Palette:**
+```
+Amber (Primary):    #d97706
+Coral (Alt):        #f56565
+Orange (Alt):       #ea580c
+```
+
+**Neutral Palette:**
+```
+Cream:              #fffaf0
+Warm Gray Light:    #f7fafc
+Warm Gray:          #edf2f7
+```
+
+### 3.2 Typography
+
+**Primary Font:** Inter or Plus Jakarta Sans
+**Fallback:** system-ui, sans-serif
+
+**Font Weights:**
+- Regular (400): Body text
+- Medium (500): Subheadings, buttons
+- Semibold (600): Headings
+- Bold (700): Hero text, emphasis
+
+### 3.3 Logo Assets Required
+
+| Asset | Sizes | Format |
+|-------|-------|--------|
+| Logomark (icon) | 16, 32, 64, 128, 256, 512 | SVG, PNG |
+| Wordmark | - | SVG |
+| Horizontal combo | - | SVG, PNG |
+| Favicon | 16, 32, 180, 192, 512 | ICO, PNG |
+| Open Graph | 1200x630 | PNG |
+| App icons | iOS/Android sizes | PNG |
+
+### 3.4 Logo Generation Prompts
+
+**Logomark:**
+```
+Minimal geometric logomark for "Batchivo", a professional SaaS platform for maker production tracking. Abstract stacked layers or batch/queue symbol, formed by clean parallel lines suggesting organized batches. Single color, works at small sizes. Style: Stripe, Linear, premium tech. No text, icon only. White background.
+```
+
+**Wordmark:**
+```
+Modern wordmark logo "Batchivo" in geometric sans-serif typeface. Clean, premium, minimal. The 'B' slightly stylized with subtle horizontal lines suggesting batches/layers. Color: deep navy or charcoal. Style reference: Squarespace, Notion. Professional software brand aesthetic. White background.
+```
+
+---
+
+## Phase 4: Deployment
+
+### 4.1 Kubernetes (k3s) Deployment
+
+**Namespace:** batchivo (new namespace)
+
+**Services to deploy:**
+- batchivo-backend (FastAPI)
+- batchivo-frontend (Nginx + React build)
+- batchivo-worker (Celery)
+
+**Shared services (existing):**
+- PostgreSQL (new database: batchivo)
+- Redis (existing cluster)
+- MinIO (new bucket: batchivo)
+
+### 4.2 Cloudflare Tunnel
+
+**Existing tunnel:** (same as nozzly/mystmereforge)
+
+**New public hostnames:**
+- batchivo.com -> batchivo-frontend service
+- api.batchivo.com -> batchivo-backend service
+- dev.batchivo.com -> dev environment
+
+### 4.3 Environment Configuration
+
+**Required secrets:**
+- DATABASE_URL
+- REDIS_URL
+- JWT_SECRET
+- SQUARE_API_KEY (if using Square payments)
+- S3/MinIO credentials
+- SMTP credentials
+
+---
+
+## Phase 5: Testing & Validation
+
+### 5.1 Code Validation
+- [ ] `grep -ri "nozzly"` returns zero results
+- [ ] All tests pass
+- [ ] Docker build succeeds
+- [ ] No hardcoded nozzly references
+
+### 5.2 Visual Validation
+- [ ] Logo displays correctly at all sizes
+- [ ] Colors match brand guide
+- [ ] Typography renders correctly
+- [ ] Dark/light mode works (if applicable)
+
+### 5.3 Deployment Validation
+- [ ] https://batchivo.com loads
+- [ ] https://api.batchivo.com/health returns OK
+- [ ] Authentication works
+- [ ] All features functional
+
+---
+
+## Success Metrics
+
+1. Zero "nozzly" references in codebase
+2. All tests passing
+3. Production deployment successful
+4. DNS resolving correctly
+5. SSL certificates valid
+6. All social handles secured
+
+---
+
+## Timeline
+
+| Phase | Duration | Owner |
+|-------|----------|-------|
+| Phase 1: Setup | 1 day | Both |
+| Phase 2: Code Rebrand | 2-3 days | Claude |
+| Phase 3: Visual Rebrand | 2-3 days | Jonathan (assets) + Claude (integration) |
+| Phase 4: Deployment | 1 day | Both |
+| Phase 5: Testing | 1 day | Both |
+
+**Total estimated:** 1-2 weeks
+
+---
+
+## Risks & Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Missed nozzly references | Medium | Comprehensive grep search, automated tests |
+| Logo quality | Low | Multiple AI generation attempts, designer review |
+| DNS propagation delays | Low | Use Cloudflare proxy, short TTLs |
+| Deployment issues | Medium | Test in dev environment first |
+
+---
+
+*PRD Created: 2026-01-09*
+*Version: 1.0*
+*Author: Nexus + Jonathan*
