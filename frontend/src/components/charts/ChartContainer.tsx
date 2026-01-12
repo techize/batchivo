@@ -39,7 +39,7 @@ export function ChartContainer({
   )
 }
 
-// Chart color palette matching the app theme
+// Chart color palette matching the Batchivo brand theme
 export const CHART_COLORS = {
   primary: 'hsl(var(--primary))',
   secondary: 'hsl(var(--secondary))',
@@ -47,18 +47,18 @@ export const CHART_COLORS = {
   accent: 'hsl(var(--accent))',
   destructive: 'hsl(var(--destructive))',
   // Semantic colors for variance
-  positive: '#22c55e', // green-500
-  negative: '#ef4444', // red-500
-  neutral: '#6366f1', // indigo-500
-  warning: '#f59e0b', // amber-500
-  // Series colors
+  positive: '#22c55e', // green-500 (good/success)
+  negative: '#f56565', // coral (brand) - error/danger
+  neutral: '#1a365d', // navy (brand) - neutral/baseline
+  warning: '#d97706', // amber (brand) - warning
+  // Series colors - Batchivo brand palette
   series: [
-    '#6366f1', // indigo
-    '#8b5cf6', // violet
-    '#ec4899', // pink
-    '#14b8a6', // teal
-    '#f59e0b', // amber
-    '#3b82f6', // blue
+    '#1a365d', // navy (primary)
+    '#0d9488', // teal
+    '#d97706', // amber
+    '#f56565', // coral
+    '#2d3748', // charcoal
+    '#ea580c', // orange
   ],
 }
 

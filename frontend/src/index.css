@@ -3,48 +3,59 @@
 @tailwind utilities;
 
 :root {
-  --background: 42 22% 88%;        /* #E4E4D5 - Cream background */
-  --foreground: 23 37% 19%;        /* #3F2A1D - Dark brown text */
-  --card: 0 0% 100%;               /* White cards for contrast */
-  --card-foreground: 23 37% 19%;   /* #3F2A1D - Dark brown */
+  /* Batchivo Brand Colors */
+  --background: 40 100% 97%;       /* #fffaf0 - Cream */
+  --foreground: 215 56% 23%;       /* #1a365d - Navy */
+  --card: 0 0% 100%;               /* White cards */
+  --card-foreground: 215 56% 23%;  /* Navy text */
   --popover: 0 0% 100%;
-  --popover-foreground: 23 37% 19%;
-  --primary: 9 95% 67%;            /* #F9735B - Orange primary */
-  --primary-foreground: 0 0% 100%; /* White text on orange */
-  --secondary: 42 22% 88%;         /* #E4E4D5 - Cream secondary */
-  --secondary-foreground: 23 37% 19%;
-  --muted: 42 15% 80%;             /* Lighter muted version */
-  --muted-foreground: 23 25% 45%;  /* Medium brown */
-  --accent: 9 95% 67%;             /* #F9735B - Orange accent */
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84.2% 60.2%;
+  --popover-foreground: 215 56% 23%;
+  --primary: 215 56% 23%;          /* #1a365d - Navy primary */
+  --primary-foreground: 0 0% 100%; /* White text on navy */
+  --secondary: 210 40% 95%;        /* #edf2f7 - Warm Gray */
+  --secondary-foreground: 215 56% 23%;
+  --muted: 204 45% 98%;            /* #f7fafc - Warm Gray Light */
+  --muted-foreground: 218 23% 35%; /* Charcoal muted */
+  --accent: 32 95% 44%;            /* #d97706 - Amber */
+  --accent-foreground: 0 0% 100%;  /* White text on amber */
+  --destructive: 0 89% 68%;        /* #f56565 - Coral */
   --destructive-foreground: 0 0% 100%;
-  --border: 42 15% 75%;            /* Subtle border */
+  --border: 210 30% 88%;           /* Subtle warm gray border */
   --input: 0 0% 100%;              /* White inputs */
-  --ring: 9 95% 67%;               /* #F9735B - Orange focus ring */
-  --radius: 0.75rem;               /* More rounded for "Rounded" typography */
+  --ring: 32 95% 44%;              /* Amber focus ring */
+  --radius: 0.5rem;
+
+  /* Extended brand colors for direct use */
+  --navy: 215 56% 23%;             /* #1a365d */
+  --charcoal: 218 23% 23%;         /* #2d3748 */
+  --teal: 175 84% 32%;             /* #0d9488 */
+  --amber: 32 95% 44%;             /* #d97706 */
+  --coral: 0 89% 68%;              /* #f56565 */
+  --orange: 21 90% 48%;            /* #ea580c */
+  --cream: 40 100% 97%;            /* #fffaf0 */
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
+  /* Batchivo Dark Mode - Navy-based */
+  --background: 215 56% 12%;       /* Deep navy background */
+  --foreground: 40 100% 97%;       /* Cream text */
+  --card: 215 50% 16%;             /* Slightly lighter navy cards */
+  --card-foreground: 40 100% 97%;
+  --popover: 215 50% 16%;
+  --popover-foreground: 40 100% 97%;
+  --primary: 175 84% 40%;          /* #0d9488 Teal primary (for contrast) */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 218 23% 20%;        /* Charcoal */
+  --secondary-foreground: 40 100% 97%;
+  --muted: 218 23% 20%;
+  --muted-foreground: 210 30% 70%;
+  --accent: 32 95% 50%;            /* Amber (slightly brighter for dark mode) */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 89% 55%;        /* Coral */
+  --destructive-foreground: 0 0% 100%;
+  --border: 218 23% 25%;
+  --input: 218 23% 20%;
+  --ring: 175 84% 40%;             /* Teal focus ring */
 }
 
 * {
@@ -54,5 +65,5 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }

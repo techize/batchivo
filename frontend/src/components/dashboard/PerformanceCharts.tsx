@@ -110,7 +110,7 @@ function ProductionChart({ data }: { data: PerformanceChartData }) {
         />
         <Legend />
         <Bar dataKey="Completed" fill="#22c55e" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="Failed" fill="#ef4444" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Failed" fill="#f56565" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

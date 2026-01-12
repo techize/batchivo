@@ -119,7 +119,7 @@ export function FailureAnalyticsPanel() {
           </div>
           {data && (
             <div className="text-right">
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-coral">
                 {data.failure_rate.toFixed(1)}%
               </div>
               <div className="text-xs text-muted-foreground">
