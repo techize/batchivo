@@ -1,13 +1,13 @@
-# NOTE: Frontend requires a staging-specific build with VITE_API_URL=https://api.staging.batchivo.com
-# The CI/CD pipeline (bead ez9) should build separate images for staging/production
+# Frontend uses runtime config - same image works for staging and production
+# VITE_API_URL is passed via environment variable and injected at container startup
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: frontend-config
   namespace: batchivo-staging
 data:
-  # This is baked into the image at build time, but kept for documentation
-  VITE_API_URL: "https://api.staging.batchivo.com"
+  # Runtime config - injected via envsubst in docker-entrypoint.sh
+  VITE_API_URL: "https://staging-api.batchivo.com"
 ---
 apiVersion: v1
 kind: Service
@@ -47,8 +47,7 @@ spec:
       - name: harbor-creds
       containers:
       - name: frontend
-        # TODO: Build staging-specific image with VITE_API_URL for staging
-        # Using production image for now until staging builds are set up
+        # Same image as production - runtime config via VITE_API_URL env var
         image: registry.techize.co.uk/batchivo/batchivo-frontend:latest
         imagePullPolicy: Always
         securityContext:
@@ -56,6 +55,12 @@ spec:
           capabilities:
             drop:
               - ALL
+        env:
+        - name: VITE_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: VITE_API_URL
         ports:
         - containerPort: 8080
         resources:
