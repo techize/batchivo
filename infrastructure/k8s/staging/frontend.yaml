@@ -47,8 +47,9 @@ spec:
       - name: harbor-creds
       containers:
       - name: frontend
-        # Uses staging-specific image built with VITE_API_URL for staging
-        image: registry.techize.co.uk/batchivo/batchivo-frontend-staging:latest
+        # TODO: Build staging-specific image with VITE_API_URL for staging
+        # Using production image for now until staging builds are set up
+        image: registry.techize.co.uk/batchivo/batchivo-frontend:latest
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
