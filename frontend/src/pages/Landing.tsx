@@ -17,7 +17,7 @@ export function Landing() {
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
-              <img src="/logo.png?v=8" alt="Nozzly" className="h-10 md:h-12 w-auto object-contain" />
+              <img src="/logo.png?v=8" alt="Batchivo" className="h-10 md:h-12 w-auto object-contain" />
               <p className="text-xs text-muted-foreground whitespace-nowrap">
                 3D Print Management
               </p>
@@ -125,7 +125,7 @@ export function Landing() {
       {/* Benefits Section */}
       <section className="container mx-auto px-4 py-16 bg-muted/50 rounded-lg">
         <div className="max-w-3xl mx-auto text-center">
-          <h3 className="text-3xl font-bold mb-6">Why Choose Nozzly?</h3>
+          <h3 className="text-3xl font-bold mb-6">Why Choose Batchivo?</h3>
           <div className="grid md:grid-cols-3 gap-6 text-left">
             <div>
               <h4 className="font-semibold mb-2">Made for Makers</h4>
@@ -153,7 +153,7 @@ export function Landing() {
       <footer className="border-t bg-card/50 backdrop-blur mt-16">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>Built with FastAPI, React, and shadcn/ui</p>
-          <p className="mt-1">© 2025 Nozzly - Open Source 3D Print Management</p>
+          <p className="mt-1">© 2026 Batchivo - Production Tracking for Makers</p>
         </div>
       </footer>
     </div>

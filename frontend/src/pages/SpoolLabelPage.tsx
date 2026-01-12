@@ -22,7 +22,7 @@ export function SpoolLabelPage() {
   })
 
   // The URL the QR code will link to (quick update page)
-  const updateUrl = `https://nozzly.app/filaments/${spoolId}/update`
+  const updateUrl = `https://batchivo.com/filaments/${spoolId}/update`
 
   if (isLoading) {
     return (

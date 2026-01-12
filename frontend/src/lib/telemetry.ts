@@ -22,7 +22,7 @@ import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from 'web-vitals'
 
 // Configuration from environment
 const OTEL_ENDPOINT = import.meta.env.VITE_OTEL_ENDPOINT || '/v1/traces'
-const SERVICE_NAME = import.meta.env.VITE_SERVICE_NAME || 'nozzly-frontend'
+const SERVICE_NAME = import.meta.env.VITE_SERVICE_NAME || 'batchivo-frontend'
 const SERVICE_VERSION = import.meta.env.VITE_SERVICE_VERSION || '1.0.0'
 
 let tracerProvider: WebTracerProvider | null = null
@@ -124,7 +124,7 @@ export function initTelemetry(): void {
 /**
  * Get a tracer instance for creating custom spans.
  */
-export function getTracer(name = 'nozzly-frontend') {
+export function getTracer(name = 'batchivo-frontend') {
   return trace.getTracer(name, SERVICE_VERSION)
 }
 

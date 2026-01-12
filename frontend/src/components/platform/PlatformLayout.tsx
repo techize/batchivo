@@ -64,7 +64,7 @@ export function PlatformLayout({ children }: PlatformLayoutProps) {
             {/* Logo and Platform Badge */}
             <div className="flex items-center gap-3">
               <Link to="/dashboard" className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                <img src="/logo.png?v=8" alt="Nozzly Logo" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
+                <img src="/logo.png?v=8" alt="Batchivo Logo" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
               </Link>
               <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-purple-100 dark:bg-purple-900 rounded-md">
                 <Shield className="h-4 w-4 text-purple-600 dark:text-purple-300" />
@@ -192,7 +192,7 @@ export function PlatformLayout({ children }: PlatformLayoutProps) {
       {/* Footer */}
       <footer className="border-t bg-card mt-16">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>Nozzly Platform Administration</p>
+          <p>Batchivo Platform Administration</p>
         </div>
       </footer>
     </div>

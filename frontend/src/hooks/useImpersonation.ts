@@ -9,8 +9,8 @@ import { setAuthTokens, getAuthTokens, type AuthTokens } from '@/lib/auth'
 import { useImpersonateTenant } from './usePlatformAdmin'
 import { useAuth } from '@/contexts/AuthContext'
 
-const IMPERSONATION_KEY = 'nozzly_impersonation_state'
-const ORIGINAL_TOKENS_KEY = 'nozzly_original_tokens'
+const IMPERSONATION_KEY = 'batchivo_impersonation_state'
+const ORIGINAL_TOKENS_KEY = 'batchivo_original_tokens'
 
 interface ImpersonationState {
   isImpersonating: boolean

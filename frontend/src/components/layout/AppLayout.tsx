@@ -137,9 +137,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-between gap-2">
             {/* Logo */}
             <Link to="/dashboard" className="flex flex-col items-center gap-0.5 flex-shrink-0">
-              <img src="/logo.png?v=8" alt="Nozzly Logo" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
+              <img src="/logo.png?v=8" alt="Batchivo Logo" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
               <p className="hidden sm:block text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
-                3D Print Management
+                Production Tracking for Makers
               </p>
             </Link>
 
@@ -324,7 +324,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Footer */}
       <footer className="border-t bg-card mt-16">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>Nozzly - 3D Print Management Platform</p>
+          <p>Batchivo - Production Tracking for Makers</p>
           <p className="mt-1 hidden sm:block">Built with FastAPI, React, and shadcn/ui</p>
         </div>
       </footer>

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright Configuration for nozzly.app E2E Tests
+ * Playwright Configuration for batchivo.com E2E Tests
  *
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -27,7 +27,7 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     /* Default to production for E2E tests; use PLAYWRIGHT_BASE_URL=http://localhost:5173 for local */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://www.nozzly.app',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://www.batchivo.com',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -57,7 +57,7 @@ export default defineConfig({
   /* Run local dev server only when testing locally (set PLAYWRIGHT_BASE_URL=http://localhost:5173) */
   webServer: process.env.PLAYWRIGHT_BASE_URL?.includes('localhost')
     ? {
-        command: `VITE_API_URL=${process.env.PLAYWRIGHT_API_URL || 'https://api.nozzly.app'} npm run dev`,
+        command: `VITE_API_URL=${process.env.PLAYWRIGHT_API_URL || 'https://api.batchivo.com'} npm run dev`,
         url: 'http://localhost:5173',
         reuseExistingServer: !process.env.CI,
         stdout: 'ignore',

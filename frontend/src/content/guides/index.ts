@@ -18,18 +18,18 @@ export const guides: Guide[] = [
   {
     slug: 'overview',
     title: 'Overview',
-    description: 'Introduction to Nozzly, key concepts, and navigation',
+    description: 'Introduction to Batchivo, key concepts, and navigation',
     category: 'core',
     order: 1,
-    content: `# Nozzly User Guide - Overview
+    content: `# Batchivo User Guide - Overview
 
-Welcome to Nozzly, a comprehensive 3D print business management platform designed to help you track inventory, manage production, and grow your 3D printing business.
+Welcome to Batchivo, a comprehensive 3D print business management platform designed to help you track inventory, manage production, and grow your 3D printing business.
 
 ---
 
-## What is Nozzly?
+## What is Batchivo?
 
-Nozzly is an all-in-one solution for 3D printing businesses that need to:
+Batchivo is an all-in-one solution for 3D printing businesses that need to:
 
 - **Track filament inventory** - Know exactly what materials you have, how much is left, and when to reorder
 - **Manage product catalog** - Create products with accurate cost calculations based on materials and components
@@ -97,7 +97,7 @@ Your 3D printers. Track:
 
 ## Navigation
 
-Nozzly's interface is organized into logical sections accessible from the top navigation bar:
+Batchivo's interface is organized into logical sections accessible from the top navigation bar:
 
 ### Dashboard
 Your home base showing:
@@ -260,7 +260,7 @@ Use the controls at the top to:
 
 ## SpoolmanDB Integration
 
-Nozzly integrates with SpoolmanDB, a community database of filament specifications.
+Batchivo integrates with SpoolmanDB, a community database of filament specifications.
 
 ### Using SpoolmanDB
 
@@ -302,7 +302,7 @@ For each spool, set a reorder point (e.g., 200g). When the current weight drops 
 
 ## Material Types
 
-Nozzly comes with standard material types pre-configured:
+Batchivo comes with standard material types pre-configured:
 
 | Material | Description |
 |----------|-------------|
@@ -456,7 +456,7 @@ Set different prices for each sales channel.
 
 ### Automatic Calculations
 
-When you set a price, Nozzly calculates:
+When you set a price, Batchivo calculates:
 - **Platform Fees** - Marketplace fees (e.g., Etsy 6.5%)
 - **Payment Fees** - Processing fees
 - **Net Revenue** - What you actually receive
@@ -614,7 +614,7 @@ This automatically:
 
 ## Variance Analysis
 
-After completion, Nozzly calculates variance:
+After completion, Batchivo calculates variance:
 
 \`\`\`
 Variance = Actual Weight - Estimated Weight
@@ -695,7 +695,7 @@ When creating a production run:
     order: 5,
     content: `# Orders
 
-Orders represent customer purchases. Nozzly helps you track orders from receipt through fulfillment and delivery.
+Orders represent customer purchases. Batchivo helps you track orders from receipt through fulfillment and delivery.
 
 ---
 
@@ -790,7 +790,7 @@ Click **Channels** in the top navigation bar to manage your sales channels.
 ## Why Configure Channels?
 
 ### Accurate Profit Calculations
-Each channel has different fees. Nozzly calculates:
+Each channel has different fees. Batchivo calculates:
 - Platform fees (percentage cut)
 - Payment processing fees
 - Monthly/listing costs
@@ -867,7 +867,7 @@ Margin % = (Profit / Net Revenue) × 100
     order: 7,
     content: `# Printers
 
-Track your 3D printer fleet in Nozzly. Recording printer details helps with production run tracking and maintenance planning.
+Track your 3D printer fleet in Batchivo. Recording printer details helps with production run tracking and maintenance planning.
 
 ---
 

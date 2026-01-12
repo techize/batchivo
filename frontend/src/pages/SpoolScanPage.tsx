@@ -33,7 +33,7 @@ export function SpoolScanPage() {
         // Navigate to the quick update page
         navigate({ to: '/filaments/$spoolId/update', params: { spoolId } })
       } else {
-        setScanError('Invalid QR code. Please scan a Nozzly spool label.')
+        setScanError('Invalid QR code. Please scan a Batchivo spool label.')
       }
     },
     [navigate]

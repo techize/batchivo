@@ -6,7 +6,7 @@
  */
 
 // API URL for backend requests
-export const API_URL = process.env.PLAYWRIGHT_API_URL || 'https://api.nozzly.app'
+export const API_URL = process.env.PLAYWRIGHT_API_URL || 'https://api.batchivo.com'
 
 // Health check endpoint
 export const HEALTH_URL = `${API_URL}/health`

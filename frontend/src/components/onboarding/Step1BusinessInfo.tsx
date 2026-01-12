@@ -93,7 +93,7 @@ export function Step1BusinessInfo({ initialData, onSubmit, isLoading }: Step1Bus
         <div className="space-y-2">
           <Label htmlFor="slug">Shop URL *</Label>
           <div className="flex items-center">
-            <span className="text-sm text-muted-foreground mr-2">nozzly.app/shop/</span>
+            <span className="text-sm text-muted-foreground mr-2">batchivo.com/shop/</span>
             <Input
               id="slug"
               placeholder="my-craft-shop"

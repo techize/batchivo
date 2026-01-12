@@ -244,7 +244,7 @@ export function Signup() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create an account</CardTitle>
-          <CardDescription>Sign up for Nozzly to get started</CardDescription>
+          <CardDescription>Sign up for Batchivo to get started</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

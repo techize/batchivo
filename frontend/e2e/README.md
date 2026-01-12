@@ -1,6 +1,6 @@
-# E2E Tests for nozzly.app
+# E2E Tests for batchivo.com
 
-This directory contains end-to-end tests for the nozzly.app frontend using Playwright.
+This directory contains end-to-end tests for the batchivo.com frontend using Playwright.
 
 ## Overview
 

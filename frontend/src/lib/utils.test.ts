@@ -41,7 +41,7 @@ describe('getSafeRedirectUrl', () => {
   beforeEach(() => {
     // Mock window.location.origin
     Object.defineProperty(window, 'location', {
-      value: { origin: 'https://nozzly.app' },
+      value: { origin: 'https://batchivo.com' },
       writable: true,
     })
   })
@@ -86,8 +86,8 @@ describe('getSafeRedirectUrl', () => {
   })
 
   it('allows same-origin absolute URLs', () => {
-    expect(getSafeRedirectUrl('https://nozzly.app/products')).toBe('/products')
-    expect(getSafeRedirectUrl('https://nozzly.app/settings?tab=billing')).toBe('/settings?tab=billing')
+    expect(getSafeRedirectUrl('https://batchivo.com/products')).toBe('/products')
+    expect(getSafeRedirectUrl('https://batchivo.com/settings?tab=billing')).toBe('/settings?tab=billing')
   })
 
   it('returns default for invalid URLs', () => {

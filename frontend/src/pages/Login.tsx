@@ -48,7 +48,7 @@ export function Login() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to your Nozzly account</CardDescription>
+          <CardDescription>Sign in to your Batchivo account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

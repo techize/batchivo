@@ -58,7 +58,7 @@ describe('Token Management', () => {
       setAuthTokens(tokens)
 
       expect(sessionStorageMock.setItem).toHaveBeenCalledWith(
-        'nozzly_auth_tokens',
+        'batchivo_auth_tokens',
         JSON.stringify(tokens)
       )
     })
@@ -72,7 +72,7 @@ describe('Token Management', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000,
       }
-      mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify(tokens)
+      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
 
       const result = getAuthTokens()
 
@@ -86,7 +86,7 @@ describe('Token Management', () => {
     })
 
     it('handles invalid JSON gracefully', () => {
-      mockSessionStorage['nozzly_auth_tokens'] = 'invalid-json'
+      mockSessionStorage['batchivo_auth_tokens'] = 'invalid-json'
 
       const result = getAuthTokens()
 
@@ -96,11 +96,11 @@ describe('Token Management', () => {
 
   describe('clearAuthTokens', () => {
     it('removes tokens from sessionStorage', () => {
-      mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify({ accessToken: 'test' })
+      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify({ accessToken: 'test' })
 
       clearAuthTokens()
 
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('nozzly_auth_tokens')
+      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
     })
   })
 })
@@ -180,7 +180,7 @@ describe('getAuthHeader', () => {
       tokenType: 'bearer',
       expiresAt: Date.now() + 3600000,
     }
-    mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify(tokens)
+    mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
 
     expect(getAuthHeader()).toBe('bearer test-access-token')
   })
@@ -237,7 +237,7 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000,
       }
-      mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify(tokens)
+      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
       mockFetch.mockResolvedValueOnce({ ok: true })
 
       await logout()
@@ -249,7 +249,7 @@ describe('Authentication Functions', () => {
           headers: { 'Authorization': 'Bearer test-access-token' },
         })
       )
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('nozzly_auth_tokens')
+      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
     })
 
     it('clears tokens even if logout request fails', async () => {
@@ -259,12 +259,12 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000,
       }
-      mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify(tokens)
+      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
       await logout()
 
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('nozzly_auth_tokens')
+      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
     })
   })
 
@@ -315,7 +315,7 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() - 1000,
       }
-      mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify(oldTokens)
+      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(oldTokens)
 
       const mockResponse = {
         access_token: 'new-access-token',
@@ -346,7 +346,7 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() - 1000,
       }
-      mockSessionStorage['nozzly_auth_tokens'] = JSON.stringify(oldTokens)
+      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(oldTokens)
 
       mockFetch.mockResolvedValueOnce({ ok: false })
 

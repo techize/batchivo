@@ -151,7 +151,7 @@ export function VerifyEmail() {
             </div>
             <CardTitle>Email verified!</CardTitle>
             <CardDescription>
-              Welcome to {tenantName || 'Nozzly'}
+              Welcome to {tenantName || 'Batchivo'}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">

@@ -49,7 +49,7 @@ test.describe('Login Page', () => {
   test('should display login form with all elements', async ({ page }) => {
     // Verify page title and description
     await expect(page.getByText('Welcome back')).toBeVisible()
-    await expect(page.getByText('Sign in to your Nozzly account')).toBeVisible()
+    await expect(page.getByText('Sign in to your Batchivo account')).toBeVisible()
 
     // Verify form elements exist
     await expect(page.locator('#email')).toBeVisible()

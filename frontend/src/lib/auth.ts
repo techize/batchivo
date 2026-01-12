@@ -5,7 +5,7 @@
 // API base URL - matches api.ts pattern
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 const API_V1_PREFIX = '/api/v1'
-const TOKEN_STORAGE_KEY = 'nozzly_auth_tokens'
+const TOKEN_STORAGE_KEY = 'batchivo_auth_tokens'
 const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000 // 5 minutes
 
 export interface User {

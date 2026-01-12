@@ -27,7 +27,7 @@ import { guidesByCategory, type Guide } from '@/content/guides'
 const categoryInfo = {
   core: {
     title: 'Core Guides',
-    description: 'Essential guides for getting started with Nozzly',
+    description: 'Essential guides for getting started with Batchivo',
     icon: Book,
   },
   sales: {
@@ -118,7 +118,7 @@ export function HelpIndex() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.png?v=8" alt="Nozzly" className="h-8 w-auto" />
+              <img src="/logo.png?v=8" alt="Batchivo" className="h-8 w-auto" />
               <span className="text-lg font-semibold">Help Center</span>
             </Link>
             <div className="flex items-center gap-2">
@@ -139,9 +139,9 @@ export function HelpIndex() {
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/5 to-background border-b">
         <div className="container mx-auto px-4 py-12 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Nozzly User Guide</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">Batchivo User Guide</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-            Learn how to use Nozzly to manage your 3D printing business - from inventory tracking
+            Learn how to use Batchivo to manage your 3D printing business - from inventory tracking
             to production runs and order fulfillment.
           </p>
           <Button asChild>
@@ -164,7 +164,7 @@ export function HelpIndex() {
       {/* Footer */}
       <footer className="border-t bg-card mt-10">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>Nozzly - 3D Print Business Management Platform</p>
+          <p>Batchivo - Production Tracking for Makers</p>
           <p className="mt-1">
             <Link to="/" className="hover:underline">
               Back to Home

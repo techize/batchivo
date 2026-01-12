@@ -125,7 +125,7 @@ export function HelpGuide() {
               </Sheet>
 
               <Link to="/help" className="flex items-center gap-2">
-                <img src="/logo.png?v=8" alt="Nozzly" className="h-8 w-auto" />
+                <img src="/logo.png?v=8" alt="Batchivo" className="h-8 w-auto" />
                 <span className="text-lg font-semibold hidden sm:inline">Help Center</span>
               </Link>
             </div>
@@ -206,7 +206,7 @@ export function HelpGuide() {
       {/* Footer */}
       <footer className="border-t bg-card mt-16">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>Nozzly - 3D Print Business Management Platform</p>
+          <p>Batchivo - Production Tracking for Makers</p>
         </div>
       </footer>
     </div>

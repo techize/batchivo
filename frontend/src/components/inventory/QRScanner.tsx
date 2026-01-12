@@ -227,19 +227,19 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
 /**
  * Parse a scanned QR code URL to extract the spool ID
  * Expected formats:
- * - https://nozzly.app/filaments/{spoolId}/update
+ * - https://batchivo.com/filaments/{spoolId}/update
  * - /filaments/{spoolId}/update
- * - nozzly://spool/{spoolId}
+ * - batchivo://spool/{spoolId}
  */
 export function parseSpoolQRCode(data: string): string | null {
-  // Try URL format: https://nozzly.app/filaments/{spoolId}/update
+  // Try URL format: https://batchivo.com/filaments/{spoolId}/update
   const urlMatch = data.match(/\/filaments\/([a-f0-9-]+)\/update/i)
   if (urlMatch) {
     return urlMatch[1]
   }
 
-  // Try deep link format: nozzly://spool/{spoolId}
-  const deepLinkMatch = data.match(/nozzly:\/\/spool\/([a-f0-9-]+)/i)
+  // Try deep link format: batchivo://spool/{spoolId}
+  const deepLinkMatch = data.match(/batchivo:\/\/spool\/([a-f0-9-]+)/i)
   if (deepLinkMatch) {
     return deepLinkMatch[1]
   }

@@ -144,7 +144,7 @@ export function Onboarding() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 text-primary mb-2">
             <Sparkles className="h-5 w-5" />
-            <span className="text-sm font-medium">Welcome to Nozzly</span>
+            <span className="text-sm font-medium">Welcome to Batchivo</span>
           </div>
           <h1 className="text-2xl font-bold">Set Up Your Shop</h1>
           <p className="text-muted-foreground mt-1">

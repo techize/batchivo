@@ -46,7 +46,7 @@ test.describe('Registration Page', () => {
   test('should display registration form with all elements', async ({ page }) => {
     // Verify page title and description
     await expect(page.getByText('Create an account')).toBeVisible()
-    await expect(page.getByText('Sign up for Nozzly to get started')).toBeVisible()
+    await expect(page.getByText('Sign up for Batchivo to get started')).toBeVisible()
 
     // Verify form elements exist
     await expect(page.locator('#fullName')).toBeVisible()

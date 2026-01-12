@@ -11,7 +11,7 @@ import type { SpoolResponse, MaterialType } from '@/types/spool'
 
 // Database version - increment when schema changes
 const DB_VERSION = 1
-const DB_NAME = 'nozzly-offline'
+const DB_NAME = 'batchivo-offline'
 
 // Sync operation types
 export type SyncOperation = 'create' | 'update' | 'delete'
@@ -41,7 +41,7 @@ export interface OfflineSpool extends SpoolResponse {
 }
 
 // Database schema definition
-interface NozzlyDBSchema extends DBSchema {
+interface BatchivoDBSchema extends DBSchema {
   spools: {
     key: string // id
     value: OfflineSpool
@@ -78,17 +78,17 @@ interface NozzlyDBSchema extends DBSchema {
 }
 
 // Database instance singleton
-let dbInstance: IDBPDatabase<NozzlyDBSchema> | null = null
+let dbInstance: IDBPDatabase<BatchivoDBSchema> | null = null
 
 /**
  * Initialize and return the database instance
  */
-export async function getDB(): Promise<IDBPDatabase<NozzlyDBSchema>> {
+export async function getDB(): Promise<IDBPDatabase<BatchivoDBSchema>> {
   if (dbInstance) {
     return dbInstance
   }
 
-  dbInstance = await openDB<NozzlyDBSchema>(DB_NAME, DB_VERSION, {
+  dbInstance = await openDB<BatchivoDBSchema>(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion) {
       // Handle migrations based on old version
       if (oldVersion < 1) {
