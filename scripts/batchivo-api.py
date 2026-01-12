@@ -19,7 +19,7 @@ Usage:
     ./batchivo-api.py get-product --id <uuid>
 
 Environment variables:
-    BATCHIVO_API_URL: API base URL (default: https://api.batchivo.app)
+    BATCHIVO_API_URL: API base URL (default: https://api.batchivo.com)
     BATCHIVO_EMAIL: Login email (alternative to --email)
     BATCHIVO_PASSWORD: Login password (alternative to --password)
 """
@@ -39,7 +39,7 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-DEFAULT_API_URL = "https://api.batchivo.app"
+DEFAULT_API_URL = "https://api.batchivo.com"
 TOKEN_FILE = Path.home() / ".batchivo" / "credentials.json"
 
 

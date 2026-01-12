@@ -199,7 +199,7 @@ import httpx
 async def get_pending_orders(token: str, page: int = 1):
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "https://api.batchivo.app/api/v1/orders",
+            "https://api.batchivo.com/api/v1/orders",
             params={"status": "pending", "page": page},
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -211,7 +211,7 @@ async def get_pending_orders(token: str, page: int = 1):
 ```javascript
 async function shipOrder(orderId, trackingNumber, trackingUrl, token) {
   const response = await fetch(
-    `https://api.batchivo.app/api/v1/orders/${orderId}/ship`,
+    `https://api.batchivo.com/api/v1/orders/${orderId}/ship`,
     {
       method: "POST",
       headers: {
@@ -231,6 +231,6 @@ async function shipOrder(orderId, trackingNumber, trackingUrl, token) {
 ### cURL: Search Orders
 
 ```bash
-curl -X GET "https://api.batchivo.app/api/v1/orders?search=john@example.com&status=pending" \
+curl -X GET "https://api.batchivo.com/api/v1/orders?search=john@example.com&status=pending" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```

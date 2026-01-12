@@ -56,6 +56,6 @@ Overview (start here)
 
 ## Need Help?
 
-- **Technical Issues**: [GitHub Issues](https://github.com/techize/batchivo.app/issues)
+- **Technical Issues**: [GitHub Issues](https://github.com/techize/batchivo.com/issues)
 - **API Documentation**: See [API Reference](../api-reference/) (coming soon)
 - **Development**: See [Development Guide](../DEVELOPMENT.md)

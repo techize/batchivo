@@ -81,8 +81,8 @@ Create separate secrets in batchivo-staging namespace:
 
 ### 5. DNS/Domains (covered by bead 86i)
 
-- `staging.batchivo.app` → staging frontend
-- `api.staging.batchivo.app` → staging backend
+- `staging.batchivo.com` → staging frontend
+- `api.staging.batchivo.com` → staging backend
 - `staging.mystmereforge.co.uk` → staging shop
 
 ## Seed Data Strategy

@@ -1,7 +1,7 @@
 # Batchivo Current Session
 
 **Last Updated**: 2025-11-17 22:10 GMT
-**Project**: Batchivo (batchivo.app)
+**Project**: Batchivo (batchivo.com)
 **Current Focus**: Authentication Issues & Production Runs Deployment
 
 ---
@@ -113,9 +113,9 @@
 
 - **Cluster**: k3s at 192.168.98.138
 - **Registry**: 192.168.98.138:30500 (HTTP)
-- **Domain**: batchivo.app (Cloudflare Tunnel)
+- **Domain**: batchivo.com (Cloudflare Tunnel)
 - **Database**: PostgreSQL (postgres-0 pod, batchivo namespace)
-- **Auth**: Authentik at auth.batchivo.app
+- **Auth**: Authentik at auth.batchivo.com
 
 ---
 

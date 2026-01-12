@@ -8,38 +8,34 @@ spec:
   - web
   - websecure
   routes:
+  # API subdomain (api.batchivo.com)
   - kind: Rule
-    match: Host(`batchivo.app`) && PathPrefix(`/api`)
+    match: Host(`api.batchivo.com`)
+    services:
+    - name: backend
+      port: 8000
+  # Main domain - frontend (batchivo.com)
+  - kind: Rule
+    match: Host(`batchivo.com`) && PathPrefix(`/uploads`)
     priority: 100
     services:
     - name: backend
       port: 8000
   - kind: Rule
-    match: Host(`batchivo.app`) && PathPrefix(`/uploads`)
-    priority: 100
-    services:
-    - name: backend
-      port: 8000
-  - kind: Rule
-    match: Host(`batchivo.app`)
+    match: Host(`batchivo.com`)
     priority: 1
     services:
     - name: frontend
       port: 8080
+  # WWW redirect (www.batchivo.com)
   - kind: Rule
-    match: Host(`www.batchivo.app`) && PathPrefix(`/api`)
+    match: Host(`www.batchivo.com`) && PathPrefix(`/uploads`)
     priority: 100
     services:
     - name: backend
       port: 8000
   - kind: Rule
-    match: Host(`www.batchivo.app`) && PathPrefix(`/uploads`)
-    priority: 100
-    services:
-    - name: backend
-      port: 8000
-  - kind: Rule
-    match: Host(`www.batchivo.app`)
+    match: Host(`www.batchivo.com`)
     priority: 1
     services:
     - name: frontend

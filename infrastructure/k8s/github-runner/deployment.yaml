@@ -4,7 +4,7 @@ metadata:
   name: runner-config
   namespace: github-runner
 data:
-  REPO_URL: "https://github.com/techize/batchivo.app"
+  REPO_URL: "https://github.com/techize/batchivo.com"
   RUNNER_NAME: "k3s-runner"
   RUNNER_WORKDIR: "/runner/_work"
   LABELS: "self-hosted,k3s,docker"

@@ -14,7 +14,7 @@ This document tracks the testing status for the Batchivo 3D Print Management pla
 
 ### Backend Unit Tests
 
-**Location**: `/Users/jonathan/Repos/2ndBrain/batchivo.app/backend/tests/unit/`
+**Location**: `/Users/jonathan/Repos/2ndBrain/batchivo.com/backend/tests/unit/`
 
 #### Costing Service Tests (`test_costing_service.py`)
 - ✅ Material cost calculation
@@ -30,7 +30,7 @@ This document tracks the testing status for the Batchivo 3D Print Management pla
 
 ### Frontend Component Tests
 
-**Location**: `/Users/jonathan/Repos/2ndBrain/batchivo.app/frontend/src/components/inventory/`
+**Location**: `/Users/jonathan/Repos/2ndBrain/batchivo.com/frontend/src/components/inventory/`
 
 #### SpoolList Component Tests (`SpoolList.test.tsx`)
 - ✅ Loading state rendering
@@ -63,7 +63,7 @@ This document tracks the testing status for the Batchivo 3D Print Management pla
 
 ### Backend Integration Tests
 
-**Location**: `/Users/jonathan/Repos/2ndBrain/batchivo.app/backend/tests/integration_test.sh`
+**Location**: `/Users/jonathan/Repos/2ndBrain/batchivo.com/backend/tests/integration_test.sh`
 
 **Tests Covered**:
 - Health check endpoint
@@ -74,7 +74,7 @@ This document tracks the testing status for the Batchivo 3D Print Management pla
 - Authentication token handling
 
 **Status**: Script exists, requires test user credentials for production environment
-**Note**: Integration tests are designed to run against deployed API at https://batchivo.app/api/v1
+**Note**: Integration tests are designed to run against deployed API at https://batchivo.com/api/v1
 
 ### End-to-End Tests
 
@@ -164,7 +164,7 @@ npm run test:coverage
 cd backend
 
 # Run against production
-./tests/integration_test.sh https://batchivo.app/api/v1
+./tests/integration_test.sh https://batchivo.com/api/v1
 
 # Run against local development
 ./tests/integration_test.sh http://localhost:8000/api/v1

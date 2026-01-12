@@ -82,7 +82,7 @@ Migrations run automatically via init container when backend deploys.
 
 ## Domains
 
-- **Backend API**: `staging.batchivo.app` ✓
+- **Backend API**: `staging.batchivo.com` ✓
 - **Shop Frontend**: `staging.mystmereforge.co.uk` ✓
 
 Both domains route through Cloudflare Tunnel to Traefik.
@@ -95,10 +95,10 @@ The cluster uses Cloudflare Tunnel for ingress. To add staging domains:
    - Go to Zero Trust → Access → Tunnels
    - Select the batchivo tunnel
 
-2. **Add Public Hostname for staging.batchivo.app**
+2. **Add Public Hostname for staging.batchivo.com**
    ```
    Subdomain: staging
-   Domain: batchivo.app
+   Domain: batchivo.com
    Type: HTTP
    URL: http://traefik.traefik.svc.cluster.local:80
    ```
@@ -124,7 +124,7 @@ kubectl set image deployment/backend \
   -n batchivo-staging
 
 # Verify staging
-curl https://staging.batchivo.app/health
+curl https://staging.batchivo.com/health
 
 # Deploy to production
 kubectl set image deployment/backend \
@@ -186,16 +186,16 @@ Without this secret, payment features are disabled in staging (secret is marked 
 ### Shop Frontend Configuration
 
 The mystmereforge-shop frontend has `VITE_BATCHIVO_API_URL` baked in at build time.
-Current staging uses production image, so API calls go to `api.batchivo.app`.
+Current staging uses production image, so API calls go to `api.batchivo.com`.
 
 For true staging isolation, CI needs to build staging-specific images:
 ```bash
-VITE_BATCHIVO_API_URL=https://staging.batchivo.app npm run build
+VITE_BATCHIVO_API_URL=https://staging.batchivo.com npm run build
 ```
 
 ## CI/CD Pipeline
 
-Both batchivo.app and mystmereforge-shop use a "staging-first" deployment strategy:
+Both batchivo.com and mystmereforge-shop use a "staging-first" deployment strategy:
 
 ```
 Push to main
@@ -215,19 +215,19 @@ On push to main branch:
 1. Runs tests and security scans
 2. Builds Docker image (`registry.techize.co.uk/batchivo/batchivo-backend:$SHA`)
 3. Updates `infrastructure/k8s/staging/deployment.yaml`
-4. Waits for staging health check at `https://staging.batchivo.app/health`
+4. Waits for staging health check at `https://staging.batchivo.com/health`
 5. Updates `infrastructure/k8s/backend/deployment.yaml` (production)
 
 ### mystmereforge-shop Pipeline
 
 On push to main branch:
 1. Runs tests
-2. Builds **staging** image with `VITE_BATCHIVO_API_URL=https://staging.batchivo.app`
+2. Builds **staging** image with `VITE_BATCHIVO_API_URL=https://staging.batchivo.com`
    - Tag: `$SHA-staging`
    - Uses Square sandbox credentials
-3. Updates `infrastructure/k8s/staging/shop-deployment.yaml` (in batchivo.app repo)
+3. Updates `infrastructure/k8s/staging/shop-deployment.yaml` (in batchivo.com repo)
 4. Waits for staging health check at `https://staging.mystmereforge.co.uk/health`
-5. Builds **production** image with `VITE_BATCHIVO_API_URL=https://api.batchivo.app`
+5. Builds **production** image with `VITE_BATCHIVO_API_URL=https://api.batchivo.com`
    - Tag: `$SHA` + `latest`
    - Uses Square production credentials
 6. Updates `k8s/deployment.yaml` (in mystmereforge-shop repo)

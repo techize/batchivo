@@ -180,7 +180,7 @@ async def configure_square(token: str, square_config: dict):
     async with httpx.AsyncClient() as client:
         # Update settings
         response = await client.put(
-            "https://api.batchivo.app/api/v1/settings/square",
+            "https://api.batchivo.com/api/v1/settings/square",
             json=square_config,
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -188,7 +188,7 @@ async def configure_square(token: str, square_config: dict):
         if response.status_code == 200:
             # Test connection
             test_response = await client.post(
-                "https://api.batchivo.app/api/v1/settings/square/test",
+                "https://api.batchivo.com/api/v1/settings/square/test",
                 headers={"Authorization": f"Bearer {token}"}
             )
             return test_response.json()
@@ -201,11 +201,11 @@ async def configure_square(token: str, square_config: dict):
 ```javascript
 async function getSettings(token) {
   const [square, tenant] = await Promise.all([
-    fetch("https://api.batchivo.app/api/v1/settings/square", {
+    fetch("https://api.batchivo.com/api/v1/settings/square", {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json()),
 
-    fetch("https://api.batchivo.app/api/v1/settings/tenant", {
+    fetch("https://api.batchivo.com/api/v1/settings/tenant", {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json())
   ]);

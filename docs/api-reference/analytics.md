@@ -208,7 +208,7 @@ async def get_variance_report(token: str, days: int = 30, threshold: float = Non
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "https://api.batchivo.app/api/v1/analytics/variance-report",
+            "https://api.batchivo.com/api/v1/analytics/variance-report",
             params=params,
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -220,7 +220,7 @@ async def get_variance_report(token: str, days: int = 30, threshold: float = Non
 ```javascript
 async function getProductHistory(productId, days = 90, token) {
   const response = await fetch(
-    `https://api.batchivo.app/api/v1/analytics/products/${productId}/production-history?days=${days}`,
+    `https://api.batchivo.com/api/v1/analytics/products/${productId}/production-history?days=${days}`,
     {
       headers: { Authorization: `Bearer ${token}` }
     }
@@ -232,7 +232,7 @@ async function getProductHistory(productId, days = 90, token) {
 ### cURL: Get Spool Usage
 
 ```bash
-curl -X GET "https://api.batchivo.app/api/v1/analytics/spools/SPOOL_ID/production-usage?days=60" \
+curl -X GET "https://api.batchivo.com/api/v1/analytics/spools/SPOOL_ID/production-usage?days=60" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

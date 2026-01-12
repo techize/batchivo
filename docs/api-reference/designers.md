@@ -194,7 +194,7 @@ import httpx
 async def create_designer(token: str, designer_data: dict):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://api.batchivo.app/api/v1/designers",
+            "https://api.batchivo.com/api/v1/designers",
             json={
                 "name": "Epic Miniatures",
                 "website_url": "https://epicminiatures.com",
@@ -214,7 +214,7 @@ async def create_designer(token: str, designer_data: dict):
 ```javascript
 async function getActiveDesigners(token) {
   const response = await fetch(
-    "https://api.batchivo.app/api/v1/designers?include_inactive=false",
+    "https://api.batchivo.com/api/v1/designers?include_inactive=false",
     {
       headers: { Authorization: `Bearer ${token}` }
     }

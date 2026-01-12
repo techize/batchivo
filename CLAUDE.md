@@ -136,7 +136,7 @@ poetry run pytest --cov=app --cov-report=term-missing
 ### After Deployment
 - Check pods: `kubectl get pods -n batchivo`
 - Watch logs: `kubectl logs -l app=backend -n batchivo -f`
-- Verify: `curl https://api.batchivo.app/health`
+- Verify: `curl https://api.batchivo.com/health`
 
 ---
 
@@ -149,7 +149,7 @@ poetry run pytest --cov=app --cov-report=term-missing
 - Production runs & analytics
 
 **URLs:**
-- **Admin/API**: www.batchivo.app / api.batchivo.app (Cloudflare Tunnel)
+- **Admin/API**: www.batchivo.com / api.batchivo.com (Cloudflare Tunnel)
 - **Shop Frontend**: test.mystmereforge.co.uk (future: www.mystmereforge.co.uk)
 - **Shop Repo**: ~/Repos/mystmereforge-shop
 
@@ -173,7 +173,7 @@ poetry run pytest --cov=app --cov-report=term-missing
 
 **Webhook Configuration:**
 - **Subscription ID**: `wbhk_f1b36f197f714e9085e6ded8bc6fdcd9`
-- **Endpoint**: `https://api.batchivo.app/api/v1/payments/webhooks/square`
+- **Endpoint**: `https://api.batchivo.com/api/v1/payments/webhooks/square`
 - **Events**: `payment.created`, `payment.updated`, `refund.created`, `refund.updated`
 
 **To update credentials:**

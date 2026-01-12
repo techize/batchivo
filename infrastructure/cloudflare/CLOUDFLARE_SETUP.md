@@ -1,10 +1,10 @@
 # Cloudflare Tunnel Setup for Batchivo
 
-This guide explains how to configure Cloudflare Tunnel to expose your k3s cluster to the internet at batchivo.app.
+This guide explains how to configure Cloudflare Tunnel to expose your k3s cluster to the internet at batchivo.com.
 
 ## Prerequisites
 
-- Cloudflare account with `batchivo.app` domain
+- Cloudflare account with `batchivo.com` domain
 - `cloudflared` installed on the machine running k3s
 - k3s cluster running with Batchivo deployed
 
@@ -53,12 +53,12 @@ tunnel: <your-tunnel-id>
 credentials-file: /Users/jonathan/.cloudflared/<your-tunnel-id>.json
 
 ingress:
-  # Frontend - batchivo.app
-  - hostname: batchivo.app
+  # Frontend - batchivo.com
+  - hostname: batchivo.com
     service: http://localhost:80
 
-  # Backend API - api.batchivo.app
-  - hostname: api.batchivo.app
+  # Backend API - api.batchivo.com
+  - hostname: api.batchivo.com
     service: http://localhost:80
 
   # Catch-all rule (required)
@@ -72,14 +72,14 @@ ingress:
 Route DNS to your tunnel:
 
 ```bash
-cloudflared tunnel route dns batchivo batchivo.app
-cloudflared tunnel route dns batchivo api.batchivo.app
+cloudflared tunnel route dns batchivo batchivo.com
+cloudflared tunnel route dns batchivo api.batchivo.com
 ```
 
 Or manually in Cloudflare Dashboard:
-1. Go to DNS settings for `batchivo.app`
-2. Add CNAME record: `batchivo.app` → `<tunnel-id>.cfargotunnel.com`
-3. Add CNAME record: `api.batchivo.app` → `<tunnel-id>.cfargotunnel.com`
+1. Go to DNS settings for `batchivo.com`
+2. Add CNAME record: `batchivo.com` → `<tunnel-id>.cfargotunnel.com`
+3. Add CNAME record: `api.batchivo.com` → `<tunnel-id>.cfargotunnel.com`
 
 ## Step 6: Update K3s Ingress
 
@@ -90,8 +90,8 @@ kubectl get ingress -n batchivo
 ```
 
 The ingress should have rules for:
-- `batchivo.app` → frontend service
-- `api.batchivo.app` → backend service
+- `batchivo.com` → frontend service
+- `api.batchivo.com` → backend service
 
 ## Step 7: Run the Tunnel
 
@@ -131,19 +131,19 @@ sudo journalctl -u cloudflared -f
 
 2. **Test DNS resolution**:
    ```bash
-   dig batchivo.app
-   dig api.batchivo.app
+   dig batchivo.com
+   dig api.batchivo.com
    ```
 
 3. **Test HTTP access**:
    ```bash
-   curl https://batchivo.app
-   curl https://api.batchivo.app/health
+   curl https://batchivo.com
+   curl https://api.batchivo.com/health
    ```
 
 4. **Open in browser**:
-   - https://batchivo.app (should show React frontend)
-   - https://api.batchivo.app/docs (should show FastAPI docs)
+   - https://batchivo.com (should show React frontend)
+   - https://api.batchivo.com/docs (should show FastAPI docs)
 
 ## Troubleshooting
 

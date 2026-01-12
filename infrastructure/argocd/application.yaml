@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/techize/batchivo.app.git
+    repoURL: https://github.com/techize/batchivo.com.git
     targetRevision: main
     path: infrastructure/k8s
     directory:

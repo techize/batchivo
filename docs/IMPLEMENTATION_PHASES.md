@@ -709,7 +709,7 @@ This document provides a phase-by-phase implementation plan for Batchivo. Each p
 #### Backend - Services
 - [ ] Update `app/services/qr_generator.py`
   - `generate_qr_code(spool_id, tenant_id)` → base64 image
-  - `generate_deep_link(spool_id)` → URL (batchivo.app/spool/update/FIL-001)
+  - `generate_deep_link(spool_id)` → URL (batchivo.com/spool/update/FIL-001)
 
 #### Backend - API Endpoints
 - [ ] `GET /api/v1/spools/{id}/qr` - Get QR code image

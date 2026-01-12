@@ -4,13 +4,13 @@
 # Tests the complete authentication and spool creation flow
 #
 # Usage: ./integration_test.sh [API_BASE_URL]
-# Example: ./integration_test.sh https://batchivo.app/api/v1
+# Example: ./integration_test.sh https://batchivo.com/api/v1
 #
 
 set -e
 
 # Configuration
-API_BASE_URL="${1:-https://batchivo.app/api/v1}"
+API_BASE_URL="${1:-https://batchivo.com/api/v1}"
 TEST_EMAIL="test@example.com"
 TEST_PASSWORD="testpassword123"
 

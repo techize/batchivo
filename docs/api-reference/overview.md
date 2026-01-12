@@ -7,7 +7,7 @@ The Batchivo API provides programmatic access to your 3D print business manageme
 ## Base URL
 
 ```
-Production: https://api.batchivo.app/api/v1
+Production: https://api.batchivo.com/api/v1
 Development: http://localhost:8000/api/v1
 ```
 
@@ -22,7 +22,7 @@ Future versions will be released as `/api/v2`, etc., with backwards compatibilit
 All API requests (except public endpoints) require authentication using JWT bearer tokens.
 
 ```bash
-curl -X GET "https://api.batchivo.app/api/v1/spools" \
+curl -X GET "https://api.batchivo.com/api/v1/spools" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -164,7 +164,7 @@ All resources are scoped to the current tenant - you can only access resources b
 ### cURL
 
 ```bash
-curl -X GET "https://api.batchivo.app/api/v1/spools?page=1&page_size=10" \
+curl -X GET "https://api.batchivo.com/api/v1/spools?page=1&page_size=10" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json"
 ```
@@ -176,7 +176,7 @@ import httpx
 
 async with httpx.AsyncClient() as client:
     response = await client.get(
-        "https://api.batchivo.app/api/v1/spools",
+        "https://api.batchivo.com/api/v1/spools",
         params={"page": 1, "page_size": 10},
         headers={"Authorization": f"Bearer {access_token}"}
     )
@@ -187,7 +187,7 @@ async with httpx.AsyncClient() as client:
 
 ```javascript
 const response = await fetch(
-  "https://api.batchivo.app/api/v1/spools?page=1&page_size=10",
+  "https://api.batchivo.com/api/v1/spools?page=1&page_size=10",
   {
     headers: {
       "Authorization": `Bearer ${accessToken}`,
@@ -214,5 +214,5 @@ Import the [Batchivo API Postman Collection](./batchivo-api.postman_collection.j
 ## Support
 
 For API support, please contact:
-- Email: api-support@batchivo.app
+- Email: api-support@batchivo.com
 - Documentation Issues: [GitHub Issues](https://github.com/batchivo/docs/issues)

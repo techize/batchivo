@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The batchivo.app CI pipeline takes ~57 minutes, with **backend tests consuming 91% of that time** (52 minutes for 1,832 tests). This document identifies the bottlenecks and proposes concrete optimizations to achieve sub-10-minute deployments without compromising test coverage.
+The batchivo.com CI pipeline takes ~57 minutes, with **backend tests consuming 91% of that time** (52 minutes for 1,832 tests). This document identifies the bottlenecks and proposes concrete optimizations to achieve sub-10-minute deployments without compromising test coverage.
 
 ---
 

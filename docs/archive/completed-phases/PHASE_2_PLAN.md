@@ -645,7 +645,7 @@ export const useDeleteProduct = () => {
    ```bash
    kubectl rollout status deployment/backend -n batchivo
    kubectl rollout status deployment/frontend -n batchivo
-   curl https://api.batchivo.app/health
+   curl https://api.batchivo.com/health
    ```
 
 ---

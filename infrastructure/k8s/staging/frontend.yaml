@@ -1,4 +1,4 @@
-# NOTE: Frontend requires a staging-specific build with VITE_API_URL=https://api.staging.batchivo.app
+# NOTE: Frontend requires a staging-specific build with VITE_API_URL=https://api.staging.batchivo.com
 # The CI/CD pipeline (bead ez9) should build separate images for staging/production
 apiVersion: v1
 kind: ConfigMap
@@ -7,7 +7,7 @@ metadata:
   namespace: batchivo-staging
 data:
   # This is baked into the image at build time, but kept for documentation
-  VITE_API_URL: "https://api.staging.batchivo.app"
+  VITE_API_URL: "https://api.staging.batchivo.com"
 ---
 apiVersion: v1
 kind: Service

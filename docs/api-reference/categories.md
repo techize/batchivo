@@ -273,7 +273,7 @@ async def create_category_with_products(token: str, category_data: dict, product
     async with httpx.AsyncClient() as client:
         # Create category
         response = await client.post(
-            "https://api.batchivo.app/api/v1/categories",
+            "https://api.batchivo.com/api/v1/categories",
             json=category_data,
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -282,7 +282,7 @@ async def create_category_with_products(token: str, category_data: dict, product
         # Add products
         for product_id in product_ids:
             await client.post(
-                f"https://api.batchivo.app/api/v1/categories/{category['id']}/products/{product_id}",
+                f"https://api.batchivo.com/api/v1/categories/{category['id']}/products/{product_id}",
                 headers={"Authorization": f"Bearer {token}"}
             )
 
@@ -295,7 +295,7 @@ async def create_category_with_products(token: str, category_data: dict, product
 async function getCategories(token, includeInactive = false) {
   const params = new URLSearchParams({ include_inactive: includeInactive });
   const response = await fetch(
-    `https://api.batchivo.app/api/v1/categories?${params}`,
+    `https://api.batchivo.com/api/v1/categories?${params}`,
     {
       headers: { Authorization: `Bearer ${token}` }
     }
@@ -307,7 +307,7 @@ async function getCategories(token, includeInactive = false) {
 ### cURL: Update Category
 
 ```bash
-curl -X PATCH "https://api.batchivo.app/api/v1/categories/CATEGORY_ID" \
+curl -X PATCH "https://api.batchivo.com/api/v1/categories/CATEGORY_ID" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

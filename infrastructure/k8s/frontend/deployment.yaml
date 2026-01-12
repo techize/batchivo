@@ -4,7 +4,7 @@ metadata:
   name: frontend-config
   namespace: batchivo
 data:
-  VITE_API_URL: "https://api.batchivo.app"
+  VITE_API_URL: "https://api.batchivo.com"
 ---
 apiVersion: v1
 kind: Service

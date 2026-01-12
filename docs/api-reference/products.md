@@ -470,7 +470,7 @@ import httpx
 async def create_product(token: str, product_data: dict):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://api.batchivo.app/api/v1/products",
+            "https://api.batchivo.com/api/v1/products",
             json={
                 "sku": "PROD-NEW",
                 "name": "New Product",
@@ -492,7 +492,7 @@ async function uploadProductImage(productId, file, token) {
   formData.append("alt_text", "Product image");
 
   const response = await fetch(
-    `https://api.batchivo.app/api/v1/products/${productId}/images`,
+    `https://api.batchivo.com/api/v1/products/${productId}/images`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -506,7 +506,7 @@ async function uploadProductImage(productId, file, token) {
 ### cURL: Add Pricing
 
 ```bash
-curl -X POST "https://api.batchivo.app/api/v1/products/PRODUCT_ID/pricing" \
+curl -X POST "https://api.batchivo.com/api/v1/products/PRODUCT_ID/pricing" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

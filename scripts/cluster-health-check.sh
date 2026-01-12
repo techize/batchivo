@@ -21,9 +21,9 @@ REGISTRY_PORT="30500"
 URLS=(
     "ci.techize.co.uk|Woodpecker CI"
     "argocd.techize.co.uk|ArgoCD"
-    "batchivo.app|Batchivo Frontend"
-    "api.batchivo.app/health|Batchivo Backend API"
-    "auth.batchivo.app|Authentik SSO"
+    "batchivo.com|Batchivo Frontend"
+    "api.batchivo.com/health|Batchivo Backend API"
+    "auth.batchivo.com|Authentik SSO"
     "mystmereforge.co.uk|Mystmereforge Main"
     "shop.mystmereforge.co.uk|Mystmereforge Shop"
 )

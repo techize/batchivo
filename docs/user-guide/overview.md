@@ -159,7 +159,7 @@ Your home base showing:
 
 - **API Documentation**: See [API Reference](../api-reference/overview.md)
 - **Workflows**: Step-by-step guides in [Workflows](../workflows/)
-- **Report Issues**: GitHub Issues at [batchivo.app repository](https://github.com/techize/batchivo.app)
+- **Report Issues**: GitHub Issues at [batchivo.com repository](https://github.com/techize/batchivo.com)
 
 ---
 

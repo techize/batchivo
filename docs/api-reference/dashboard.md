@@ -337,9 +337,9 @@ async def get_dashboard_data(token: str):
 
         # Fetch all dashboard data in parallel
         summary, active, low_stock = await asyncio.gather(
-            client.get("https://api.batchivo.app/api/v1/dashboard/summary", headers=headers),
-            client.get("https://api.batchivo.app/api/v1/dashboard/active-production", headers=headers),
-            client.get("https://api.batchivo.app/api/v1/dashboard/low-stock", headers=headers)
+            client.get("https://api.batchivo.com/api/v1/dashboard/summary", headers=headers),
+            client.get("https://api.batchivo.com/api/v1/dashboard/active-production", headers=headers),
+            client.get("https://api.batchivo.com/api/v1/dashboard/low-stock", headers=headers)
         )
 
         return {
@@ -354,15 +354,15 @@ async def get_dashboard_data(token: str):
 ```javascript
 async function refreshDashboard(token) {
   const [summary, charts, failures] = await Promise.all([
-    fetch("https://api.batchivo.app/api/v1/dashboard/summary", {
+    fetch("https://api.batchivo.com/api/v1/dashboard/summary", {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json()),
 
-    fetch("https://api.batchivo.app/api/v1/dashboard/performance-charts?days=7", {
+    fetch("https://api.batchivo.com/api/v1/dashboard/performance-charts?days=7", {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json()),
 
-    fetch("https://api.batchivo.app/api/v1/dashboard/failure-analytics?days=30", {
+    fetch("https://api.batchivo.com/api/v1/dashboard/failure-analytics?days=30", {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json())
   ]);

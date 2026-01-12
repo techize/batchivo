@@ -16,7 +16,7 @@ data:
   ENABLE_TRACING: "false"
   ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
   # CORS - staging domains
-  CORS_ORIGINS: '["https://staging.batchivo.app", "https://staging.mystmereforge.co.uk"]'
+  CORS_ORIGINS: '["https://staging.batchivo.com", "https://staging.mystmereforge.co.uk"]'
   # S3/MinIO storage - separate bucket for staging
   STORAGE_TYPE: "s3"
   STORAGE_S3_BUCKET: "batchivo-staging-images"

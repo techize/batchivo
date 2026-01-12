@@ -74,8 +74,8 @@ Use WSL2 with Ubuntu and follow Linux instructions above.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/techize/batchivo.app.git
-cd batchivo.app
+git clone https://github.com/techize/batchivo.com.git
+cd batchivo.com
 ```
 
 ### 2. Start Infrastructure Services
@@ -193,7 +193,7 @@ Authentik is your SSO provider. Configure it before first login:
    - Redirect URIs:
      ```
      http://localhost:5173/auth/callback
-     https://batchivo.app/auth/callback
+     https://batchivo.com/auth/callback
      ```
    - Client Type: Confidential
    - Save and note **Client ID** and **Client Secret**
@@ -636,7 +636,7 @@ breakpoint()
 ## Project Structure
 
 ```
-batchivo.app/
+batchivo.com/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/          # API endpoints

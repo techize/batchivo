@@ -1,5 +1,5 @@
 # Staging deployment for mystmereforge-shop frontend
-# Note: Current image uses production API URL (https://api.batchivo.app)
+# Note: Current image uses production API URL (https://api.batchivo.com)
 # For true staging isolation, CI needs to build staging-specific images
 # This allows testing frontend changes while API calls go to production
 apiVersion: v1
@@ -49,7 +49,7 @@ spec:
       containers:
       - name: shop
         # Uses same image as production - API URL baked in at build time
-        # TODO: Update CI to build staging images with VITE_BATCHIVO_API_URL=https://staging.batchivo.app
+        # TODO: Update CI to build staging images with VITE_BATCHIVO_API_URL=https://staging.batchivo.com
         image: registry.techize.co.uk/mystmereforge/mystmereforge-shop:1666af2c4e703a51314d27ab14e7c9c8b189531e-staging
         imagePullPolicy: Always
         securityContext:

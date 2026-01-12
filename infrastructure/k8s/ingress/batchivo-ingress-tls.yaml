@@ -12,11 +12,11 @@ spec:
   ingressClassName: traefik
   tls:
   - hosts:
-    - batchivo.app
-    - api.batchivo.app
+    - batchivo.com
+    - api.batchivo.com
     secretName: batchivo-tls
   rules:
-  - host: batchivo.app
+  - host: batchivo.com
     http:
       paths:
       - path: /api
@@ -40,7 +40,7 @@ spec:
             name: frontend
             port:
               number: 8080
-  - host: api.batchivo.app
+  - host: api.batchivo.com
     http:
       paths:
       - path: /

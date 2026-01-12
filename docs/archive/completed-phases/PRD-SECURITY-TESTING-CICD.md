@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This PRD addresses critical security vulnerabilities, establishes testing infrastructure, and implements GitOps-based CI/CD for the batchivo.app codebase. These issues were identified during a comprehensive code review on 2025-12-12.
+This PRD addresses critical security vulnerabilities, establishes testing infrastructure, and implements GitOps-based CI/CD for the batchivo.com codebase. These issues were identified during a comprehensive code review on 2025-12-12.
 
 **Business Impact**:
 - Current state blocks production deployment confidence
@@ -988,7 +988,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            VITE_API_URL=https://api.batchivo.app
+            VITE_API_URL=https://api.batchivo.com
 
   # ============================================
   # Security Scanning

@@ -77,7 +77,7 @@ GET /api/v1/spools
 **Example: Search with filters**
 
 ```bash
-curl -X GET "https://api.batchivo.app/api/v1/spools?search=black&is_active=true&page_size=10" \
+curl -X GET "https://api.batchivo.com/api/v1/spools?search=black&is_active=true&page_size=10" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -243,7 +243,7 @@ Returns a file download with appropriate content type:
 **Example:**
 
 ```bash
-curl -X GET "https://api.batchivo.app/api/v1/spools/export?format=json" \
+curl -X GET "https://api.batchivo.com/api/v1/spools/export?format=json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -o spools.json
 ```
@@ -369,7 +369,7 @@ import httpx
 async def update_spool_weight(spool_id: str, new_weight: float, token: str):
     async with httpx.AsyncClient() as client:
         response = await client.put(
-            f"https://api.batchivo.app/api/v1/spools/{spool_id}",
+            f"https://api.batchivo.com/api/v1/spools/{spool_id}",
             json={"current_weight_g": new_weight},
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -381,7 +381,7 @@ async def update_spool_weight(spool_id: str, new_weight: float, token: str):
 ```javascript
 async function getLowStockSpools(token) {
   const response = await fetch(
-    "https://api.batchivo.app/api/v1/spools?low_stock_only=true",
+    "https://api.batchivo.com/api/v1/spools?low_stock_only=true",
     {
       headers: { Authorization: `Bearer ${token}` }
     }
@@ -393,7 +393,7 @@ async function getLowStockSpools(token) {
 ### cURL: Create Spool
 
 ```bash
-curl -X POST "https://api.batchivo.app/api/v1/spools" \
+curl -X POST "https://api.batchivo.com/api/v1/spools" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

@@ -65,7 +65,7 @@ Located in `backend/tests/integration_test.sh`
 cd backend
 
 # Test against production
-./tests/integration_test.sh https://batchivo.app/api/v1
+./tests/integration_test.sh https://batchivo.com/api/v1
 
 # Test against local dev
 ./tests/integration_test.sh http://localhost:8000/api/v1
@@ -191,7 +191,7 @@ Located in `backend/tests/integration_test.sh`
 **Configuration Variables**:
 
 ```bash
-API_BASE_URL="https://batchivo.app/api/v1"
+API_BASE_URL="https://batchivo.com/api/v1"
 TEST_EMAIL="test@example.com"
 TEST_PASSWORD="testpassword123"
 ```
@@ -352,7 +352,7 @@ pytest --pdb
 bash -x tests/integration_test.sh
 
 # Check specific endpoint
-curl -v -H "Authorization: Bearer $TOKEN" https://batchivo.app/api/v1/users/me
+curl -v -H "Authorization: Bearer $TOKEN" https://batchivo.com/api/v1/users/me
 ```
 
 ### Frontend Debugging (when tests exist)

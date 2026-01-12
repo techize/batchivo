@@ -40,7 +40,7 @@ This document tracks planned features to bring Batchivo to feature parity with S
 
 - [ ] **QR Code Scanning**
   - PWA camera access for scanning
-  - Deep link support: `https://batchivo.app/spool/scan/{qr_code_id}`
+  - Deep link support: `https://batchivo.com/spool/scan/{qr_code_id}`
   - Quick actions after scan:
     - View spool details
     - Update weight
