@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 60" width="280" height="60">
+  <!-- Batch/Stack Icon - represents batch production -->
+  <g fill="#1a365d">
+    <!-- Bottom layer -->
+    <rect x="8" y="38" width="32" height="8" rx="2"/>
+    <!-- Middle layer -->
+    <rect x="12" y="26" width="28" height="8" rx="2"/>
+    <!-- Top layer -->
+    <rect x="16" y="14" width="24" height="8" rx="2"/>
+  </g>
+  <!-- Amber accent dot -->
+  <circle cx="40" cy="10" r="4" fill="#d97706"/>
+  <!-- Batchivo text -->
+  <text x="56" y="42" font-family="Inter, system-ui, sans-serif" font-size="36" font-weight="600" fill="#1a365d">Batchivo</text>
+</svg>

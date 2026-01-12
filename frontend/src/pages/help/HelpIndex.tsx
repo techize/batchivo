@@ -118,7 +118,7 @@ export function HelpIndex() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.png?v=8" alt="Batchivo" className="h-8 w-auto" />
+              <img src="/logo.svg" alt="Batchivo" className="h-8 w-auto" />
               <span className="text-lg font-semibold">Help Center</span>
             </Link>
             <div className="flex items-center gap-2">

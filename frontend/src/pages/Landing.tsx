@@ -17,7 +17,7 @@ export function Landing() {
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
-              <img src="/logo.png?v=8" alt="Batchivo" className="h-10 md:h-12 w-auto object-contain" />
+              <img src="/logo.svg" alt="Batchivo" className="h-10 md:h-12 w-auto object-contain" />
               <p className="text-xs text-muted-foreground whitespace-nowrap">
                 3D Print Management
               </p>

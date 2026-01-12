@@ -125,7 +125,7 @@ export function HelpGuide() {
               </Sheet>
 
               <Link to="/help" className="flex items-center gap-2">
-                <img src="/logo.png?v=8" alt="Batchivo" className="h-8 w-auto" />
+                <img src="/logo.svg" alt="Batchivo" className="h-8 w-auto" />
                 <span className="text-lg font-semibold hidden sm:inline">Help Center</span>
               </Link>
             </div>
