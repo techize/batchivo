@@ -163,7 +163,7 @@ Track consumable purchases to maintain accurate costs:
 
 ### Cost Per Unit
 
-Nozzly automatically calculates:
+Batchivo automatically calculates:
 ```
 Cost Per Unit = Total Cost / Quantity Purchased
 ```
@@ -309,7 +309,7 @@ Use consistent, logical SKUs:
 
 ## FIFO Costing
 
-Nozzly uses First-In-First-Out (FIFO) costing:
+Batchivo uses First-In-First-Out (FIFO) costing:
 - Oldest purchases are used first
 - Costs match actual purchase prices
 - More accurate than average costing

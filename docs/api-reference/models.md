@@ -399,7 +399,7 @@ async def create_model_with_bom(token: str, model_data: dict, materials: list):
     async with httpx.AsyncClient() as client:
         # Create model
         response = await client.post(
-            "https://api.nozzly.app/api/v1/models",
+            "https://api.batchivo.app/api/v1/models",
             json=model_data,
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -408,7 +408,7 @@ async def create_model_with_bom(token: str, model_data: dict, materials: list):
         # Add materials to BOM
         for material in materials:
             await client.post(
-                f"https://api.nozzly.app/api/v1/models/{model['id']}/materials",
+                f"https://api.batchivo.app/api/v1/models/{model['id']}/materials",
                 json=material,
                 headers={"Authorization": f"Bearer {token}"}
             )
@@ -421,7 +421,7 @@ async def create_model_with_bom(token: str, model_data: dict, materials: list):
 ```javascript
 async function getProductionDefaults(modelId, token) {
   const response = await fetch(
-    `https://api.nozzly.app/api/v1/models/${modelId}/production-defaults`,
+    `https://api.batchivo.app/api/v1/models/${modelId}/production-defaults`,
     {
       headers: { Authorization: `Bearer ${token}` }
     }
@@ -433,7 +433,7 @@ async function getProductionDefaults(modelId, token) {
 ### cURL: Import Models
 
 ```bash
-curl -X POST "https://api.nozzly.app/api/v1/models/import" \
+curl -X POST "https://api.batchivo.app/api/v1/models/import" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -F "file=@models.csv"
 ```

@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Nozzly Infrastructure Health - Container resources, database uptime, and system monitoring",
+  "description": "Batchivo Infrastructure Health - Container resources, database uptime, and system monitoring",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -115,7 +115,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "100 * (sum(rate(container_cpu_usage_seconds_total{namespace=\"nozzly\"}[5m])) by (pod) / sum(container_spec_cpu_quota{namespace=\"nozzly\"}/container_spec_cpu_period{namespace=\"nozzly\"}) by (pod))",
+          "expr": "100 * (sum(rate(container_cpu_usage_seconds_total{namespace=\"batchivo\"}[5m])) by (pod) / sum(container_spec_cpu_quota{namespace=\"batchivo\"}/container_spec_cpu_period{namespace=\"batchivo\"}) by (pod))",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -216,7 +216,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "100 * (container_memory_working_set_bytes{namespace=\"nozzly\"} / container_spec_memory_limit_bytes{namespace=\"nozzly\"})",
+          "expr": "100 * (container_memory_working_set_bytes{namespace=\"batchivo\"} / container_spec_memory_limit_bytes{namespace=\"batchivo\"})",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -533,7 +533,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "up{job=\"nozzly-backend\"}",
+          "expr": "up{job=\"batchivo-backend\"}",
           "legendFormat": "Backend",
           "range": true,
           "refId": "A"
@@ -603,7 +603,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"nozzly\"})",
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"batchivo\"})",
           "legendFormat": "Restarts",
           "range": true,
           "refId": "A"
@@ -840,7 +840,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"nozzly\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"batchivo\"}[5m])) by (pod)",
           "legendFormat": "{{pod}} receive",
           "range": true,
           "refId": "A"
@@ -851,7 +851,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"nozzly\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"batchivo\"}[5m])) by (pod)",
           "legendFormat": "{{pod}} transmit",
           "range": true,
           "refId": "B"
@@ -942,7 +942,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "container_memory_working_set_bytes{namespace=\"nozzly\"}",
+          "expr": "container_memory_working_set_bytes{namespace=\"batchivo\"}",
           "legendFormat": "{{pod}}",
           "range": true,
           "refId": "A"
@@ -1153,7 +1153,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "kube_pod_container_status_restarts_total{namespace=\"nozzly\"}",
+          "expr": "kube_pod_container_status_restarts_total{namespace=\"batchivo\"}",
           "legendFormat": "{{container}}",
           "range": true,
           "refId": "A"
@@ -1165,7 +1165,7 @@
   ],
   "refresh": "1m",
   "schemaVersion": 38,
-  "tags": ["nozzly", "infrastructure", "kubernetes"],
+  "tags": ["batchivo", "infrastructure", "kubernetes"],
   "templating": {
     "list": [
       {
@@ -1194,8 +1194,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Nozzly - Infrastructure Health",
-  "uid": "nozzly-infra-health",
+  "title": "Batchivo - Infrastructure Health",
+  "uid": "batchivo-infra-health",
   "version": 1,
   "weekStart": ""
 }

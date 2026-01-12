@@ -13,7 +13,7 @@ Click **Channels** in the top navigation bar to manage your sales channels.
 ## Why Configure Channels?
 
 ### Accurate Profit Calculations
-Each channel has different fees. Nozzly calculates:
+Each channel has different fees. Batchivo calculates:
 - Platform fees (percentage cut)
 - Payment processing fees
 - Monthly/listing costs
@@ -104,7 +104,7 @@ Recurring expenses:
 - Booth/table rentals at fairs
 - Website hosting
 
-### How Nozzly Calculates
+### How Batchivo Calculates
 
 ```
 Gross Revenue = List Price

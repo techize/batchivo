@@ -1,12 +1,12 @@
-# Nozzly User Guide
+# Batchivo User Guide
 
-Comprehensive documentation for using Nozzly, the 3D print business management platform.
+Comprehensive documentation for using Batchivo, the 3D print business management platform.
 
 ## Core Guides
 
 | Guide | Description |
 |-------|-------------|
-| [Overview](overview.md) | Introduction to Nozzly, key concepts, and navigation |
+| [Overview](overview.md) | Introduction to Batchivo, key concepts, and navigation |
 | [Filament Management](filament-management.md) | Managing filament spools and inventory |
 | [Products](products.md) | Creating products, pricing, and cost management |
 | [Production Runs](production-runs.md) | Tracking print jobs and material usage |
@@ -56,6 +56,6 @@ Overview (start here)
 
 ## Need Help?
 
-- **Technical Issues**: [GitHub Issues](https://github.com/techize/nozzly.app/issues)
+- **Technical Issues**: [GitHub Issues](https://github.com/techize/batchivo.app/issues)
 - **API Documentation**: See [API Reference](../api-reference/) (coming soon)
 - **Development**: See [Development Guide](../DEVELOPMENT.md)

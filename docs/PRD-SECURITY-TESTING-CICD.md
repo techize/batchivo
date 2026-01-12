@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This PRD addresses critical security vulnerabilities, establishes testing infrastructure, and implements GitOps-based CI/CD for the nozzly.app codebase. These issues were identified during a comprehensive code review on 2025-12-12.
+This PRD addresses critical security vulnerabilities, establishes testing infrastructure, and implements GitOps-based CI/CD for the batchivo.app codebase. These issues were identified during a comprehensive code review on 2025-12-12.
 
 **Business Impact**:
 - Current state blocks production deployment confidence
@@ -61,11 +61,11 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: backend-secrets
-  namespace: nozzly
+  namespace: batchivo
 type: Opaque
 stringData:
   SECRET_KEY: "<generated-key>"
-  DATABASE_URL: "postgresql+psycopg://nozzly:<password>@postgres:5432/nozzly"
+  DATABASE_URL: "postgresql+psycopg://batchivo:<password>@postgres:5432/batchivo"
 ```
 
 #### 1.1.3 Update Deployment to Use Secret
@@ -109,7 +109,7 @@ kubectl create secret generic square-credentials \
   --from-literal=access-token='<token>' \
   --from-literal=location-id='***REMOVED***' \
   --from-literal=environment='sandbox' \
-  -n nozzly
+  -n batchivo
 ```
 
 #### 1.2.2 Update Backend Deployment
@@ -792,7 +792,7 @@ jobs:
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_nozzly
+          POSTGRES_DB: test_batchivo
         ports:
           - 5432:5432
         options: >-
@@ -821,7 +821,7 @@ jobs:
       - name: Run tests with coverage
         working-directory: backend
         env:
-          DATABASE_URL: postgresql+psycopg://test:test@localhost:5432/test_nozzly
+          DATABASE_URL: postgresql+psycopg://test:test@localhost:5432/test_batchivo
           SECRET_KEY: test-secret-key-for-ci-only
           DEBUG: false
         run: |
@@ -988,7 +988,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            VITE_API_URL=https://api.nozzly.app
+            VITE_API_URL=https://api.batchivo.app
 
   # ============================================
   # Security Scanning
@@ -1073,8 +1073,8 @@ jobs:
 
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment/nozzly-backend -n nozzly --timeout=300s
-          kubectl rollout status deployment/nozzly-frontend -n nozzly --timeout=300s
+          kubectl rollout status deployment/batchivo-backend -n batchivo --timeout=300s
+          kubectl rollout status deployment/batchivo-frontend -n batchivo --timeout=300s
 
       - name: Run smoke tests
         run: |
@@ -1082,8 +1082,8 @@ jobs:
           sleep 30
 
           # Test backend health endpoint
-          kubectl run curl --image=curlimages/curl --rm -i --restart=Never -n nozzly -- \
-            curl -sf http://nozzly-backend:8000/health || exit 1
+          kubectl run curl --image=curlimages/curl --rm -i --restart=Never -n batchivo -- \
+            curl -sf http://batchivo-backend:8000/health || exit 1
 
           echo "Smoke tests passed!"
 ```
@@ -1295,7 +1295,7 @@ updates:
 ## Appendix C: Rollback Plan
 
 ### If Security Changes Fail
-1. Revert K8s deployment: `kubectl rollout undo deployment/nozzly-backend -n nozzly`
+1. Revert K8s deployment: `kubectl rollout undo deployment/batchivo-backend -n batchivo`
 2. Restore previous secret values
 3. Debug and fix before retrying
 

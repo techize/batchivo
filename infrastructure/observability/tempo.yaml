@@ -1,4 +1,4 @@
-# Tempo Configuration for Nozzly
+# Tempo Configuration for Batchivo
 
 server:
   http_listen_port: 3200

@@ -1,4 +1,4 @@
-# Nozzly Documentation Plan
+# Batchivo Documentation Plan
 
 **Created**: 2025-12-15
 **Status**: Planning Phase

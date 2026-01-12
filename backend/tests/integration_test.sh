@@ -1,16 +1,16 @@
 #!/bin/bash
 #
-# Integration Test Script for Nozzly API
+# Integration Test Script for Batchivo API
 # Tests the complete authentication and spool creation flow
 #
 # Usage: ./integration_test.sh [API_BASE_URL]
-# Example: ./integration_test.sh https://nozzly.app/api/v1
+# Example: ./integration_test.sh https://batchivo.app/api/v1
 #
 
 set -e
 
 # Configuration
-API_BASE_URL="${1:-https://nozzly.app/api/v1}"
+API_BASE_URL="${1:-https://batchivo.app/api/v1}"
 TEST_EMAIL="test@example.com"
 TEST_PASSWORD="testpassword123"
 
@@ -47,8 +47,8 @@ log_info() {
 
 # Cleanup function
 cleanup() {
-    if [ -f "/tmp/nozzly_test_response.json" ]; then
-        rm -f /tmp/nozzly_test_response.json
+    if [ -f "/tmp/batchivo_test_response.json" ]; then
+        rm -f /tmp/batchivo_test_response.json
     fi
 }
 
@@ -58,11 +58,11 @@ trap cleanup EXIT
 # Test 1: Health Check
 # ============================================================================
 log_test "Health check endpoint"
-if curl -s -f "${API_BASE_URL}/health" > /tmp/nozzly_test_response.json 2>&1; then
+if curl -s -f "${API_BASE_URL}/health" > /tmp/batchivo_test_response.json 2>&1; then
     log_pass "Health check passed"
 else
     log_fail "Health check failed"
-    cat /tmp/nozzly_test_response.json
+    cat /tmp/batchivo_test_response.json
 fi
 
 # ============================================================================

@@ -1,6 +1,6 @@
 # Phase 1 & 2 Completion Report
 **Date**: 2025-12-12
-**Project**: Nozzly.app Security, Testing, and CI/CD Implementation
+**Project**: Batchivo.app Security, Testing, and CI/CD Implementation
 
 ## Executive Summary
 
@@ -208,8 +208,8 @@ TOTAL: 4928 statements, 2323 covered = 53%
    - Test result artifacts
 
 3. **Docker Image Building**:
-   - Backend image: `192.168.98.138:30500/nozzly-backend`
-   - Frontend image: `192.168.98.138:30500/nozzly-frontend`
+   - Backend image: `192.168.98.138:30500/batchivo-backend`
+   - Frontend image: `192.168.98.138:30500/batchivo-frontend`
    - SHA-based tagging + latest tag
    - Self-hosted runner (local k3s cluster)
 
@@ -241,7 +241,7 @@ TOTAL: 4928 statements, 2323 covered = 53%
 ```bash
 # Current deployment process (manual)
 kubectl apply -f infrastructure/k8s/backend/
-kubectl rollout status deployment/backend -n nozzly
+kubectl rollout status deployment/backend -n batchivo
 ```
 
 ---

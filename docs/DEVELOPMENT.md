@@ -1,6 +1,6 @@
 # Development Guide
 
-**Nozzly - Local Development Setup**
+**Batchivo - Local Development Setup**
 
 ---
 
@@ -74,8 +74,8 @@ Use WSL2 with Ubuntu and follow Linux instructions above.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/techize/nozzly.app.git
-cd nozzly.app
+git clone https://github.com/techize/batchivo.app.git
+cd batchivo.app
 ```
 
 ### 2. Start Infrastructure Services
@@ -189,11 +189,11 @@ Authentik is your SSO provider. Configure it before first login:
 2. **Create OAuth2 Application**:
    - Navigate to: Applications → Providers → Create
    - Provider Type: OAuth2/OpenID Provider
-   - Name: Nozzly
+   - Name: Batchivo
    - Redirect URIs:
      ```
      http://localhost:5173/auth/callback
-     https://nozzly.app/auth/callback
+     https://batchivo.app/auth/callback
      ```
    - Client Type: Confidential
    - Save and note **Client ID** and **Client Secret**
@@ -219,7 +219,7 @@ curl http://localhost:8000/health
 
 ```bash
 # Connect to PostgreSQL
-docker-compose exec postgres psql -U nozzly -d nozzly
+docker-compose exec postgres psql -U batchivo -d batchivo
 
 # List tables
 \dt
@@ -252,14 +252,14 @@ Visit http://localhost:5173 in browser. You should see login page.
 
 ```env
 # App Configuration
-APP_NAME=Nozzly
+APP_NAME=Batchivo
 DEBUG=true
 
 # Database
-DATABASE_URL=postgresql+asyncpg://nozzly:nozzly@localhost:5432/nozzly
+DATABASE_URL=postgresql+asyncpg://batchivo:batchivo@localhost:5432/batchivo
 
 # For SQLite (development alternative):
-# DATABASE_URL=sqlite+aiosqlite:///./nozzly.db
+# DATABASE_URL=sqlite+aiosqlite:///./batchivo.db
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
@@ -271,7 +271,7 @@ AUTHENTIK_CLIENT_SECRET=<your-client-secret>
 
 # OpenTelemetry
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-OTEL_SERVICE_NAME=nozzly-backend
+OTEL_SERVICE_NAME=batchivo-backend
 ENABLE_TRACING=true
 ENABLE_METRICS=true
 
@@ -545,7 +545,7 @@ poetry run celery -A app.background.celery_app beat --loglevel=info
 
 ```bash
 # PostgreSQL
-docker-compose exec postgres psql -U nozzly -d nozzly
+docker-compose exec postgres psql -U batchivo -d batchivo
 
 # Redis CLI
 docker-compose exec redis redis-cli
@@ -619,24 +619,24 @@ breakpoint()
 1. Go to Grafana: http://localhost:3000
 2. Navigate to Explore
 3. Select Tempo datasource
-4. Search for traces by service name: `nozzly-backend`
+4. Search for traces by service name: `batchivo-backend`
 
 **View Logs:**
 1. Go to Grafana: http://localhost:3000
 2. Navigate to Explore
 3. Select Loki datasource
-4. Query: `{service_name="nozzly-backend"}`
+4. Query: `{service_name="batchivo-backend"}`
 
 **View Metrics:**
 1. Go to Prometheus: http://localhost:9090
-2. Query: `http_requests_total{service="nozzly-backend"}`
+2. Query: `http_requests_total{service="batchivo-backend"}`
 
 ---
 
 ## Project Structure
 
 ```
-nozzly.app/
+batchivo.app/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/          # API endpoints

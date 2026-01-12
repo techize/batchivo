@@ -1,12 +1,12 @@
 # Database Schema
 
-**Nozzly - Complete Database Schema Documentation**
+**Batchivo - Complete Database Schema Documentation**
 
 ---
 
 ## Overview
 
-Nozzly uses **PostgreSQL 16+** with Row-Level Security (RLS) for multi-tenant data isolation. The schema is designed for:
+Batchivo uses **PostgreSQL 16+** with Row-Level Security (RLS) for multi-tenant data isolation. The schema is designed for:
 
 - **Multi-tenancy**: Every table scoped to `tenant_id`
 - **Data integrity**: Foreign keys, constraints, and transactions

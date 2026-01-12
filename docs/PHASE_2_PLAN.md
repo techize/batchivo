@@ -624,28 +624,28 @@ export const useDeleteProduct = () => {
    ```bash
    # Backend
    cd backend
-   docker buildx build --platform linux/amd64 -t nozzly-backend:v2.0 --load .
-   docker tag nozzly-backend:v2.0 192.168.98.138:30500/nozzly-backend:v2.0
-   docker push 192.168.98.138:30500/nozzly-backend:v2.0
+   docker buildx build --platform linux/amd64 -t batchivo-backend:v2.0 --load .
+   docker tag batchivo-backend:v2.0 192.168.98.138:30500/batchivo-backend:v2.0
+   docker push 192.168.98.138:30500/batchivo-backend:v2.0
 
    # Frontend
    cd frontend
-   docker buildx build --platform linux/amd64 -t nozzly-frontend:v2.0 --load .
-   docker tag nozzly-frontend:v2.0 192.168.98.138:30500/nozzly-frontend:v2.0
-   docker push 192.168.98.138:30500/nozzly-frontend:v2.0
+   docker buildx build --platform linux/amd64 -t batchivo-frontend:v2.0 --load .
+   docker tag batchivo-frontend:v2.0 192.168.98.138:30500/batchivo-frontend:v2.0
+   docker push 192.168.98.138:30500/batchivo-frontend:v2.0
    ```
 
 3. Update k8s deployments
    ```bash
-   kubectl set image deployment/backend backend=192.168.98.138:30500/nozzly-backend:v2.0 -n nozzly
-   kubectl set image deployment/frontend frontend=192.168.98.138:30500/nozzly-frontend:v2.0 -n nozzly
+   kubectl set image deployment/backend backend=192.168.98.138:30500/batchivo-backend:v2.0 -n batchivo
+   kubectl set image deployment/frontend frontend=192.168.98.138:30500/batchivo-frontend:v2.0 -n batchivo
    ```
 
 4. Verify deployment
    ```bash
-   kubectl rollout status deployment/backend -n nozzly
-   kubectl rollout status deployment/frontend -n nozzly
-   curl https://api.nozzly.app/health
+   kubectl rollout status deployment/backend -n batchivo
+   kubectl rollout status deployment/frontend -n batchivo
+   curl https://api.batchivo.app/health
    ```
 
 ---

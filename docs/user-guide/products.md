@@ -94,7 +94,7 @@ At the top, you'll see key metrics:
 
 ### Suggested Pricing
 
-Nozzly calculates suggested retail prices:
+Batchivo calculates suggested retail prices:
 
 | Method | Formula | Use Case |
 |--------|---------|----------|
@@ -187,7 +187,7 @@ Set different prices for each sales channel.
 
 ### Automatic Calculations
 
-When you set a price, Nozzly calculates:
+When you set a price, Batchivo calculates:
 
 | Metric | Description |
 |--------|-------------|

@@ -1,11 +1,11 @@
-# Grafana Dashboards Configuration for Nozzly
+# Grafana Dashboards Configuration for Batchivo
 
 apiVersion: 1
 
 providers:
-  - name: 'Nozzly Dashboards'
+  - name: 'Batchivo Dashboards'
     orgId: 1
-    folder: 'Nozzly'
+    folder: 'Batchivo'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 10

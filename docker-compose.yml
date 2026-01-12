@@ -1,4 +1,4 @@
-# Nozzly - Local Development Stack
+# Batchivo - Local Development Stack
 # This Docker Compose file provides all infrastructure services for local development
 
 version: '3.9'
@@ -7,27 +7,27 @@ services:
   # PostgreSQL - Main database
   postgres:
     image: postgres:16-alpine
-    container_name: nozzly-postgres
+    container_name: batchivo-postgres
     environment:
-      POSTGRES_USER: nozzly
-      POSTGRES_PASSWORD: nozzly
-      POSTGRES_DB: nozzly
+      POSTGRES_USER: batchivo
+      POSTGRES_PASSWORD: batchivo
+      POSTGRES_DB: batchivo
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nozzly"]
+      test: ["CMD-SHELL", "pg_isready -U batchivo"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - nozzly-network
+      - batchivo-network
 
   # Redis - Caching and job queue
   redis:
     image: redis:7-alpine
-    container_name: nozzly-redis
+    container_name: batchivo-redis
     ports:
       - "6379:6379"
     volumes:
@@ -38,12 +38,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - nozzly-network
+      - batchivo-network
 
   # Tempo - Distributed tracing
   tempo:
     image: grafana/tempo:latest
-    container_name: nozzly-tempo
+    container_name: batchivo-tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:
       - ./infrastructure/observability/tempo.yaml:/etc/tempo.yaml
@@ -58,12 +58,12 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - nozzly-network
+      - batchivo-network
 
   # Prometheus - Metrics
   prometheus:
     image: prom/prometheus:latest
-    container_name: nozzly-prometheus
+    container_name: batchivo-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -80,12 +80,12 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - nozzly-network
+      - batchivo-network
 
   # Loki - Log aggregation
   loki:
     image: grafana/loki:latest
-    container_name: nozzly-loki
+    container_name: batchivo-loki
     ports:
       - "3100:3100"
     volumes:
@@ -97,12 +97,12 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - nozzly-network
+      - batchivo-network
 
   # Grafana - Observability dashboards
   grafana:
     image: grafana/grafana:latest
-    container_name: nozzly-grafana
+    container_name: batchivo-grafana
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
@@ -126,10 +126,10 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - nozzly-network
+      - batchivo-network
 
 networks:
-  nozzly-network:
+  batchivo-network:
     driver: bridge
 
 volumes:

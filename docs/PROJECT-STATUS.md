@@ -1,4 +1,4 @@
-# Nozzly Project Status & Todo List
+# Batchivo Project Status & Todo List
 
 **Last Updated**: 2025-12-15
 **Version**: v1.18+

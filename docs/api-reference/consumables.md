@@ -304,7 +304,7 @@ async def record_purchase_and_check(token: str, consumable_id: str, qty: int, co
     async with httpx.AsyncClient() as client:
         # Record purchase
         await client.post(
-            "https://api.nozzly.app/api/v1/consumables/purchases",
+            "https://api.batchivo.app/api/v1/consumables/purchases",
             json={
                 "consumable_type_id": consumable_id,
                 "quantity_purchased": qty,
@@ -315,7 +315,7 @@ async def record_purchase_and_check(token: str, consumable_id: str, qty: int, co
 
         # Check low stock alerts
         response = await client.get(
-            "https://api.nozzly.app/api/v1/consumables/alerts/low-stock",
+            "https://api.batchivo.app/api/v1/consumables/alerts/low-stock",
             headers={"Authorization": f"Bearer {token}"}
         )
         return response.json()
@@ -326,7 +326,7 @@ async def record_purchase_and_check(token: str, consumable_id: str, qty: int, co
 ```javascript
 async function adjustStock(consumableId, adjustment, reason, token) {
   const response = await fetch(
-    `https://api.nozzly.app/api/v1/consumables/types/${consumableId}/adjust-stock`,
+    `https://api.batchivo.app/api/v1/consumables/types/${consumableId}/adjust-stock`,
     {
       method: "POST",
       headers: {

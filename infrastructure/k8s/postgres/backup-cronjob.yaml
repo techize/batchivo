@@ -5,7 +5,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: backup-scripts
-  namespace: nozzly
+  namespace: batchivo
 data:
   backup.sh: |
     #!/bin/sh
@@ -13,8 +13,8 @@ data:
 
     # Configuration
     BACKUP_DATE=$(date +%Y%m%d-%H%M%S)
-    BACKUP_FILE="nozzly-backup-${BACKUP_DATE}.sql.gz"
-    BUCKET="nozzly-backups"
+    BACKUP_FILE="batchivo-backup-${BACKUP_DATE}.sql.gz"
+    BUCKET="batchivo-backups"
     RETENTION_DAYS=30
 
     echo "Starting PostgreSQL backup at $(date)"
@@ -56,7 +56,7 @@ data:
     mc ls minio/${BUCKET}/ | while read -r line; do
       FILE=$(echo "$line" | awk '{print $NF}')
       if [ -n "$FILE" ]; then
-        # Extract date from filename (nozzly-backup-YYYYMMDD-HHMMSS.sql.gz)
+        # Extract date from filename (batchivo-backup-YYYYMMDD-HHMMSS.sql.gz)
         FILE_DATE=$(echo "$FILE" | grep -oE '[0-9]{8}' | head -1)
         if [ -n "$FILE_DATE" ] && [ "$FILE_DATE" -lt "$CUTOFF_DATE" ]; then
           echo "Deleting old backup: $FILE"
@@ -74,7 +74,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
-  namespace: nozzly
+  namespace: batchivo
 spec:
   # Run daily at 3am UTC
   schedule: "0 3 * * *"
@@ -122,7 +122,7 @@ spec:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
             - name: DB_NAME
-              value: "nozzly"
+              value: "batchivo"
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
@@ -149,5 +149,5 @@ spec:
               name: backup-scripts
               defaultMode: 0755
 ---
-# Manual backup Job (run with: kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n nozzly)
+# Manual backup Job (run with: kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n batchivo)
 # This is just a reference - the CronJob handles automatic backups

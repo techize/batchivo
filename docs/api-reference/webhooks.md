@@ -104,7 +104,7 @@ POST /api/v1/webhooks/subscriptions
 ```json
 {
   "name": "Order Notifications",
-  "url": "https://my-server.com/webhooks/nozzly",
+  "url": "https://my-server.com/webhooks/batchivo",
   "events": ["order.created", "order.paid", "order.shipped"],
   "custom_headers": {
     "X-Custom-Header": "my-value"
@@ -125,7 +125,7 @@ POST /api/v1/webhooks/subscriptions
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "name": "Order Notifications",
-  "url": "https://my-server.com/webhooks/nozzly",
+  "url": "https://my-server.com/webhooks/batchivo",
   "events": ["order.created", "order.paid", "order.shipped"],
   "is_active": true,
   "failure_count": 0,
@@ -162,7 +162,7 @@ GET /api/v1/webhooks/subscriptions
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "name": "Order Notifications",
-      "url": "https://my-server.com/webhooks/nozzly",
+      "url": "https://my-server.com/webhooks/batchivo",
       "events": ["order.created", "order.paid", "order.shipped"],
       "is_active": true,
       "failure_count": 0,
@@ -388,7 +388,7 @@ def verify_webhook(payload: bytes, signature: str, secret: str) -> bool:
     return hmac.compare_digest(expected, received)
 
 # In your webhook handler:
-@app.post("/webhooks/nozzly")
+@app.post("/webhooks/batchivo")
 async def handle_webhook(request: Request):
     payload = await request.body()
     signature = request.headers.get("X-Webhook-Signature")
@@ -456,7 +456,7 @@ After 5 failed attempts, the subscription is marked inactive.
 
 ```python
 # Example: Process events asynchronously
-@app.post("/webhooks/nozzly")
+@app.post("/webhooks/batchivo")
 async def handle_webhook(request: Request):
     # 1. Verify signature (do this first)
     # 2. Parse payload

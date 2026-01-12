@@ -1,10 +1,10 @@
-# Prometheus Configuration for Nozzly
+# Prometheus Configuration for Batchivo
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'nozzly-dev'
+    cluster: 'batchivo-dev'
     environment: 'local'
 
 # Alertmanager configuration (optional, add when needed)
@@ -24,9 +24,9 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Nozzly Backend (when running)
+  # Batchivo Backend (when running)
   # Uncomment when backend is running with metrics endpoint
-  # - job_name: 'nozzly-backend'
+  # - job_name: 'batchivo-backend'
   #   static_configs:
   #     - targets: ['host.docker.internal:8000']
   #   metrics_path: '/metrics'

@@ -1,10 +1,10 @@
-# MinIO Object Storage for Nozzly
+# MinIO Object Storage for Batchivo
 #
 # IMPORTANT: The minio-credentials secret must be created manually before deploying.
 # Do NOT commit secrets to version control.
 #
 # Create the secret with:
-#   kubectl create secret generic minio-credentials -n nozzly \
+#   kubectl create secret generic minio-credentials -n batchivo \
 #     --from-literal=MINIO_ROOT_USER=<username> \
 #     --from-literal=MINIO_ROOT_PASSWORD=<secure-password>
 #
@@ -15,7 +15,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: minio-data
-  namespace: nozzly
+  namespace: batchivo
 spec:
   accessModes:
     - ReadWriteOnce
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: minio
-  namespace: nozzly
+  namespace: batchivo
 spec:
   selector:
     app: minio
@@ -47,7 +47,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: minio
-  namespace: nozzly
+  namespace: batchivo
 spec:
   serviceName: minio
   replicas: 1
@@ -151,7 +151,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: minio-create-bucket
-  namespace: nozzly
+  namespace: batchivo
 spec:
   ttlSecondsAfterFinished: 300
   template:
@@ -181,8 +181,8 @@ spec:
           done
 
           # Create bucket (ignore if exists)
-          echo "Creating bucket nozzly-images..."
-          mc mb myminio/nozzly-images --ignore-existing
+          echo "Creating bucket batchivo-images..."
+          mc mb myminio/batchivo-images --ignore-existing
 
           echo "Bucket created successfully!"
           mc ls myminio/

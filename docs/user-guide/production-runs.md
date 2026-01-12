@@ -235,7 +235,7 @@ Failed runs still track material consumption for accurate cost analysis.
 
 ## Variance Analysis
 
-After completion, Nozzly calculates variance:
+After completion, Batchivo calculates variance:
 
 ### Material Variance
 

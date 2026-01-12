@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """
-Nozzly API Client Script
+Batchivo API Client Script
 
-A command-line tool for interacting with the Nozzly API.
+A command-line tool for interacting with the Batchivo API.
 Supports product creation, listing, and other operations.
 
 Usage:
     # Login and save credentials
-    ./nozzly-api.py login --email user@example.com --password yourpassword
+    ./batchivo-api.py login --email user@example.com --password yourpassword
 
     # Create a product
-    ./nozzly-api.py create-product --name "Product Name" --sku "PROD-001"
+    ./batchivo-api.py create-product --name "Product Name" --sku "PROD-001"
 
     # List products
-    ./nozzly-api.py list-products
+    ./batchivo-api.py list-products
 
     # Get product details
-    ./nozzly-api.py get-product --id <uuid>
+    ./batchivo-api.py get-product --id <uuid>
 
 Environment variables:
-    NOZZLY_API_URL: API base URL (default: https://api.nozzly.app)
-    NOZZLY_EMAIL: Login email (alternative to --email)
-    NOZZLY_PASSWORD: Login password (alternative to --password)
+    BATCHIVO_API_URL: API base URL (default: https://api.batchivo.app)
+    BATCHIVO_EMAIL: Login email (alternative to --email)
+    BATCHIVO_PASSWORD: Login password (alternative to --password)
 """
 
 import argparse
@@ -39,12 +39,12 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-DEFAULT_API_URL = "https://api.nozzly.app"
-TOKEN_FILE = Path.home() / ".nozzly" / "credentials.json"
+DEFAULT_API_URL = "https://api.batchivo.app"
+TOKEN_FILE = Path.home() / ".batchivo" / "credentials.json"
 
 
-class NozzlyClient:
-    """Client for interacting with the Nozzly API."""
+class BatchivoClient:
+    """Client for interacting with the Batchivo API."""
 
     def __init__(self, base_url: str = DEFAULT_API_URL):
         self.base_url = base_url.rstrip("/")
@@ -272,28 +272,28 @@ class NozzlyClient:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Nozzly API Client",
+        description="Batchivo API Client",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
     parser.add_argument(
         "--api-url",
-        default=os.environ.get("NOZZLY_API_URL", DEFAULT_API_URL),
+        default=os.environ.get("BATCHIVO_API_URL", DEFAULT_API_URL),
         help="API base URL",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Login command
-    login_parser = subparsers.add_parser("login", help="Login to Nozzly")
+    login_parser = subparsers.add_parser("login", help="Login to Batchivo")
     login_parser.add_argument(
         "--email",
-        default=os.environ.get("NOZZLY_EMAIL"),
+        default=os.environ.get("BATCHIVO_EMAIL"),
         help="Email address",
     )
     login_parser.add_argument(
         "--password",
-        default=os.environ.get("NOZZLY_PASSWORD"),
+        default=os.environ.get("BATCHIVO_PASSWORD"),
         help="Password",
     )
 
@@ -350,12 +350,12 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    client = NozzlyClient(args.api_url)
+    client = BatchivoClient(args.api_url)
 
     try:
         if args.command == "login":
             if not args.email or not args.password:
-                print("Error: --email and --password required (or set NOZZLY_EMAIL/NOZZLY_PASSWORD)")
+                print("Error: --email and --password required (or set BATCHIVO_EMAIL/BATCHIVO_PASSWORD)")
                 sys.exit(1)
             result = client.login(args.email, args.password)
             print(json.dumps(result, indent=2))
@@ -433,7 +433,7 @@ def main():
                 print(f"Token file: {TOKEN_FILE}")
             else:
                 print("Status: Not logged in")
-                print("Run 'nozzly-api.py login' to authenticate")
+                print("Run 'batchivo-api.py login' to authenticate")
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

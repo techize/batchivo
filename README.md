@@ -1,4 +1,4 @@
-# Nozzly
+# Batchivo
 
 **Complete 3D printing business management platform**
 
@@ -10,9 +10,9 @@
 
 ---
 
-## 🎯 What is Nozzly?
+## 🎯 What is Batchivo?
 
-Nozzly is a comprehensive, self-hosted SaaS platform for managing 3D printing businesses. From filament inventory tracking to multi-marketplace pricing strategies, Nozzly helps you run your 3D printing operation professionally and profitably.
+Batchivo is a comprehensive, self-hosted SaaS platform for managing 3D printing businesses. From filament inventory tracking to multi-marketplace pricing strategies, Batchivo helps you run your 3D printing operation professionally and profitably.
 
 **Born from need**: Started as an extensive spreadsheet for tracking personal 3D printing projects, evolved into a full-featured business management system that the community can benefit from.
 
@@ -190,8 +190,8 @@ Built from day one as a proper SaaS platform:
 
 ```bash
 # Clone repository
-git clone https://github.com/techize/nozzly.app.git
-cd nozzly.app
+git clone https://github.com/techize/batchivo.git
+cd batchivo
 
 # Start infrastructure (PostgreSQL, Redis, Observability)
 docker-compose up -d
@@ -291,7 +291,7 @@ Stay tuned for CONTRIBUTING.md!
 
 ### Reporting Vulnerabilities
 
-If you discover a security vulnerability, please email security@nozzly.app (or contact repository owner) directly. Do not create a public issue.
+If you discover a security vulnerability, please email security@batchivo (or contact repository owner) directly. Do not create a public issue.
 
 ### Security Features
 
@@ -307,14 +307,14 @@ If you discover a security vulnerability, please email security@nozzly.app (or c
 
 ## 📊 Observability
 
-Nozzly includes comprehensive observability from day one:
+Batchivo includes comprehensive observability from day one:
 
 - **Traces**: OpenTelemetry → Tempo → Jaeger UI
 - **Metrics**: Prometheus → Grafana
 - **Logs**: Loki → Grafana
 - **Dashboards**: Pre-configured Grafana dashboards for application, database, and business metrics
 
-Access Grafana at http://localhost:3000 (local dev) or https://grafana.nozzly.app (production).
+Access Grafana at http://localhost:3000 (local dev) or https://grafana.batchivo (production).
 
 ---
 
@@ -356,7 +356,7 @@ See [Makefile](Makefile) for all available commands.
 
 ## 🌐 Deployment
 
-Nozzly is designed to be self-hosted on your own infrastructure:
+Batchivo is designed to be self-hosted on your own infrastructure:
 
 - **k3s cluster** (lightweight Kubernetes)
 - **Cloudflare Tunnel** for secure ingress (no exposed ports)
@@ -364,7 +364,7 @@ Nozzly is designed to be self-hosted on your own infrastructure:
 - **Redis** for caching and job queue
 - **Tempo/Prometheus/Loki/Grafana** for observability
 
-**Domain**: nozzly.app (configurable)
+**Domain**: batchivo (configurable)
 
 See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed instructions.
 
@@ -402,8 +402,8 @@ Built with amazing open source technologies:
 ## 📧 Contact
 
 **Project Owner**: Jonathan
-**Domain**: [nozzly.app](https://nozzly.app)
-**Repository**: [github.com/techize/nozzly.app](https://github.com/techize/nozzly.app)
+**Domain**: [batchivo](https://batchivo)
+**Repository**: [github.com/techize/batchivo](https://github.com/techize/batchivo)
 
 ---
 

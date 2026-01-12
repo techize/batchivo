@@ -2,25 +2,25 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: backend-config
-  namespace: nozzly-staging
+  namespace: batchivo-staging
 data:
-  # Database - uses nozzly_staging database in shared PostgreSQL
-  DB_HOST: "postgres.nozzly.svc.cluster.local"
+  # Database - uses batchivo_staging database in shared PostgreSQL
+  DB_HOST: "postgres.batchivo.svc.cluster.local"
   DB_PORT: "5432"
-  DB_NAME: "nozzly_staging"
+  DB_NAME: "batchivo_staging"
   # Redis - shared with production (different key prefix via app)
-  REDIS_URL: "redis://redis.nozzly.svc.cluster.local:6379/1"
+  REDIS_URL: "redis://redis.batchivo.svc.cluster.local:6379/1"
   # Environment
   ENVIRONMENT: "staging"
   LOG_LEVEL: "DEBUG"
   ENABLE_TRACING: "false"
   ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
   # CORS - staging domains
-  CORS_ORIGINS: '["https://staging.nozzly.app", "https://staging.mystmereforge.co.uk"]'
+  CORS_ORIGINS: '["https://staging.batchivo.app", "https://staging.mystmereforge.co.uk"]'
   # S3/MinIO storage - separate bucket for staging
   STORAGE_TYPE: "s3"
-  STORAGE_S3_BUCKET: "nozzly-staging-images"
+  STORAGE_S3_BUCKET: "batchivo-staging-images"
   STORAGE_S3_REGION: "us-east-1"
-  STORAGE_S3_ENDPOINT: "http://minio.nozzly.svc.cluster.local:9000"
+  STORAGE_S3_ENDPOINT: "http://minio.batchivo.svc.cluster.local:9000"
   # Row-Level Security
   RLS_ENABLED: "false"

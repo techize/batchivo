@@ -2,15 +2,15 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: frontend-config
-  namespace: nozzly
+  namespace: batchivo
 data:
-  VITE_API_URL: "https://api.nozzly.app"
+  VITE_API_URL: "https://api.batchivo.app"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: nozzly
+  namespace: batchivo
 spec:
   selector:
     app: frontend
@@ -23,7 +23,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: nozzly
+  namespace: batchivo
 spec:
   replicas: 2
   selector:
@@ -43,7 +43,7 @@ spec:
       - name: harbor-creds
       containers:
       - name: frontend
-        image: registry.techize.co.uk/nozzly/nozzly-frontend:9c10b8866abaec50ec3a51ef5462dc0ced0c03ab
+        image: registry.techize.co.uk/batchivo/batchivo-frontend:9c10b8866abaec50ec3a51ef5462dc0ced0c03ab
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false

@@ -1,4 +1,4 @@
-# Nozzly Competitive Analysis Report
+# Batchivo Competitive Analysis Report
 
 **Date**: 2025-12-15
 **Version**: 1.0
@@ -8,11 +8,11 @@
 
 ## Executive Summary
 
-This report provides a critical analysis of Nozzly against the top 5 3D print farm management and filament tracking systems. The analysis reveals both strengths and significant gaps in Nozzly's current feature set.
+This report provides a critical analysis of Batchivo against the top 5 3D print farm management and filament tracking systems. The analysis reveals both strengths and significant gaps in Batchivo's current feature set.
 
 ### Key Findings
 
-| Area | Nozzly Status | Industry Standard |
+| Area | Batchivo Status | Industry Standard |
 |------|---------------|-------------------|
 | Filament Tracking | Good | Excellent |
 | Production Management | Good | Excellent |
@@ -22,7 +22,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Analytics | Basic | Advanced |
 | Multi-User | Present | Standard |
 
-**Overall Assessment**: Nozzly has strong foundations but lacks critical printer integration and automation features that competitors offer as standard.
+**Overall Assessment**: Batchivo has strong foundations but lacks critical printer integration and automation features that competitors offer as standard.
 
 ---
 
@@ -64,7 +64,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 1. Filament/Spool Tracking
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Spool inventory | Yes | Yes | Yes | Yes | Yes | Yes |
 | Weight tracking | Yes | Yes | Yes | Yes | Yes | Yes |
@@ -75,7 +75,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Low stock alerts | Yes | Yes | Yes | Yes | Yes | Yes |
 | Import/Export | Yes | Yes | No | No | Yes | No |
 
-**Critical Gap**: Nozzly lacks **real-time automatic filament tracking** from printers. Users must manually update weights after printing.
+**Critical Gap**: Batchivo lacks **real-time automatic filament tracking** from printers. Users must manually update weights after printing.
 
 **Competitor Advantage**: Spoolman, SimplyPrint, AutoFarm3D, and Printago all offer automatic weight deduction as prints progress by integrating with printer firmware.
 
@@ -83,7 +83,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 2. Printer Integration
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | OctoPrint integration | **No** | Yes | Yes | No | No | No |
 | Klipper/Moonraker | **No** | Yes | Yes | No | No | Yes |
@@ -94,7 +94,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Webcam streaming | **No** | No | **Yes** | **Yes** | No | **Yes** |
 | Printer health status | **No** | No | **Yes** | **Yes** | No | **Yes** |
 
-**Critical Gap**: Nozzly has **ZERO printer integration**. This is the most significant missing feature.
+**Critical Gap**: Batchivo has **ZERO printer integration**. This is the most significant missing feature.
 
 **Impact**: Without printer integration:
 - No automatic filament deduction
@@ -109,7 +109,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 3. Print Queue & Job Management
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Print queue | **No** | No | **Yes** | **Yes** | No | **Yes** |
 | Auto job routing | **No** | No | **Yes** | **Yes** | No | **Yes** |
@@ -119,7 +119,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | G-code storage | **No** | No | **Yes** | **Yes** | No | **Yes** |
 | Remote job submission | **No** | No | **Yes** | **Yes** | No | **Yes** |
 
-**Critical Gap**: Nozzly has **no print queue or job management system**.
+**Critical Gap**: Batchivo has **no print queue or job management system**.
 
 **Impact**: Users cannot:
 - Queue prints for automatic execution
@@ -133,7 +133,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 4. Production Run Tracking
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Production runs | **Yes** | No | Partial | Yes | **Yes** | No |
 | Multi-plate runs | **Yes** | No | No | No | No | No |
@@ -143,15 +143,15 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Printer configs per model | **Yes** | No | No | No | No | No |
 | Inventory deduction | **Yes** | Auto | Auto | Auto | Auto | Auto |
 
-**Strength**: Nozzly's production run system with multi-plate support and variance analysis is **industry-leading** for tracking what was printed and comparing planned vs actual usage.
+**Strength**: Batchivo's production run system with multi-plate support and variance analysis is **industry-leading** for tracking what was printed and comparing planned vs actual usage.
 
-**Note**: However, production runs in Nozzly are manually tracked, while competitors auto-track from actual print data.
+**Note**: However, production runs in Batchivo are manually tracked, while competitors auto-track from actual print data.
 
 ---
 
 ### 5. Cost Analysis & COGS
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Material cost per gram | Yes | Yes | Yes | Yes | **Yes** | Yes |
 | Component costs | Yes | No | No | No | **Yes** | No |
@@ -163,19 +163,19 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Profit margin analysis | Partial | No | No | No | **Yes** | No |
 | Break-even analysis | **No** | No | No | No | **Yes** | No |
 
-**Gap**: Nozzly lacks complete COGS tracking. PrintFarmHQ includes:
+**Gap**: Batchivo lacks complete COGS tracking. PrintFarmHQ includes:
 - Printer depreciation (cost per hour based on purchase price and expected life)
 - Software license allocation
 - Electricity costs
 - Failure rate buffer
 
-**Partial Strength**: Nozzly does track material + component + labor costs, which is better than most competitors except PrintFarmHQ.
+**Partial Strength**: Batchivo does track material + component + labor costs, which is better than most competitors except PrintFarmHQ.
 
 ---
 
 ### 6. AI & Automation Features
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | AI failure detection | **No** | No | **Yes** | **Yes** | No | No |
 | Spaghetti detection | **No** | No | **Yes** | **Yes** | No | No |
@@ -184,7 +184,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Automatic bed clearing | **No** | No | **Yes** | No | No | **Yes** |
 | Continuous printing | **No** | No | **Yes** | No | No | **Yes** |
 
-**Critical Gap**: Nozzly has **no AI or automation features**.
+**Critical Gap**: Batchivo has **no AI or automation features**.
 
 **Impact**: Users cannot:
 - Detect print failures automatically
@@ -198,7 +198,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 7. Analytics & Reporting
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Dashboard overview | Yes | No | **Yes** | **Yes** | **Yes** | Yes |
 | Production history | Yes | No | **Yes** | **Yes** | **Yes** | Yes |
@@ -210,7 +210,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Export reports | Partial | No | No | No | Yes | No |
 | Prometheus metrics | **No** | **Yes** | No | No | No | No |
 
-**Gap**: Nozzly analytics are basic compared to SimplyPrint and PrintFarmHQ.
+**Gap**: Batchivo analytics are basic compared to SimplyPrint and PrintFarmHQ.
 
 **Missing**:
 - Printer utilization metrics
@@ -222,7 +222,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 8. Order & E-Commerce Integration
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Order management | Yes | No | No | Yes | Yes | No |
 | Order → Production link | Partial | No | No | Yes | Yes | No |
@@ -232,7 +232,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Shipping workflow | Yes | No | No | Yes | No | No |
 | Customer database | **No** | No | No | Yes | Yes | No |
 
-**Partial Strength**: Nozzly has order management with Square payment integration.
+**Partial Strength**: Batchivo has order management with Square payment integration.
 
 **Gap**: No marketplace integrations (Etsy, eBay, Shopify). AutoFarm3D offers direct marketplace integration to automatically pull orders.
 
@@ -240,7 +240,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ### 9. Multi-User & Access Control
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Multi-user support | Yes | No | **Yes** | **Yes** | No | **Yes** |
 | Role-based access | Yes | No | **Yes** | No | No | **Yes** |
@@ -248,13 +248,13 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | Multi-tenant | **Yes** | No | No | No | No | No |
 | Audit trail | Partial | No | **Yes** | **Yes** | No | **Yes** |
 
-**Strength**: Nozzly's multi-tenant architecture is unique among competitors. Most competitors are single-tenant or per-account.
+**Strength**: Batchivo's multi-tenant architecture is unique among competitors. Most competitors are single-tenant or per-account.
 
 ---
 
 ### 10. Self-Hosting & Data Ownership
 
-| Feature | Nozzly | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
+| Feature | Batchivo | Spoolman | SimplyPrint | AutoFarm3D | PrintFarmHQ | Printago |
 |---------|--------|----------|-------------|------------|-------------|----------|
 | Self-hosted option | **Yes** | **Yes** | No | No | No | No |
 | Open source | No | **Yes** | No | No | No | No |
@@ -262,7 +262,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 | No subscription | **Yes** | **Yes** | No | No | No (beta) | Partial |
 | Offline capability | **Yes** | **Yes** | No | No | No | No |
 
-**Strength**: Nozzly and Spoolman are the only solutions that offer true self-hosting with complete data ownership.
+**Strength**: Batchivo and Spoolman are the only solutions that offer true self-hosting with complete data ownership.
 
 ---
 
@@ -296,7 +296,7 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 - G-code storage and management
 - Remote job submission
 
-**Why It Matters**: Print farms need queue management. Currently Nozzly cannot tell a printer what to print.
+**Why It Matters**: Print farms need queue management. Currently Batchivo cannot tell a printer what to print.
 
 **Recommendation**: Build queue system with material matching and priority support.
 
@@ -385,12 +385,12 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ## Strengths to Leverage
 
-### What Nozzly Does Better Than Competitors
+### What Batchivo Does Better Than Competitors
 
 1. **Multi-Plate Production Runs**: No competitor offers per-plate tracking with variance analysis
 2. **Printer-Specific Model Configs**: Unique feature for managing different print settings per printer
 3. **Multi-Tenant Architecture**: True multi-tenant SaaS design (others are single-tenant)
-4. **Self-Hosted + Full Control**: Only Nozzly and Spoolman offer this
+4. **Self-Hosted + Full Control**: Only Batchivo and Spoolman offer this
 5. **QR Code Scanning**: Mobile-friendly spool identification
 6. **SpoolmanDB Integration**: Community filament database support
 7. **Modern Tech Stack**: React + FastAPI + PostgreSQL is cleaner than legacy solutions
@@ -433,19 +433,19 @@ This report provides a critical analysis of Nozzly against the top 5 3D print fa
 
 ## Conclusion
 
-Nozzly has strong foundations with excellent production run tracking, multi-tenant architecture, and self-hosting capabilities. However, the **lack of printer integration is a critical gap** that must be addressed to compete with SimplyPrint, AutoFarm3D, and Printago.
+Batchivo has strong foundations with excellent production run tracking, multi-tenant architecture, and self-hosting capabilities. However, the **lack of printer integration is a critical gap** that must be addressed to compete with SimplyPrint, AutoFarm3D, and Printago.
 
 ### Immediate Priorities:
-1. **Printer Integration** - Without this, Nozzly is a manual tracking system
+1. **Printer Integration** - Without this, Batchivo is a manual tracking system
 2. **Print Queue** - Required for print farm operations
 3. **AI Failure Detection** - Expected feature in 2025+
 
 ### Competitive Position:
-- **vs Spoolman**: Nozzly offers production runs, costing, orders - Spoolman is filament-only
-- **vs SimplyPrint**: SimplyPrint has better printer integration, Nozzly has better production tracking
-- **vs AutoFarm3D**: AutoFarm3D has better automation, Nozzly has better costing
-- **vs PrintFarmHQ**: PrintFarmHQ has better COGS, Nozzly has better production runs
-- **vs Printago**: Printago has better queue management, Nozzly has better inventory
+- **vs Spoolman**: Batchivo offers production runs, costing, orders - Spoolman is filament-only
+- **vs SimplyPrint**: SimplyPrint has better printer integration, Batchivo has better production tracking
+- **vs AutoFarm3D**: AutoFarm3D has better automation, Batchivo has better costing
+- **vs PrintFarmHQ**: PrintFarmHQ has better COGS, Batchivo has better production runs
+- **vs Printago**: Printago has better queue management, Batchivo has better inventory
 
 ---
 

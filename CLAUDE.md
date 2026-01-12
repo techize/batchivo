@@ -1,4 +1,4 @@
-# Nozzly - 3D Print Business Management Platform
+# Batchivo - 3D Print Business Management Platform
 
 ## Critical Rules (MANDATORY)
 
@@ -48,11 +48,11 @@
 **Production:**
 | Action | Command |
 |--------|---------|
-| Check pods | `kubectl get pods -n nozzly` |
-| Backend logs | `kubectl logs -l app=backend -n nozzly -f` |
-| Frontend logs | `kubectl logs -l app=frontend -n nozzly -f` |
-| ArgoCD sync | `argocd app sync nozzly-app` |
-| Rollback | `argocd app rollback nozzly-app` |
+| Check pods | `kubectl get pods -n batchivo` |
+| Backend logs | `kubectl logs -l app=backend -n batchivo -f` |
+| Frontend logs | `kubectl logs -l app=frontend -n batchivo -f` |
+| ArgoCD sync | `argocd app sync batchivo-app` |
+| Rollback | `argocd app rollback batchivo-app` |
 
 ---
 
@@ -123,7 +123,7 @@ poetry run pytest --cov=app --cov-report=term-missing
 
 ### Before Starting Work
 1. `git pull origin main`
-2. Check ArgoCD status: `argocd app get nozzly-app`
+2. Check ArgoCD status: `argocd app get batchivo-app`
 3. Ensure tests pass: `cd backend && poetry run pytest`
 
 ### Making Changes
@@ -134,9 +134,9 @@ poetry run pytest --cov=app --cov-report=term-missing
 5. Woodpecker CI builds → ArgoCD syncs automatically
 
 ### After Deployment
-- Check pods: `kubectl get pods -n nozzly`
-- Watch logs: `kubectl logs -l app=backend -n nozzly -f`
-- Verify: `curl https://api.nozzly.app/health`
+- Check pods: `kubectl get pods -n batchivo`
+- Watch logs: `kubectl logs -l app=backend -n batchivo -f`
+- Verify: `curl https://api.batchivo.app/health`
 
 ---
 
@@ -149,7 +149,7 @@ poetry run pytest --cov=app --cov-report=term-missing
 - Production runs & analytics
 
 **URLs:**
-- **Admin/API**: www.nozzly.app / api.nozzly.app (Cloudflare Tunnel)
+- **Admin/API**: www.batchivo.app / api.batchivo.app (Cloudflare Tunnel)
 - **Shop Frontend**: test.mystmereforge.co.uk (future: www.mystmereforge.co.uk)
 - **Shop Repo**: ~/Repos/mystmereforge-shop
 
@@ -161,7 +161,7 @@ poetry run pytest --cov=app --cov-report=term-missing
 
 ## Payment Integration (Square)
 
-**Credentials stored in:** `kubectl get secret square-credentials -n nozzly`
+**Credentials stored in:** `kubectl get secret square-credentials -n batchivo`
 
 | Environment Variable | Description |
 |---------------------|-------------|
@@ -173,14 +173,14 @@ poetry run pytest --cov=app --cov-report=term-missing
 
 **Webhook Configuration:**
 - **Subscription ID**: `wbhk_f1b36f197f714e9085e6ded8bc6fdcd9`
-- **Endpoint**: `https://api.nozzly.app/api/v1/payments/webhooks/square`
+- **Endpoint**: `https://api.batchivo.app/api/v1/payments/webhooks/square`
 - **Events**: `payment.created`, `payment.updated`, `refund.created`, `refund.updated`
 
 **To update credentials:**
 ```bash
 # Delete existing and recreate
-kubectl delete secret square-credentials -n nozzly
-kubectl create secret generic square-credentials -n nozzly \
+kubectl delete secret square-credentials -n batchivo
+kubectl create secret generic square-credentials -n batchivo \
   --from-literal=SQUARE_ACCESS_TOKEN=<token> \
   --from-literal=SQUARE_APP_ID=<app_id> \
   --from-literal=SQUARE_ENVIRONMENT=<sandbox|production> \
@@ -194,7 +194,7 @@ kubectl create secret generic square-credentials -n nozzly \
 
 ## Email Integration (Resend)
 
-**Credentials stored in:** `kubectl get secret resend-credentials -n nozzly`
+**Credentials stored in:** `kubectl get secret resend-credentials -n batchivo`
 
 | Environment Variable | Description |
 |---------------------|-------------|
@@ -208,10 +208,10 @@ kubectl create secret generic square-credentials -n nozzly \
 
 **To update credentials:**
 ```bash
-kubectl delete secret resend-credentials -n nozzly
-kubectl create secret generic resend-credentials -n nozzly \
+kubectl delete secret resend-credentials -n batchivo
+kubectl create secret generic resend-credentials -n batchivo \
   --from-literal=RESEND_API_KEY=<api_key>
-kubectl rollout restart deployment/backend -n nozzly
+kubectl rollout restart deployment/backend -n batchivo
 ```
 
 **Status:** Production credentials configured (Dec 2025). Sends order confirmation emails automatically.
@@ -233,18 +233,18 @@ For comprehensive information, see:
 
 **Pod not starting:**
 ```bash
-kubectl describe pod <pod-name> -n nozzly
-kubectl logs <pod-name> -n nozzly --previous
+kubectl describe pod <pod-name> -n batchivo
+kubectl logs <pod-name> -n batchivo --previous
 ```
 
 **Database issues:**
 ```bash
-kubectl exec -it postgres-0 -n nozzly -- psql -U nozzly -d nozzly
+kubectl exec -it postgres-0 -n batchivo -- psql -U batchivo -d batchivo
 ```
 
 **ArgoCD out of sync:**
 ```bash
-argocd app sync nozzly-app --prune
+argocd app sync batchivo-app --prune
 ```
 
 ---

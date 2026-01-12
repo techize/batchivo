@@ -514,7 +514,7 @@ async def create_production_run(token: str, items: list, materials: list):
     async with httpx.AsyncClient() as client:
         # Create run
         response = await client.post(
-            "https://api.nozzly.app/api/v1/production-runs",
+            "https://api.batchivo.app/api/v1/production-runs",
             json={
                 "notes": "Batch production",
                 "items": items,
@@ -528,7 +528,7 @@ async def create_production_run(token: str, items: list, materials: list):
 async def complete_run(token: str, run_id: str):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"https://api.nozzly.app/api/v1/production-runs/{run_id}/complete",
+            f"https://api.batchivo.app/api/v1/production-runs/{run_id}/complete",
             headers={"Authorization": f"Bearer {token}"}
         )
         return response.json()
@@ -539,7 +539,7 @@ async def complete_run(token: str, run_id: str):
 ```javascript
 async function recordMaterialUsage(runId, materialId, beforeWeight, afterWeight, token) {
   const response = await fetch(
-    `https://api.nozzly.app/api/v1/production-runs/${runId}/materials/${materialId}`,
+    `https://api.batchivo.app/api/v1/production-runs/${runId}/materials/${materialId}`,
     {
       method: "PATCH",
       headers: {
@@ -560,7 +560,7 @@ async function recordMaterialUsage(runId, materialId, beforeWeight, afterWeight,
 
 ```bash
 # First, update material with actual weights
-curl -X PATCH "https://api.nozzly.app/api/v1/production-runs/RUN_ID/materials/MATERIAL_ID" \
+curl -X PATCH "https://api.batchivo.app/api/v1/production-runs/RUN_ID/materials/MATERIAL_ID" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -569,6 +569,6 @@ curl -X PATCH "https://api.nozzly.app/api/v1/production-runs/RUN_ID/materials/MA
   }'
 
 # Then complete the run
-curl -X POST "https://api.nozzly.app/api/v1/production-runs/RUN_ID/complete" \
+curl -X POST "https://api.batchivo.app/api/v1/production-runs/RUN_ID/complete" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```

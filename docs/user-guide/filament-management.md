@@ -85,7 +85,7 @@ Use the controls at the top to:
 
 ## SpoolmanDB Integration
 
-Nozzly integrates with [SpoolmanDB](https://github.com/Donkie/SpoolmanDB), a community database of filament specifications.
+Batchivo integrates with [SpoolmanDB](https://github.com/Donkie/SpoolmanDB), a community database of filament specifications.
 
 ### Using SpoolmanDB
 
@@ -117,7 +117,7 @@ After each print or production run, update your spool weights for accurate inven
 
 ### Weight Update from Production Runs
 
-When you complete a production run, Nozzly automatically offers to update spool weights based on actual material consumption. This is the most accurate method.
+When you complete a production run, Batchivo automatically offers to update spool weights based on actual material consumption. This is the most accurate method.
 
 ### Tips for Accurate Weighing
 
@@ -213,7 +213,7 @@ Scan a spool's QR code to:
 
 ## Material Types
 
-Nozzly comes with standard material types pre-configured:
+Batchivo comes with standard material types pre-configured:
 
 | Material | Description |
 |----------|-------------|

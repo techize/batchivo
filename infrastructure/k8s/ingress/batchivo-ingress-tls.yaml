@@ -1,22 +1,22 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nozzly-ingress
-  namespace: nozzly
+  name: batchivo-ingress
+  namespace: batchivo
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: nozzly-body-size@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: batchivo-body-size@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
   - hosts:
-    - nozzly.app
-    - api.nozzly.app
-    secretName: nozzly-tls
+    - batchivo.app
+    - api.batchivo.app
+    secretName: batchivo-tls
   rules:
-  - host: nozzly.app
+  - host: batchivo.app
     http:
       paths:
       - path: /api
@@ -40,7 +40,7 @@ spec:
             name: frontend
             port:
               number: 8080
-  - host: api.nozzly.app
+  - host: api.batchivo.app
     http:
       paths:
       - path: /

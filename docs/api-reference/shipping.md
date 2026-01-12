@@ -238,7 +238,7 @@ async def get_checkout_shipping(postcode: str, cart_total_pence: int, weight_gra
     async with httpx.AsyncClient() as client:
         # Validate postcode first
         validation = await client.get(
-            f"https://api.nozzly.app/api/v1/shipping/validate-postcode/{postcode}"
+            f"https://api.batchivo.app/api/v1/shipping/validate-postcode/{postcode}"
         )
 
         if not validation.json()["is_valid"]:
@@ -246,7 +246,7 @@ async def get_checkout_shipping(postcode: str, cart_total_pence: int, weight_gra
 
         # Get shipping rates
         rates = await client.post(
-            "https://api.nozzly.app/api/v1/shipping/rates",
+            "https://api.batchivo.app/api/v1/shipping/rates",
             json={
                 "postcode": postcode,
                 "weight_grams": weight_grams,
@@ -262,7 +262,7 @@ async def get_checkout_shipping(postcode: str, cart_total_pence: int, weight_gra
 ```javascript
 async function getShippingOptions(postcode, cartTotal, weight) {
   const response = await fetch(
-    "https://api.nozzly.app/api/v1/shipping/rates",
+    "https://api.batchivo.app/api/v1/shipping/rates",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -290,7 +290,7 @@ async function getShippingOptions(postcode, cartTotal, weight) {
 ### cURL: Validate Postcode
 
 ```bash
-curl -X GET "https://api.nozzly.app/api/v1/shipping/validate-postcode/SW1A%201AA"
+curl -X GET "https://api.batchivo.app/api/v1/shipping/validate-postcode/SW1A%201AA"
 ```
 
 ---

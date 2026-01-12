@@ -1,7 +1,7 @@
-# Nozzly Current Session
+# Batchivo Current Session
 
 **Last Updated**: 2025-11-17 22:10 GMT
-**Project**: Nozzly (nozzly.app)
+**Project**: Batchivo (batchivo.app)
 **Current Focus**: Authentication Issues & Production Runs Deployment
 
 ---
@@ -113,9 +113,9 @@
 
 - **Cluster**: k3s at 192.168.98.138
 - **Registry**: 192.168.98.138:30500 (HTTP)
-- **Domain**: nozzly.app (Cloudflare Tunnel)
-- **Database**: PostgreSQL (postgres-0 pod, nozzly namespace)
-- **Auth**: Authentik at auth.nozzly.app
+- **Domain**: batchivo.app (Cloudflare Tunnel)
+- **Database**: PostgreSQL (postgres-0 pod, batchivo namespace)
+- **Auth**: Authentik at auth.batchivo.app
 
 ---
 
@@ -146,21 +146,21 @@
 **Backend Build & Deploy**:
 ```bash
 cd backend
-docker buildx build --platform linux/amd64 -t nozzly-backend:vX.X --load .
-docker tag nozzly-backend:vX.X 192.168.98.138:30500/nozzly-backend:vX.X
-docker push 192.168.98.138:30500/nozzly-backend:vX.X
-kubectl set image deployment/backend backend=192.168.98.138:30500/nozzly-backend:vX.X -n nozzly
-kubectl rollout status deployment/backend -n nozzly --timeout=120s
+docker buildx build --platform linux/amd64 -t batchivo-backend:vX.X --load .
+docker tag batchivo-backend:vX.X 192.168.98.138:30500/batchivo-backend:vX.X
+docker push 192.168.98.138:30500/batchivo-backend:vX.X
+kubectl set image deployment/backend backend=192.168.98.138:30500/batchivo-backend:vX.X -n batchivo
+kubectl rollout status deployment/backend -n batchivo --timeout=120s
 ```
 
 **Frontend Build & Deploy**:
 ```bash
 cd frontend
-docker buildx build --platform linux/amd64 -t nozzly-frontend:vX.X --load .
-docker tag nozzly-frontend:vX.X 192.168.98.138:30500/nozzly-frontend:vX.X
-docker push 192.168.98.138:30500/nozzly-frontend:vX.X
-kubectl set image deployment/frontend frontend=192.168.98.138:30500/nozzly-frontend:vX.X -n nozzly
-kubectl rollout status deployment/frontend -n nozzly --timeout=120s
+docker buildx build --platform linux/amd64 -t batchivo-frontend:vX.X --load .
+docker tag batchivo-frontend:vX.X 192.168.98.138:30500/batchivo-frontend:vX.X
+docker push 192.168.98.138:30500/batchivo-frontend:vX.X
+kubectl set image deployment/frontend frontend=192.168.98.138:30500/batchivo-frontend:vX.X -n batchivo
+kubectl rollout status deployment/frontend -n batchivo --timeout=120s
 ```
 
 ---
@@ -174,4 +174,4 @@ kubectl rollout status deployment/frontend -n nozzly --timeout=120s
 4. Test page refresh doesn't log user out
 5. Then move to signup button fix
 
-**Full Session Log**: `/Users/jonathan/Repos/2ndBrain/Sessions/2025-11-17-nozzly-production-runs-deployment-and-fixes.md`
+**Full Session Log**: `/Users/jonathan/Repos/2ndBrain/Sessions/2025-11-17-batchivo-production-runs-deployment-and-fixes.md`

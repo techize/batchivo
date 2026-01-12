@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Kubernetes cluster with `nozzly` namespace
+- Kubernetes cluster with `batchivo` namespace
 - PostgreSQL database deployed (see `../postgres/`)
 - Redis deployed (see `../redis/`)
 
@@ -40,8 +40,8 @@
 
 6. **Verify**:
    ```bash
-   kubectl get secret backend-secrets -n nozzly
-   kubectl describe secret backend-secrets -n nozzly
+   kubectl get secret backend-secrets -n batchivo
+   kubectl describe secret backend-secrets -n batchivo
    ```
 
 ### Security Best Practices
@@ -65,8 +65,8 @@ kubectl apply -f secrets.yaml
 kubectl apply -f deployment.yaml
 
 # 3. Verify
-kubectl get pods -n nozzly
-kubectl logs -n nozzly -l app=backend
+kubectl get pods -n batchivo
+kubectl logs -n batchivo -l app=backend
 ```
 
 ### Updates
@@ -76,23 +76,23 @@ kubectl logs -n nozzly -l app=backend
 kubectl apply -f deployment.yaml
 
 # Verify rollout
-kubectl rollout status deployment/backend -n nozzly
+kubectl rollout status deployment/backend -n batchivo
 
 # View logs
-kubectl logs -n nozzly -l app=backend --tail=100 -f
+kubectl logs -n batchivo -l app=backend --tail=100 -f
 ```
 
 ### Rolling Back
 
 ```bash
 # View rollout history
-kubectl rollout history deployment/backend -n nozzly
+kubectl rollout history deployment/backend -n batchivo
 
 # Rollback to previous version
-kubectl rollout undo deployment/backend -n nozzly
+kubectl rollout undo deployment/backend -n batchivo
 
 # Rollback to specific revision
-kubectl rollout undo deployment/backend -n nozzly --to-revision=2
+kubectl rollout undo deployment/backend -n batchivo --to-revision=2
 ```
 
 ## Troubleshooting
@@ -101,40 +101,40 @@ kubectl rollout undo deployment/backend -n nozzly --to-revision=2
 
 ```bash
 # Check pod status
-kubectl get pods -n nozzly
+kubectl get pods -n batchivo
 
 # Describe pod for events
-kubectl describe pod <pod-name> -n nozzly
+kubectl describe pod <pod-name> -n batchivo
 
 # Check logs
-kubectl logs <pod-name> -n nozzly
+kubectl logs <pod-name> -n batchivo
 
 # Check previous container logs (if crashed)
-kubectl logs <pod-name> -n nozzly --previous
+kubectl logs <pod-name> -n batchivo --previous
 ```
 
 ### Database connection issues
 
 ```bash
 # Test database connectivity from pod
-kubectl exec -it <pod-name> -n nozzly -- psql $DATABASE_URL -c "SELECT 1"
+kubectl exec -it <pod-name> -n batchivo -- psql $DATABASE_URL -c "SELECT 1"
 
 # Check if postgres service is running
-kubectl get svc postgres -n nozzly
-kubectl get pods -n nozzly -l app=postgres
+kubectl get svc postgres -n batchivo
+kubectl get pods -n batchivo -l app=postgres
 ```
 
 ### Secret not found errors
 
 ```bash
 # Verify secret exists
-kubectl get secret backend-secrets -n nozzly
+kubectl get secret backend-secrets -n batchivo
 
 # If missing, create it (see "Creating Secrets" above)
 kubectl apply -f secrets.yaml
 
 # Restart deployment
-kubectl rollout restart deployment/backend -n nozzly
+kubectl rollout restart deployment/backend -n batchivo
 ```
 
 ## Database Credentials
@@ -145,21 +145,21 @@ kubectl rollout restart deployment/backend -n nozzly
 
 ```bash
 # Create postgres-secret with secure password
-kubectl create secret generic postgres-secret -n nozzly \
-  --from-literal=POSTGRES_USER=nozzly \
+kubectl create secret generic postgres-secret -n batchivo \
+  --from-literal=POSTGRES_USER=batchivo \
   --from-literal=POSTGRES_PASSWORD=$(openssl rand -base64 32) \
-  --from-literal=POSTGRES_DB=nozzly
+  --from-literal=POSTGRES_DB=batchivo
 
 # Or update existing secret
-kubectl delete secret postgres-secret -n nozzly
-kubectl create secret generic postgres-secret -n nozzly \
-  --from-literal=POSTGRES_USER=nozzly \
+kubectl delete secret postgres-secret -n batchivo
+kubectl create secret generic postgres-secret -n batchivo \
+  --from-literal=POSTGRES_USER=batchivo \
   --from-literal=POSTGRES_PASSWORD=<YOUR_NEW_PASSWORD> \
-  --from-literal=POSTGRES_DB=nozzly
+  --from-literal=POSTGRES_DB=batchivo
 
 # Restart deployments to pick up new credentials
-kubectl rollout restart statefulset/postgres -n nozzly
-kubectl rollout restart deployment/backend -n nozzly
+kubectl rollout restart statefulset/postgres -n batchivo
+kubectl rollout restart deployment/backend -n batchivo
 ```
 
 The `DATABASE_URL` is automatically constructed from:
@@ -200,7 +200,7 @@ The deployment includes liveness and readiness probes:
 
 Check health endpoint:
 ```bash
-kubectl port-forward svc/backend 8000:8000 -n nozzly
+kubectl port-forward svc/backend 8000:8000 -n batchivo
 curl http://localhost:8000/health
 ```
 
@@ -221,7 +221,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: backend-hpa
-  namespace: nozzly
+  namespace: batchivo
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -241,5 +241,5 @@ spec:
 Apply with:
 ```bash
 kubectl apply -f hpa.yaml
-kubectl get hpa -n nozzly
+kubectl get hpa -n batchivo
 ```

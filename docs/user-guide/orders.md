@@ -1,6 +1,6 @@
 # Orders
 
-Orders represent customer purchases. Nozzly helps you track orders from receipt through fulfillment and delivery.
+Orders represent customer purchases. Batchivo helps you track orders from receipt through fulfillment and delivery.
 
 ---
 
@@ -163,7 +163,7 @@ From the order list, you can perform quick actions without opening the detail pa
 Orders can come from:
 
 ### Manual Entry
-Create orders directly in Nozzly for:
+Create orders directly in Batchivo for:
 - Phone orders
 - In-person sales
 - Custom requests
@@ -176,7 +176,7 @@ Create orders directly in Nozzly for:
 - WooCommerce
 
 ### Shop Frontend
-Orders placed through your Nozzly shop (if configured).
+Orders placed through your Batchivo shop (if configured).
 
 ---
 

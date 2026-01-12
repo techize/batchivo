@@ -1,12 +1,12 @@
 # Implementation Phases
 
-**Nozzly - Detailed Development Roadmap**
+**Batchivo - Detailed Development Roadmap**
 
 ---
 
 ## Overview
 
-This document provides a phase-by-phase implementation plan for Nozzly. Each phase includes:
+This document provides a phase-by-phase implementation plan for Batchivo. Each phase includes:
 
 - **Goals**: What we're building
 - **Deliverables**: Concrete outputs
@@ -709,7 +709,7 @@ This document provides a phase-by-phase implementation plan for Nozzly. Each pha
 #### Backend - Services
 - [ ] Update `app/services/qr_generator.py`
   - `generate_qr_code(spool_id, tenant_id)` → base64 image
-  - `generate_deep_link(spool_id)` → URL (nozzly.app/spool/update/FIL-001)
+  - `generate_deep_link(spool_id)` → URL (batchivo.app/spool/update/FIL-001)
 
 #### Backend - API Endpoints
 - [ ] `GET /api/v1/spools/{id}/qr` - Get QR code image
@@ -870,7 +870,7 @@ This document provides a phase-by-phase implementation plan for Nozzly. Each pha
 - [ ] Create `app/integrations/etsy.py`
   - OAuth setup
   - Fetch orders endpoint
-  - Map Etsy order → Nozzly order
+  - Map Etsy order → Batchivo order
 - [ ] Background job: Sync Etsy orders daily
 
 **eBay Integration**
@@ -882,7 +882,7 @@ This document provides a phase-by-phase implementation plan for Nozzly. Each pha
 **Shopify Integration**
 - [ ] Create `app/integrations/shopify.py`
   - Webhook receiver (orders/create)
-  - Map Shopify order → Nozzly order
+  - Map Shopify order → Batchivo order
 
 **Slicer Integration**
 - [ ] Create `app/integrations/gcode_parser.py`

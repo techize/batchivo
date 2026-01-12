@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Nozzly Database Performance - PostgreSQL query metrics, connection pools, and performance analysis",
+  "description": "Batchivo Database Performance - PostgreSQL query metrics, connection pools, and performance analysis",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -988,7 +988,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 38,
-  "tags": ["nozzly", "database", "postgresql"],
+  "tags": ["batchivo", "database", "postgresql"],
   "templating": {
     "list": [
       {
@@ -1017,8 +1017,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Nozzly - Database Performance",
-  "uid": "nozzly-db-perf",
+  "title": "Batchivo - Database Performance",
+  "uid": "batchivo-db-perf",
   "version": 1,
   "weekStart": ""
 }

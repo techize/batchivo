@@ -1,12 +1,12 @@
-# Nozzly User Guide - Overview
+# Batchivo User Guide - Overview
 
-Welcome to Nozzly, a comprehensive 3D print business management platform designed to help you track inventory, manage production, and grow your 3D printing business.
+Welcome to Batchivo, a comprehensive 3D print business management platform designed to help you track inventory, manage production, and grow your 3D printing business.
 
 ---
 
-## What is Nozzly?
+## What is Batchivo?
 
-Nozzly is an all-in-one solution for 3D printing businesses that need to:
+Batchivo is an all-in-one solution for 3D printing businesses that need to:
 
 - **Track filament inventory** - Know exactly what materials you have, how much is left, and when to reorder
 - **Manage product catalog** - Create products with accurate cost calculations based on materials and components
@@ -74,7 +74,7 @@ Your 3D printers. Track:
 
 ## Navigation
 
-Nozzly's interface is organized into logical sections accessible from the top navigation bar:
+Batchivo's interface is organized into logical sections accessible from the top navigation bar:
 
 ### Dashboard
 Your home base showing:
@@ -159,7 +159,7 @@ Your home base showing:
 
 - **API Documentation**: See [API Reference](../api-reference/overview.md)
 - **Workflows**: Step-by-step guides in [Workflows](../workflows/)
-- **Report Issues**: GitHub Issues at [nozzly.app repository](https://github.com/techize/nozzly.app)
+- **Report Issues**: GitHub Issues at [batchivo.app repository](https://github.com/techize/batchivo.app)
 
 ---
 

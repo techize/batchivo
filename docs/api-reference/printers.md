@@ -189,7 +189,7 @@ import httpx
 async def get_active_printers(token: str):
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "https://api.nozzly.app/api/v1/printers",
+            "https://api.batchivo.app/api/v1/printers",
             params={"is_active": True},
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -201,7 +201,7 @@ async def get_active_printers(token: str):
 ```javascript
 async function createPrinter(printerData, token) {
   const response = await fetch(
-    "https://api.nozzly.app/api/v1/printers",
+    "https://api.batchivo.app/api/v1/printers",
     {
       method: "POST",
       headers: {
@@ -218,7 +218,7 @@ async function createPrinter(printerData, token) {
 ### cURL: Update Printer
 
 ```bash
-curl -X PUT "https://api.nozzly.app/api/v1/printers/PRINTER_ID" \
+curl -X PUT "https://api.batchivo.app/api/v1/printers/PRINTER_ID" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

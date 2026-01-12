@@ -1,21 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nozzly-app
+  name: batchivo-app
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/techize/nozzly.app.git
+    repoURL: https://github.com/techize/batchivo.app.git
     targetRevision: main
     path: infrastructure/k8s
     directory:
       recurse: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: nozzly
+    namespace: batchivo
   syncPolicy:
     automated:
       prune: true      # Remove resources not in git

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Security hardening for nozzly.app has been completed successfully. All critical security vulnerabilities have been addressed, testing infrastructure is in place with 60% backend coverage, and CI pipeline is operational.
+Security hardening for batchivo.app has been completed successfully. All critical security vulnerabilities have been addressed, testing infrastructure is in place with 60% backend coverage, and CI pipeline is operational.
 
 **Key Achievements**:
 - ✅ 60% backend test coverage (exceeding 50% target)
@@ -32,11 +32,11 @@ Security hardening for nozzly.app has been completed successfully. All critical 
 
 **Evidence**:
 ```bash
-$ kubectl get secret -n nozzly backend-secrets
+$ kubectl get secret -n batchivo backend-secrets
 NAME              TYPE     DATA   AGE
 backend-secrets   Opaque   4      34h
 
-$ kubectl get pods -n nozzly -l app=backend
+$ kubectl get pods -n batchivo -l app=backend
 NAME                       READY   STATUS    RESTARTS   AGE
 backend-5bbc9bc7d8-ptvgf   1/1     Running   0          19h
 backend-5bbc9bc7d8-tgbxh   1/1     Running   0          28h
@@ -182,8 +182,8 @@ Time: 15.95s
 7. ✅ **security-scan** - Trivy vulnerability scanning
 
 **Registry**: Local registry at `192.168.98.138:30500`
-- Images: `nozzly-backend:latest`, `nozzly-backend:<sha>`
-- Images: `nozzly-frontend:latest`, `nozzly-frontend:<sha>`
+- Images: `batchivo-backend:latest`, `batchivo-backend:<sha>`
+- Images: `batchivo-frontend:latest`, `batchivo-frontend:<sha>`
 
 **Triggers**:
 - Push to `main` or `develop` branches
@@ -209,7 +209,7 @@ Time: 15.95s
 ```bash
 kubectl apply -f infrastructure/k8s/backend/
 kubectl apply -f infrastructure/k8s/frontend/
-kubectl rollout restart deployment/backend -n nozzly
+kubectl rollout restart deployment/backend -n batchivo
 ```
 
 **To Enable CD (Future Work)**:

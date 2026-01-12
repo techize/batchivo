@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-# Nozzly Deployment Script for k3s
+# Batchivo Deployment Script for k3s
 # This script builds Docker images and deploys to k3s cluster
 
-echo "🚀 Nozzly Deployment Script"
+echo "🚀 Batchivo Deployment Script"
 echo "============================"
 echo ""
 
@@ -24,14 +24,14 @@ echo ""
 # Build backend
 echo "Building backend image..."
 cd backend
-docker build -t nozzly-backend:latest .
+docker build -t batchivo-backend:latest .
 echo "✅ Backend image built"
 echo ""
 
 # Build frontend
 echo "Building frontend image..."
 cd ../frontend
-docker build -t nozzly-frontend:latest .
+docker build -t batchivo-frontend:latest .
 echo "✅ Frontend image built"
 echo ""
 
@@ -44,8 +44,8 @@ echo ""
 # For k3s, we can import images directly
 if command -v k3s &> /dev/null; then
     echo "Importing images into k3s..."
-    docker save nozzly-backend:latest | sudo k3s ctr images import -
-    docker save nozzly-frontend:latest | sudo k3s ctr images import -
+    docker save batchivo-backend:latest | sudo k3s ctr images import -
+    docker save batchivo-frontend:latest | sudo k3s ctr images import -
     echo "✅ Images loaded into k3s"
 else
     echo "⚠️  k3s command not found - assuming images are in a registry"
@@ -62,7 +62,7 @@ echo ""
 echo "🗄️  Deploying PostgreSQL..."
 kubectl apply -f infrastructure/k8s/postgres/statefulset.yaml
 echo "⏳ Waiting for PostgreSQL to be ready..."
-kubectl wait --for=condition=ready pod -l app=postgres -n nozzly --timeout=120s
+kubectl wait --for=condition=ready pod -l app=postgres -n batchivo --timeout=120s
 echo "✅ PostgreSQL deployed and ready"
 echo ""
 
@@ -70,7 +70,7 @@ echo ""
 echo "💾 Deploying Redis..."
 kubectl apply -f infrastructure/k8s/redis/deployment.yaml
 echo "⏳ Waiting for Redis to be ready..."
-kubectl wait --for=condition=ready pod -l app=redis -n nozzly --timeout=60s
+kubectl wait --for=condition=ready pod -l app=redis -n batchivo --timeout=60s
 echo "✅ Redis deployed and ready"
 echo ""
 
@@ -78,7 +78,7 @@ echo ""
 echo "⚙️  Deploying Backend..."
 kubectl apply -f infrastructure/k8s/backend/deployment.yaml
 echo "⏳ Waiting for backend to be ready..."
-kubectl wait --for=condition=ready pod -l app=backend -n nozzly --timeout=120s
+kubectl wait --for=condition=ready pod -l app=backend -n batchivo --timeout=120s
 echo "✅ Backend deployed and ready"
 echo ""
 
@@ -86,7 +86,7 @@ echo ""
 echo "🎨 Deploying Frontend..."
 kubectl apply -f infrastructure/k8s/frontend/deployment.yaml
 echo "⏳ Waiting for frontend to be ready..."
-kubectl wait --for=condition=ready pod -l app=frontend -n nozzly --timeout=120s
+kubectl wait --for=condition=ready pod -l app=frontend -n batchivo --timeout=120s
 echo "✅ Frontend deployed and ready"
 echo ""
 
@@ -108,11 +108,11 @@ echo "  ✅ Frontend (2 replicas)"
 echo "  ✅ Ingress"
 echo ""
 echo "Check status with:"
-echo "  kubectl get pods -n nozzly"
+echo "  kubectl get pods -n batchivo"
 echo ""
 echo "View logs with:"
-echo "  kubectl logs -f deployment/backend -n nozzly"
-echo "  kubectl logs -f deployment/frontend -n nozzly"
+echo "  kubectl logs -f deployment/backend -n batchivo"
+echo "  kubectl logs -f deployment/frontend -n batchivo"
 echo ""
 echo "⚠️  Next steps:"
 echo "  1. Configure Cloudflare Tunnel to point to your k3s ingress"

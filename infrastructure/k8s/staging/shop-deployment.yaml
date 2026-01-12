@@ -1,12 +1,12 @@
 # Staging deployment for mystmereforge-shop frontend
-# Note: Current image uses production API URL (https://api.nozzly.app)
+# Note: Current image uses production API URL (https://api.batchivo.app)
 # For true staging isolation, CI needs to build staging-specific images
 # This allows testing frontend changes while API calls go to production
 apiVersion: v1
 kind: Service
 metadata:
   name: mystmereforge-shop
-  namespace: nozzly-staging
+  namespace: batchivo-staging
   labels:
     app: mystmereforge-shop
     environment: staging
@@ -24,7 +24,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mystmereforge-shop
-  namespace: nozzly-staging
+  namespace: batchivo-staging
   labels:
     app: mystmereforge-shop
     environment: staging
@@ -49,7 +49,7 @@ spec:
       containers:
       - name: shop
         # Uses same image as production - API URL baked in at build time
-        # TODO: Update CI to build staging images with VITE_NOZZLY_API_URL=https://staging.nozzly.app
+        # TODO: Update CI to build staging images with VITE_BATCHIVO_API_URL=https://staging.batchivo.app
         image: registry.techize.co.uk/mystmereforge/mystmereforge-shop:1666af2c4e703a51314d27ab14e7c9c8b189531e-staging
         imagePullPolicy: Always
         securityContext:

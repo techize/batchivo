@@ -1,12 +1,12 @@
-# Cloudflare Tunnel Setup for Nozzly
+# Cloudflare Tunnel Setup for Batchivo
 
-This guide explains how to configure Cloudflare Tunnel to expose your k3s cluster to the internet at nozzly.app.
+This guide explains how to configure Cloudflare Tunnel to expose your k3s cluster to the internet at batchivo.app.
 
 ## Prerequisites
 
-- Cloudflare account with `nozzly.app` domain
+- Cloudflare account with `batchivo.app` domain
 - `cloudflared` installed on the machine running k3s
-- k3s cluster running with Nozzly deployed
+- k3s cluster running with Batchivo deployed
 
 ## Step 1: Install cloudflared
 
@@ -30,7 +30,7 @@ This will open a browser window to authorize cloudflared with your Cloudflare ac
 ## Step 3: Create a Tunnel
 
 ```bash
-cloudflared tunnel create nozzly
+cloudflared tunnel create batchivo
 ```
 
 This creates a tunnel and saves credentials to `~/.cloudflared/<tunnel-id>.json`.
@@ -53,12 +53,12 @@ tunnel: <your-tunnel-id>
 credentials-file: /Users/jonathan/.cloudflared/<your-tunnel-id>.json
 
 ingress:
-  # Frontend - nozzly.app
-  - hostname: nozzly.app
+  # Frontend - batchivo.app
+  - hostname: batchivo.app
     service: http://localhost:80
 
-  # Backend API - api.nozzly.app
-  - hostname: api.nozzly.app
+  # Backend API - api.batchivo.app
+  - hostname: api.batchivo.app
     service: http://localhost:80
 
   # Catch-all rule (required)
@@ -72,33 +72,33 @@ ingress:
 Route DNS to your tunnel:
 
 ```bash
-cloudflared tunnel route dns nozzly nozzly.app
-cloudflared tunnel route dns nozzly api.nozzly.app
+cloudflared tunnel route dns batchivo batchivo.app
+cloudflared tunnel route dns batchivo api.batchivo.app
 ```
 
 Or manually in Cloudflare Dashboard:
-1. Go to DNS settings for `nozzly.app`
-2. Add CNAME record: `nozzly.app` → `<tunnel-id>.cfargotunnel.com`
-3. Add CNAME record: `api.nozzly.app` → `<tunnel-id>.cfargotunnel.com`
+1. Go to DNS settings for `batchivo.app`
+2. Add CNAME record: `batchivo.app` → `<tunnel-id>.cfargotunnel.com`
+3. Add CNAME record: `api.batchivo.app` → `<tunnel-id>.cfargotunnel.com`
 
 ## Step 6: Update K3s Ingress
 
 Make sure your k3s ingress is listening for the correct hostnames. Check:
 
 ```bash
-kubectl get ingress -n nozzly
+kubectl get ingress -n batchivo
 ```
 
 The ingress should have rules for:
-- `nozzly.app` → frontend service
-- `api.nozzly.app` → backend service
+- `batchivo.app` → frontend service
+- `api.batchivo.app` → backend service
 
 ## Step 7: Run the Tunnel
 
 ### Option A: Run in Foreground (Testing)
 
 ```bash
-cloudflared tunnel run nozzly
+cloudflared tunnel run batchivo
 ```
 
 ### Option B: Run as System Service (Production)
@@ -127,23 +127,23 @@ sudo journalctl -u cloudflared -f
 
 1. **Check tunnel status** in Cloudflare Dashboard:
    - Go to Zero Trust → Access → Tunnels
-   - You should see "nozzly" tunnel with status "HEALTHY"
+   - You should see "batchivo" tunnel with status "HEALTHY"
 
 2. **Test DNS resolution**:
    ```bash
-   dig nozzly.app
-   dig api.nozzly.app
+   dig batchivo.app
+   dig api.batchivo.app
    ```
 
 3. **Test HTTP access**:
    ```bash
-   curl https://nozzly.app
-   curl https://api.nozzly.app/health
+   curl https://batchivo.app
+   curl https://api.batchivo.app/health
    ```
 
 4. **Open in browser**:
-   - https://nozzly.app (should show React frontend)
-   - https://api.nozzly.app/docs (should show FastAPI docs)
+   - https://batchivo.app (should show React frontend)
+   - https://api.batchivo.app/docs (should show FastAPI docs)
 
 ## Troubleshooting
 
@@ -162,9 +162,9 @@ kubectl get svc -n kube-system traefik
 
 ### 502 Bad Gateway
 
-- Check if k3s pods are running: `kubectl get pods -n nozzly`
-- Check pod logs: `kubectl logs -f deployment/frontend -n nozzly`
-- Verify service endpoints: `kubectl get endpoints -n nozzly`
+- Check if k3s pods are running: `kubectl get pods -n batchivo`
+- Check pod logs: `kubectl logs -f deployment/frontend -n batchivo`
+- Verify service endpoints: `kubectl get endpoints -n batchivo`
 
 ### Connection Refused
 
@@ -205,7 +205,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared
-  namespace: nozzly
+  namespace: batchivo
 spec:
   replicas: 2
   selector:
@@ -236,10 +236,10 @@ This approach runs cloudflared inside your cluster for better HA.
 cloudflared tunnel list
 
 # Check tunnel info
-cloudflared tunnel info nozzly
+cloudflared tunnel info batchivo
 
 # Delete tunnel
-cloudflared tunnel delete nozzly
+cloudflared tunnel delete batchivo
 
 # Test config
 cloudflared tunnel ingress validate

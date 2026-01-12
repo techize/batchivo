@@ -21,15 +21,15 @@ REGISTRY_PORT="30500"
 URLS=(
     "ci.techize.co.uk|Woodpecker CI"
     "argocd.techize.co.uk|ArgoCD"
-    "nozzly.app|Nozzly Frontend"
-    "api.nozzly.app/health|Nozzly Backend API"
-    "auth.nozzly.app|Authentik SSO"
+    "batchivo.app|Batchivo Frontend"
+    "api.batchivo.app/health|Batchivo Backend API"
+    "auth.batchivo.app|Authentik SSO"
     "mystmereforge.co.uk|Mystmereforge Main"
     "shop.mystmereforge.co.uk|Mystmereforge Shop"
 )
 
 # Namespaces to check
-NAMESPACES=("nozzly" "woodpecker" "registry" "argocd" "linkerd" "kube-system")
+NAMESPACES=("batchivo" "woodpecker" "registry" "argocd" "linkerd" "kube-system")
 
 echo ""
 echo "========================================"
@@ -139,12 +139,12 @@ fi
 echo ""
 echo -e "${BLUE}[5/6] Cloudflare Tunnel${NC}"
 
-TUNNEL_PODS=$(kubectl get pods -n nozzly -l app=cloudflared --no-headers 2>/dev/null | grep "Running" | wc -l | tr -d ' ')
+TUNNEL_PODS=$(kubectl get pods -n batchivo -l app=cloudflared --no-headers 2>/dev/null | grep "Running" | wc -l | tr -d ' ')
 if [ "$TUNNEL_PODS" -gt 0 ]; then
     echo -e "  ${GREEN}✓${NC} Cloudflared: $TUNNEL_PODS pod(s) running"
 
     # Check tunnel registration from logs
-    if kubectl logs -n nozzly -l app=cloudflared --tail=50 2>/dev/null | grep -q "Registered tunnel connection"; then
+    if kubectl logs -n batchivo -l app=cloudflared --tail=50 2>/dev/null | grep -q "Registered tunnel connection"; then
         echo -e "  ${GREEN}✓${NC} Tunnel connections registered"
     else
         echo -e "  ${YELLOW}⚠${NC} Could not verify tunnel registration"

@@ -1,15 +1,15 @@
 #!/bin/bash
-# Setup secrets for nozzly-staging namespace
+# Setup secrets for batchivo-staging namespace
 # Run this script once after creating the namespace
 #
 # Prerequisites:
 # - kubectl configured for cluster access
-# - nozzly-staging namespace exists
+# - batchivo-staging namespace exists
 # - Access to production secrets for reference
 
 set -e
 
-NAMESPACE="nozzly-staging"
+NAMESPACE="batchivo-staging"
 
 echo "Setting up secrets for $NAMESPACE..."
 
@@ -22,8 +22,8 @@ fi
 
 # PostgreSQL credentials (copy from production - same user, different DB)
 echo "Creating postgres-secret..."
-POSTGRES_USER=$(kubectl get secret postgres-secret -n nozzly -o jsonpath='{.data.POSTGRES_USER}' | base64 -d)
-POSTGRES_PASSWORD=$(kubectl get secret postgres-secret -n nozzly -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)
+POSTGRES_USER=$(kubectl get secret postgres-secret -n batchivo -o jsonpath='{.data.POSTGRES_USER}' | base64 -d)
+POSTGRES_PASSWORD=$(kubectl get secret postgres-secret -n batchivo -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)
 
 kubectl create secret generic postgres-secret -n $NAMESPACE \
     --from-literal=POSTGRES_USER="$POSTGRES_USER" \
@@ -32,8 +32,8 @@ kubectl create secret generic postgres-secret -n $NAMESPACE \
 
 # MinIO credentials (copy from production - shared MinIO)
 echo "Creating minio-credentials..."
-MINIO_USER=$(kubectl get secret minio-credentials -n nozzly -o jsonpath='{.data.MINIO_ROOT_USER}' | base64 -d)
-MINIO_PASSWORD=$(kubectl get secret minio-credentials -n nozzly -o jsonpath='{.data.MINIO_ROOT_PASSWORD}' | base64 -d)
+MINIO_USER=$(kubectl get secret minio-credentials -n batchivo -o jsonpath='{.data.MINIO_ROOT_USER}' | base64 -d)
+MINIO_PASSWORD=$(kubectl get secret minio-credentials -n batchivo -o jsonpath='{.data.MINIO_ROOT_PASSWORD}' | base64 -d)
 
 kubectl create secret generic minio-credentials -n $NAMESPACE \
     --from-literal=MINIO_ROOT_USER="$MINIO_USER" \
@@ -50,8 +50,8 @@ kubectl create secret generic backend-secrets -n $NAMESPACE \
 
 # Harbor registry credentials (copy from production)
 echo "Creating harbor-creds..."
-kubectl get secret harbor-creds -n nozzly -o yaml | \
-    sed "s/namespace: nozzly/namespace: $NAMESPACE/" | \
+kubectl get secret harbor-creds -n batchivo -o yaml | \
+    sed "s/namespace: batchivo/namespace: $NAMESPACE/" | \
     kubectl apply -f -
 
 echo ""

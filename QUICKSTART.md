@@ -1,4 +1,4 @@
-# Nozzly Quick Start Guide
+# Batchivo Quick Start Guide
 
 ## Current Status
 
@@ -286,7 +286,7 @@ poetry run alembic history
 
 ```bash
 # Reset database (CAUTION: deletes all data)
-rm backend/nozzly.db
+rm backend/batchivo.db
 poetry run alembic upgrade head
 ```
 

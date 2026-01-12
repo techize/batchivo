@@ -18,7 +18,7 @@ Given this is a homelab k3s cluster with limited resources, using a separate dat
 │                    PostgreSQL StatefulSet                    │
 │                      (postgres:16-alpine)                    │
 │  ┌─────────────────────┐  ┌─────────────────────┐          │
-│  │   nozzly (prod)     │  │  nozzly_staging     │          │
+│  │   batchivo (prod)     │  │  batchivo_staging     │          │
 │  │   - tenants         │  │  - tenants          │          │
 │  │   - users           │  │  - users            │          │
 │  │   - products        │  │  - products         │          │
@@ -28,7 +28,7 @@ Given this is a homelab k3s cluster with limited resources, using a separate dat
               │                        │
               ▼                        ▼
 ┌─────────────────────┐  ┌─────────────────────────────────┐
-│  nozzly namespace   │  │  nozzly-staging namespace       │
+│  batchivo namespace   │  │  batchivo-staging namespace       │
 │  (production)       │  │                                 │
 │  - backend (x2)     │  │  - backend (x1)                 │
 │  - frontend         │  │  - frontend                     │
@@ -43,23 +43,23 @@ Given this is a homelab k3s cluster with limited resources, using a separate dat
 
 ```bash
 # Connect to PostgreSQL pod
-kubectl exec -it postgres-0 -n nozzly -- psql -U nozzly
+kubectl exec -it postgres-0 -n batchivo -- psql -U batchivo
 
 # Create staging database
-CREATE DATABASE nozzly_staging;
+CREATE DATABASE batchivo_staging;
 
 # Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE nozzly_staging TO nozzly;
+GRANT ALL PRIVILEGES ON DATABASE batchivo_staging TO batchivo;
 ```
 
-### 2. Create nozzly-staging namespace
+### 2. Create batchivo-staging namespace
 
 ```yaml
 # infrastructure/k8s/staging/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: nozzly-staging
+  name: batchivo-staging
   labels:
     environment: staging
 ```
@@ -67,22 +67,22 @@ metadata:
 ### 3. Staging ConfigMap
 
 Key differences from production:
-- `DB_NAME: nozzly_staging`
+- `DB_NAME: batchivo_staging`
 - `ENVIRONMENT: staging`
 - `CORS_ORIGINS` includes staging domains
-- `STORAGE_S3_BUCKET: nozzly-staging-images` (separate bucket)
+- `STORAGE_S3_BUCKET: batchivo-staging-images` (separate bucket)
 
 ### 4. Staging secrets
 
-Create separate secrets in nozzly-staging namespace:
+Create separate secrets in batchivo-staging namespace:
 - `postgres-secret` - same credentials, different DB_NAME
 - `backend-secrets` - can use same JWT secret or separate
 - `minio-credentials` - same MinIO, different bucket
 
 ### 5. DNS/Domains (covered by bead 86i)
 
-- `staging.nozzly.app` → staging frontend
-- `api.staging.nozzly.app` → staging backend
+- `staging.batchivo.app` → staging frontend
+- `api.staging.batchivo.app` → staging backend
 - `staging.mystmereforge.co.uk` → staging shop
 
 ## Seed Data Strategy
@@ -97,17 +97,17 @@ For staging tenant (covered by bead 5va):
 
 ```bash
 # 1. Deploy to staging first
-kubectl set image deployment/backend backend=registry.techize.co.uk/nozzly/nozzly-backend:$SHA -n nozzly-staging
+kubectl set image deployment/backend backend=registry.techize.co.uk/batchivo/batchivo-backend:$SHA -n batchivo-staging
 
 # 2. Verify migrations ran successfully
-kubectl logs -l app=backend -n nozzly-staging --tail=50
+kubectl logs -l app=backend -n batchivo-staging --tail=50
 
 # 3. Test staging environment
 # - Run automated tests
 # - Manual smoke test
 
 # 4. Deploy to production
-kubectl set image deployment/backend backend=registry.techize.co.uk/nozzly/nozzly-backend:$SHA -n nozzly
+kubectl set image deployment/backend backend=registry.techize.co.uk/batchivo/batchivo-backend:$SHA -n batchivo
 ```
 
 ## Resource Requirements
@@ -116,7 +116,7 @@ Additional resources for staging:
 - Backend: 1 replica (256Mi RAM, 250m CPU)
 - Frontend: 1 replica (128Mi RAM, 100m CPU)
 - Redis: Can share production Redis with key prefix, or 1 small replica
-- MinIO: Share instance, use `nozzly-staging-images` bucket
+- MinIO: Share instance, use `batchivo-staging-images` bucket
 
 **Total additional**: ~400Mi RAM, ~350m CPU
 

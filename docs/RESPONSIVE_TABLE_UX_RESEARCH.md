@@ -1,5 +1,5 @@
 # Responsive Table UX Research & Recommendations
-**Project**: Nozzly - 3D Print Management Platform
+**Project**: Batchivo - 3D Print Management Platform
 **Component**: Spool Inventory Table
 **Research Date**: 2024-11-18
 **Status**: Comprehensive Research Complete
@@ -54,7 +54,7 @@ Based on research from Nielsen Norman Group, Material Design, LogRocket, and UX 
 - **Desktop**: 960px - 1280px (12 columns)
 - **Wide Desktop**: > 1280px (12 columns, more spacing)
 
-**Nozzly-Specific Breakpoints:**
+**Batchivo-Specific Breakpoints:**
 - **Mobile**: < 768px → **Card View**
 - **Narrow Desktop**: 768px - 1200px → **Condensed Table with Horizontal Scroll**
 - **Desktop**: > 1200px → **Full Table**

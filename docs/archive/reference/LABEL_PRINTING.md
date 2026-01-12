@@ -151,7 +151,7 @@ The Nelko PM230 does not have publicly available:
 
 **Workflow**:
 1. User creates/edits spool in web UI
-2. Backend generates QR code (points to nozzly.app/spool/FIL-001)
+2. Backend generates QR code (points to batchivo.app/spool/FIL-001)
 3. Backend creates thermal printer image (QR + text)
 4. Backend sends BLE commands to Nelko PM230
 5. Printer outputs adhesive label
@@ -159,11 +159,11 @@ The Nelko PM230 does not have publicly available:
 
 ### QR Code URL Structure
 
-**Format**: `https://nozzly.app/spool/update/{spool_id}`
+**Format**: `https://batchivo.app/spool/update/{spool_id}`
 
 **Behavior**:
 - Scan QR code with phone camera
-- Opens Nozzly PWA to spool detail page
+- Opens Batchivo PWA to spool detail page
 - Quick actions: Update weight, mark as empty, view usage
 - Optimized for mobile quick updates
 
@@ -215,7 +215,7 @@ class NelkoPM230Service:
 
     def _generate_qr_code(self, spool_id: str) -> Image:
         """Generate QR code for spool URL"""
-        url = f"https://nozzly.app/spool/update/{spool_id}"
+        url = f"https://batchivo.app/spool/update/{spool_id}"
         qr = qrcode.QRCode(version=1, box_size=10, border=2)
         qr.add_data(url)
         qr.make(fit=True)

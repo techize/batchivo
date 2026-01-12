@@ -1,19 +1,19 @@
-# NOTE: Frontend requires a staging-specific build with VITE_API_URL=https://api.staging.nozzly.app
+# NOTE: Frontend requires a staging-specific build with VITE_API_URL=https://api.staging.batchivo.app
 # The CI/CD pipeline (bead ez9) should build separate images for staging/production
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: frontend-config
-  namespace: nozzly-staging
+  namespace: batchivo-staging
 data:
   # This is baked into the image at build time, but kept for documentation
-  VITE_API_URL: "https://api.staging.nozzly.app"
+  VITE_API_URL: "https://api.staging.batchivo.app"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: nozzly-staging
+  namespace: batchivo-staging
 spec:
   selector:
     app: frontend
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: nozzly-staging
+  namespace: batchivo-staging
 spec:
   replicas: 1  # Single replica for staging
   selector:
@@ -48,7 +48,7 @@ spec:
       containers:
       - name: frontend
         # Uses staging-specific image built with VITE_API_URL for staging
-        image: registry.techize.co.uk/nozzly/nozzly-frontend-staging:latest
+        image: registry.techize.co.uk/batchivo/batchivo-frontend-staging:latest
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false

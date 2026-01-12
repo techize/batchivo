@@ -1,4 +1,4 @@
-# Pre-commit hooks for Nozzly.app
+# Pre-commit hooks for Batchivo
 # Install: pip install pre-commit && pre-commit install
 # Run manually: pre-commit run --all-files
 

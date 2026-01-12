@@ -1,6 +1,6 @@
 # Authentication
 
-The Nozzly API uses JWT (JSON Web Tokens) for authentication. This document covers the complete authentication flow.
+The Batchivo API uses JWT (JSON Web Tokens) for authentication. This document covers the complete authentication flow.
 
 ## Authentication Flow
 
@@ -218,7 +218,7 @@ POST /api/v1/auth/reset-password
 Include the access token in all authenticated requests:
 
 ```bash
-curl -X GET "https://api.nozzly.app/api/v1/spools" \
+curl -X GET "https://api.batchivo.app/api/v1/spools" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
@@ -251,8 +251,8 @@ JWT tokens contain the following claims:
 ```python
 import httpx
 
-class NozzlyClient:
-    def __init__(self, base_url: str = "https://api.nozzly.app/api/v1"):
+class BatchivoClient:
+    def __init__(self, base_url: str = "https://api.batchivo.app/api/v1"):
         self.base_url = base_url
         self.access_token = None
         self.refresh_token = None
@@ -286,8 +286,8 @@ class NozzlyClient:
 ### JavaScript (fetch)
 
 ```javascript
-class NozzlyClient {
-  constructor(baseUrl = "https://api.nozzly.app/api/v1") {
+class BatchivoClient {
+  constructor(baseUrl = "https://api.batchivo.app/api/v1") {
     this.baseUrl = baseUrl;
     this.accessToken = null;
     this.refreshToken = null;
@@ -331,7 +331,7 @@ class NozzlyClient {
 
 ```bash
 # Login
-TOKEN_RESPONSE=$(curl -s -X POST "https://api.nozzly.app/api/v1/auth/login" \
+TOKEN_RESPONSE=$(curl -s -X POST "https://api.batchivo.app/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "user@example.com", "password": "password"}')
 
@@ -339,11 +339,11 @@ ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | jq -r '.access_token')
 REFRESH_TOKEN=$(echo $TOKEN_RESPONSE | jq -r '.refresh_token')
 
 # Use access token
-curl -X GET "https://api.nozzly.app/api/v1/spools" \
+curl -X GET "https://api.batchivo.app/api/v1/spools" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 
 # Refresh token
-curl -X POST "https://api.nozzly.app/api/v1/auth/refresh" \
+curl -X POST "https://api.batchivo.app/api/v1/auth/refresh" \
   -H "Content-Type: application/json" \
   -d "{\"refresh_token\": \"$REFRESH_TOKEN\"}"
 ```

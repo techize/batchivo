@@ -1,4 +1,4 @@
-# Pre-Commit Setup for Nozzly.app
+# Pre-Commit Setup for Batchivo
 
 This project uses pre-commit hooks to ensure code quality before commits.
 

@@ -21,7 +21,7 @@ steps:
 
         # Fetch open Dependabot PRs
         PRS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-          "https://api.github.com/repos/techize/nozzly.app/pulls?state=open" | \
+          "https://api.github.com/repos/techize/batchivo/pulls?state=open" | \
           jq -r '.[] | select(.user.login == "dependabot[bot]") | "- #\(.number): \(.title) (\(.created_at | split("T")[0]))"')
 
         if [ -z "$PRS" ]; then
@@ -32,5 +32,5 @@ steps:
           echo ""
           echo "$PRS"
           echo ""
-          echo "Review at: https://github.com/techize/nozzly.app/pulls?q=is%3Apr+is%3Aopen+author%3Aapp%2Fdependabot"
+          echo "Review at: https://github.com/techize/batchivo/pulls?q=is%3Apr+is%3Aopen+author%3Aapp%2Fdependabot"
         fi

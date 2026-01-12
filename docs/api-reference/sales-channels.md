@@ -200,7 +200,7 @@ import httpx
 async def create_etsy_channel(token: str):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://api.nozzly.app/api/v1/sales-channels",
+            "https://api.batchivo.app/api/v1/sales-channels",
             json={
                 "name": "Etsy Shop",
                 "platform_type": "etsy",
@@ -219,7 +219,7 @@ async def create_etsy_channel(token: str):
 ```javascript
 async function getActiveChannels(token) {
   const response = await fetch(
-    "https://api.nozzly.app/api/v1/sales-channels?is_active=true",
+    "https://api.batchivo.app/api/v1/sales-channels?is_active=true",
     {
       headers: { Authorization: `Bearer ${token}` }
     }

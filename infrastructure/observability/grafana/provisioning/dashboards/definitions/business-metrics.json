@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Nozzly Business Metrics - Production runs, orders, inventory, and revenue analytics",
+  "description": "Batchivo Business Metrics - Production runs, orders, inventory, and revenue analytics",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -76,7 +76,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_production_runs_completed_total[24h]))",
+          "expr": "sum(increase(batchivo_production_runs_completed_total[24h]))",
           "legendFormat": "Production Runs (24h)",
           "range": true,
           "refId": "A"
@@ -138,7 +138,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_orders_created_total[24h]))",
+          "expr": "sum(increase(batchivo_orders_created_total[24h]))",
           "legendFormat": "Orders (24h)",
           "range": true,
           "refId": "A"
@@ -200,7 +200,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_orders_total_amount_sum[24h]))",
+          "expr": "sum(increase(batchivo_orders_total_amount_sum[24h]))",
           "legendFormat": "Revenue (24h)",
           "range": true,
           "refId": "A"
@@ -262,7 +262,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_inventory_operations_total[24h]))",
+          "expr": "sum(increase(batchivo_inventory_operations_total[24h]))",
           "legendFormat": "Inventory Operations (24h)",
           "range": true,
           "refId": "A"
@@ -351,7 +351,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_production_runs_completed_total[1d])) by (tenant_id)",
+          "expr": "sum(increase(batchivo_production_runs_completed_total[1d])) by (tenant_id)",
           "legendFormat": "{{tenant_id}}",
           "range": true,
           "refId": "A"
@@ -442,7 +442,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_orders_created_total[1h])) by (channel)",
+          "expr": "sum(increase(batchivo_orders_created_total[1h])) by (channel)",
           "legendFormat": "{{channel}}",
           "range": true,
           "refId": "A"
@@ -505,7 +505,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_orders_total_amount_sum[7d])) by (channel)",
+          "expr": "sum(increase(batchivo_orders_total_amount_sum[7d])) by (channel)",
           "legendFormat": "{{channel}}",
           "range": true,
           "refId": "A"
@@ -596,7 +596,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_inventory_operations_total[1h])) by (operation)",
+          "expr": "sum(increase(batchivo_inventory_operations_total[1h])) by (operation)",
           "legendFormat": "{{operation}}",
           "range": true,
           "refId": "A"
@@ -687,7 +687,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(nozzly_production_run_duration_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(batchivo_production_run_duration_bucket[5m])) by (le))",
           "legendFormat": "p50",
           "range": true,
           "refId": "A"
@@ -698,7 +698,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(nozzly_production_run_duration_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(batchivo_production_run_duration_bucket[5m])) by (le))",
           "legendFormat": "p95",
           "range": true,
           "refId": "B"
@@ -789,7 +789,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(nozzly_production_material_cost_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(batchivo_production_material_cost_bucket[5m])) by (le))",
           "legendFormat": "p50 Material Cost",
           "range": true,
           "refId": "A"
@@ -800,7 +800,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(nozzly_production_material_cost_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(batchivo_production_material_cost_bucket[5m])) by (le))",
           "legendFormat": "p95 Material Cost",
           "range": true,
           "refId": "B"
@@ -889,7 +889,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_payments_processed_total[7d])) by (status)",
+          "expr": "sum(increase(batchivo_payments_processed_total[7d])) by (status)",
           "legendFormat": "{{status}}",
           "range": true,
           "refId": "A"
@@ -980,7 +980,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(nozzly_inventory_spool_weight_updates_total[1h]))",
+          "expr": "sum(increase(batchivo_inventory_spool_weight_updates_total[1h]))",
           "legendFormat": "Weight Updates",
           "range": true,
           "refId": "A"
@@ -992,7 +992,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 38,
-  "tags": ["nozzly", "business", "orders", "production"],
+  "tags": ["batchivo", "business", "orders", "production"],
   "templating": {
     "list": [
       {
@@ -1021,8 +1021,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Nozzly - Business Metrics",
-  "uid": "nozzly-business",
+  "title": "Batchivo - Business Metrics",
+  "uid": "batchivo-business",
   "version": 1,
   "weekStart": ""
 }

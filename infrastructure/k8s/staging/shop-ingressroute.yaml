@@ -4,7 +4,7 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: mystmereforge-shop-staging
-  namespace: nozzly-staging
+  namespace: batchivo-staging
 spec:
   entryPoints:
   - web

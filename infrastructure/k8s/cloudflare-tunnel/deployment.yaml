@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared
-  namespace: nozzly
+  namespace: batchivo
 spec:
   replicas: 2
   selector:

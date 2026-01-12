@@ -233,7 +233,7 @@ Deactivated designers:
 ### New Designer Setup
 
 1. Purchase/subscribe to designer's files
-2. Add designer to Nozzly:
+2. Add designer to Batchivo:
    - Name and contact info
    - Membership cost and dates
    - License notes

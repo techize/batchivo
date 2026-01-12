@@ -1,4 +1,4 @@
-# Woodpecker CI Pipeline for Nozzly - Hybrid Optimized
+# Woodpecker CI Pipeline for Batchivo - Hybrid Optimized
 # Uses Kaniko for Docker builds (no DinD required, works on k8s)
 #
 # Hybrid Optimization Strategy:
@@ -36,7 +36,7 @@ services:
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
-      POSTGRES_DB: test_nozzly
+      POSTGRES_DB: test_batchivo
 
 steps:
   # ============================================
@@ -62,7 +62,7 @@ steps:
     depends_on:
       - scan-deps-backend
     environment:
-      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_nozzly
+      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
       SECRET_KEY: test-secret-key-for-ci
       PGPASSWORD: test
     commands:
@@ -72,7 +72,7 @@ steps:
       - poetry install --no-interaction --quiet
       - echo "=== Creating worker databases for parallel tests ==="
       - apt-get update -qq && apt-get install -y -qq postgresql-client > /dev/null
-      - for i in 0 1 2 3; do psql -h postgres -U test -d test_nozzly -c "CREATE DATABASE test_nozzly_gw$i" 2>/dev/null || true; done
+      - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i" 2>/dev/null || true; done
       - echo "=== Running linters ==="
       - poetry run ruff check .
       - poetry run ruff format --check .
@@ -105,7 +105,7 @@ steps:
     depends_on:
       - scan-deps-backend
     settings:
-      repo: registry.techize.co.uk/nozzly/nozzly-backend
+      repo: registry.techize.co.uk/batchivo/batchivo-backend
       dockerfile: backend/Dockerfile
       context: backend
       tags:
@@ -122,14 +122,14 @@ steps:
     depends_on:
       - scan-deps-frontend
     settings:
-      repo: registry.techize.co.uk/nozzly/nozzly-frontend
+      repo: registry.techize.co.uk/batchivo/batchivo-frontend
       dockerfile: frontend/Dockerfile
       context: frontend
       tags:
         - ${CI_COMMIT_SHA}
         - latest
       build_args:
-        - VITE_API_URL=https://api.nozzly.app
+        - VITE_API_URL=https://api.batchivo
       registry: registry.techize.co.uk
       username:
         from_secret: docker_username
@@ -151,8 +151,8 @@ steps:
       TRIVY_PASSWORD:
         from_secret: docker_password
     commands:
-      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/nozzly/nozzly-backend:${CI_COMMIT_SHA}
-      - trivy image --format spdx-json --output /tmp/sbom-backend.json registry.techize.co.uk/nozzly/nozzly-backend:${CI_COMMIT_SHA}
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
+      - trivy image --format spdx-json --output /tmp/sbom-backend.json registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
       - echo "Backend security scan passed"
 
   scan-frontend:
@@ -166,8 +166,8 @@ steps:
       TRIVY_PASSWORD:
         from_secret: docker_password
     commands:
-      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/nozzly/nozzly-frontend:${CI_COMMIT_SHA}
-      - trivy image --format spdx-json --output /tmp/sbom-frontend.json registry.techize.co.uk/nozzly/nozzly-frontend:${CI_COMMIT_SHA}
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
+      - trivy image --format spdx-json --output /tmp/sbom-frontend.json registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
       - echo "Frontend security scan passed"
 
   # ============================================
@@ -180,19 +180,19 @@ steps:
       - scan-frontend
     environment:
       GIT_AUTHOR_NAME: woodpecker-ci[bot]
-      GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@nozzly.app
+      GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@batchivo
       GIT_COMMITTER_NAME: woodpecker-ci[bot]
-      GIT_COMMITTER_EMAIL: woodpecker-ci[bot]@nozzly.app
+      GIT_COMMITTER_EMAIL: woodpecker-ci[bot]@batchivo
       GITHUB_TOKEN:
         from_secret: github_token
     commands:
       - apk add --no-cache sed curl
-      - cd /woodpecker/src/github.com/techize/nozzly.app
+      - cd /woodpecker/src/github.com/techize/batchivo
       - 'echo "=== Deploying to STAGING ==="'
       - 'echo "Updating staging manifests with $CI_COMMIT_SHA..."'
-      - 'sed -i "s|image: registry.techize.co.uk/nozzly/nozzly-backend:.*|image: registry.techize.co.uk/nozzly/nozzly-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/staging/deployment.yaml'
-      - git config --global --add safe.directory /woodpecker/src/github.com/techize/nozzly.app
-      - 'git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/nozzly.app.git'
+      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/staging/deployment.yaml'
+      - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
+      - 'git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git'
       - git add infrastructure/k8s/staging/deployment.yaml
       - |
         for i in 1 2 3; do
@@ -223,7 +223,7 @@ steps:
       - echo "Checking staging health..."
       - |
         for i in $(seq 1 10); do
-          if curl -sf https://staging.nozzly.app/health | grep -q '"status":"healthy"'; then
+          if curl -sf https://staging.batchivo/health | grep -q '"status":"healthy"'; then
             echo "Staging health check passed!"
             exit 0
           fi
@@ -242,20 +242,20 @@ steps:
       - health-check-staging
     environment:
       GIT_AUTHOR_NAME: woodpecker-ci[bot]
-      GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@nozzly.app
+      GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@batchivo
       GIT_COMMITTER_NAME: woodpecker-ci[bot]
-      GIT_COMMITTER_EMAIL: woodpecker-ci[bot]@nozzly.app
+      GIT_COMMITTER_EMAIL: woodpecker-ci[bot]@batchivo
       GITHUB_TOKEN:
         from_secret: github_token
     commands:
       - apk add --no-cache sed
-      - cd /woodpecker/src/github.com/techize/nozzly.app
+      - cd /woodpecker/src/github.com/techize/batchivo
       - 'echo "=== Deploying to PRODUCTION ==="'
       - 'echo "Updating production manifests with $CI_COMMIT_SHA..."'
-      - 'sed -i "s|image: registry.techize.co.uk/nozzly/nozzly-backend:.*|image: registry.techize.co.uk/nozzly/nozzly-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/backend/deployment.yaml'
-      - 'sed -i "s|image: registry.techize.co.uk/nozzly/nozzly-frontend:.*|image: registry.techize.co.uk/nozzly/nozzly-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml'
-      - git config --global --add safe.directory /woodpecker/src/github.com/techize/nozzly.app
-      - 'git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/nozzly.app.git'
+      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/backend/deployment.yaml'
+      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-frontend:.*|image: registry.techize.co.uk/batchivo/batchivo-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml'
+      - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
+      - 'git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git'
       - git add infrastructure/k8s/backend/deployment.yaml infrastructure/k8s/frontend/deployment.yaml
       - |
         for i in 1 2 3; do

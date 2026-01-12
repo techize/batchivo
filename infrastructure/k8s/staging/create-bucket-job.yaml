@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: minio-create-staging-bucket
-  namespace: nozzly
+  namespace: batchivo
 spec:
   ttlSecondsAfterFinished: 300
   template:
@@ -29,12 +29,12 @@ spec:
           mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
 
           # Create staging bucket
-          echo "Creating bucket nozzly-staging-images..."
-          mc mb myminio/nozzly-staging-images --ignore-existing
+          echo "Creating bucket batchivo-staging-images..."
+          mc mb myminio/batchivo-staging-images --ignore-existing
 
           # Set public download policy for images
           echo "Setting download policy..."
-          mc anonymous set download myminio/nozzly-staging-images
+          mc anonymous set download myminio/batchivo-staging-images
 
           echo "Staging bucket created successfully!"
           mc ls myminio/

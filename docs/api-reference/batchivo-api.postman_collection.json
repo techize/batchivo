@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Nozzly API",
-    "description": "Complete API collection for Nozzly 3D Print Business Management Platform",
+    "name": "Batchivo API",
+    "description": "Complete API collection for Batchivo 3D Print Business Management Platform",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -17,7 +17,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "https://api.nozzly.app/api/v1",
+      "value": "https://api.batchivo.app/api/v1",
       "type": "string"
     },
     {
@@ -795,7 +795,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Order Notifications\",\n  \"url\": \"https://my-server.com/webhooks/nozzly\",\n  \"events\": [\"order.created\", \"order.paid\", \"order.shipped\"]\n}",
+              "raw": "{\n  \"name\": \"Order Notifications\",\n  \"url\": \"https://my-server.com/webhooks/batchivo\",\n  \"events\": [\"order.created\", \"order.paid\", \"order.shipped\"]\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/webhooks/subscriptions"

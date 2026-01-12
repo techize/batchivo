@@ -1,9 +1,9 @@
 # NOTE: This template contains placeholder values.
 # Create the actual secret manually with:
-#   kubectl create secret generic postgres-secret -n nozzly \
-#     --from-literal=POSTGRES_USER=nozzly \
+#   kubectl create secret generic postgres-secret -n batchivo \
+#     --from-literal=POSTGRES_USER=batchivo \
 #     --from-literal=POSTGRES_PASSWORD=<YOUR_SECURE_PASSWORD> \
-#     --from-literal=POSTGRES_DB=nozzly
+#     --from-literal=POSTGRES_DB=batchivo
 #
 # Or apply a local secrets file (not committed to git):
 #   kubectl apply -f postgres-secret.local.yaml
@@ -12,7 +12,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: nozzly
+  namespace: batchivo
 spec:
   selector:
     app: postgres
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: nozzly
+  namespace: batchivo
 spec:
   serviceName: postgres
   replicas: 1
@@ -72,7 +72,7 @@ spec:
             command:
             - pg_isready
             - -U
-            - nozzly
+            - batchivo
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
@@ -80,7 +80,7 @@ spec:
             command:
             - pg_isready
             - -U
-            - nozzly
+            - batchivo
           initialDelaySeconds: 5
           periodSeconds: 5
   volumeClaimTemplates:

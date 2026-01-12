@@ -1,6 +1,6 @@
-# Nozzly Roadmap: Spoolman Feature Parity & Beyond
+# Batchivo Roadmap: Spoolman Feature Parity & Beyond
 
-This document tracks planned features to bring Nozzly to feature parity with Spoolman, plus unique enhancements for 3D printing business management.
+This document tracks planned features to bring Batchivo to feature parity with Spoolman, plus unique enhancements for 3D printing business management.
 
 ---
 
@@ -40,7 +40,7 @@ This document tracks planned features to bring Nozzly to feature parity with Spo
 
 - [ ] **QR Code Scanning**
   - PWA camera access for scanning
-  - Deep link support: `https://nozzly.app/spool/scan/{qr_code_id}`
+  - Deep link support: `https://batchivo.app/spool/scan/{qr_code_id}`
   - Quick actions after scan:
     - View spool details
     - Update weight

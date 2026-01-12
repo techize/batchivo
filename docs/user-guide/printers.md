@@ -1,6 +1,6 @@
 # Printers
 
-Track your 3D printer fleet in Nozzly. Recording printer details helps with production run tracking, maintenance planning, and understanding your capacity.
+Track your 3D printer fleet in Batchivo. Recording printer details helps with production run tracking, maintenance planning, and understanding your capacity.
 
 ---
 

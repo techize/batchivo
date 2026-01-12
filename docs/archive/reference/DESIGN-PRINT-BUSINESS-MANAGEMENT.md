@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document proposes enhancements to Nozzly to support complete print business management, including:
+This document proposes enhancements to Batchivo to support complete print business management, including:
 - **Product Sets & Collections** - Group parts into sellable sets
 - **Consumables Inventory** - Track magnets, inserts, hardware
 - **Comprehensive Costing** - Per-part, per-set, true COGS
@@ -33,7 +33,7 @@ This document proposes enhancements to Nozzly to support complete print business
 
 ---
 
-## Current Nozzly State (v1.18)
+## Current Batchivo State (v1.18)
 
 ### Existing Models
 
@@ -605,7 +605,7 @@ Total Material Cost = Σ(model_weight + purge_weight + prime_tower_weight) × co
 4. **Seasonal Pricing** - Adjust prices for holidays, sales events
 5. **Bundle Discounts** - Automatic discounts for multi-set purchases
 
-### Unique to Nozzly
+### Unique to Batchivo
 
 1. **Recipe System** - Same product, different color schemes (e.g., "Arctic Fox" vs "Red Fox")
 2. **Production Templates** - Save common plate configurations for reuse
@@ -748,4 +748,4 @@ class PricingService:
 
 *Document Version: 1.0*
 *Created: 2024-12-05*
-*Author: Nozzly Development Team*
+*Author: Batchivo Development Team*
