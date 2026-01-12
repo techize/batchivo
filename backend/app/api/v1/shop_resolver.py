@@ -288,7 +288,9 @@ def build_shop_config(tenant: Tenant) -> TenantShopConfig:
     description="Resolve tenant configuration from request hostname or custom domain.",
 )
 async def resolve_domain(
-    hostname: str = Query(..., description="Hostname to resolve (e.g., mystmereforge.batchivo.shop)"),
+    hostname: str = Query(
+        ..., description="Hostname to resolve (e.g., mystmereforge.batchivo.shop)"
+    ),
     db: AsyncSession = Depends(get_db),
 ) -> DomainResolutionResponse:
     """
