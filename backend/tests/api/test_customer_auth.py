@@ -31,7 +31,7 @@ class TestCustomerRegistration:
                     "phone": "07700900000",
                     "marketing_consent": True,
                 },
-                headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+                headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
             )
 
         assert response.status_code == 201
@@ -69,7 +69,7 @@ class TestCustomerRegistration:
                 "password": "newpassword123",
                 "full_name": "Duplicate Customer",
             },
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
 
         assert response.status_code == 400
@@ -88,7 +88,7 @@ class TestCustomerRegistration:
                 "password": "testpassword123",
                 "full_name": "Test Customer",
             },
-            headers={"X-Shop-Hostname": "nonexistent.nozzly.app"},
+            headers={"X-Shop-Hostname": "nonexistent.batchivo.com"},
         )
 
         assert response.status_code == 404
@@ -122,7 +122,7 @@ class TestCustomerLogin:
                 "email": "login@example.com",
                 "password": "correctpassword",
             },
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
 
         assert response.status_code == 200
@@ -156,7 +156,7 @@ class TestCustomerLogin:
                 "email": "wrongpw@example.com",
                 "password": "wrongpassword",
             },
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
 
         assert response.status_code == 401
@@ -175,7 +175,7 @@ class TestCustomerLogin:
                 "email": "nonexistent@example.com",
                 "password": "somepassword",
             },
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
 
         assert response.status_code == 401
@@ -206,7 +206,7 @@ class TestCustomerLogin:
                 "email": "inactive@example.com",
                 "password": "password123",
             },
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
 
         assert response.status_code == 403
@@ -241,7 +241,7 @@ class TestCustomerTokenRefresh:
                 "email": "refresh@example.com",
                 "password": "password123",
             },
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
         refresh_token = login_response.json()["refresh_token"]
 
@@ -284,7 +284,7 @@ class TestCustomerForgotPassword:
             response = await unauthenticated_client.post(
                 "/api/v1/customer/auth/forgot-password",
                 json={"email": "forgot@example.com"},
-                headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+                headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
             )
 
         assert response.status_code == 200
@@ -301,7 +301,7 @@ class TestCustomerForgotPassword:
         response = await unauthenticated_client.post(
             "/api/v1/customer/auth/forgot-password",
             json={"email": "nonexistent@example.com"},
-            headers={"X-Shop-Hostname": f"{test_tenant.slug}.nozzly.app"},
+            headers={"X-Shop-Hostname": f"{test_tenant.slug}.batchivo.com"},
         )
 
         # Should still return success to prevent email enumeration

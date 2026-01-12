@@ -14,7 +14,7 @@ from app.models.tenant import Tenant
 logger = logging.getLogger(__name__)
 
 # Target for CNAME verification
-SHOPS_DOMAIN = "shops.nozzly.app"
+SHOPS_DOMAIN = "shops.batchivo.com"
 
 
 class DomainVerificationService:
@@ -27,9 +27,9 @@ class DomainVerificationService:
         """Generate a unique verification token for domain ownership.
 
         Returns:
-            A URL-safe token prefixed with 'nozzly-verify-'
+            A URL-safe token prefixed with 'batchivo-verify-'
         """
-        return f"nozzly-verify-{secrets.token_urlsafe(32)}"
+        return f"batchivo-verify-{secrets.token_urlsafe(32)}"
 
     async def verify_cname(
         self, domain: str, expected_target: str = SHOPS_DOMAIN
@@ -38,7 +38,7 @@ class DomainVerificationService:
 
         Args:
             domain: The custom domain to verify
-            expected_target: The expected CNAME target (default: shops.nozzly.app)
+            expected_target: The expected CNAME target (default: shops.batchivo.com)
 
         Returns:
             Tuple of (success, error_message)
@@ -85,7 +85,7 @@ class DomainVerificationService:
     async def verify_txt(self, domain: str, expected_token: str) -> tuple[bool, str | None]:
         """Verify that a TXT record contains the expected verification token.
 
-        Looks for a TXT record at _nozzly-verify.{domain}
+        Looks for a TXT record at _batchivo-verify.{domain}
 
         Args:
             domain: The custom domain to verify
@@ -94,7 +94,7 @@ class DomainVerificationService:
         Returns:
             Tuple of (success, error_message)
         """
-        txt_hostname = f"_nozzly-verify.{domain}"
+        txt_hostname = f"_batchivo-verify.{domain}"
 
         try:
             answers = dns.resolver.resolve(txt_hostname, "TXT")
@@ -168,10 +168,10 @@ class DomainVerificationService:
             "domain": domain,
             "verification_token": token,
             "cname_target": SHOPS_DOMAIN,
-            "txt_record_host": f"_nozzly-verify.{domain}",
+            "txt_record_host": f"_batchivo-verify.{domain}",
             "instructions": {
                 "step_1": f"Add a CNAME record for '{domain}' pointing to '{SHOPS_DOMAIN}'",
-                "step_2": f"Add a TXT record at '_nozzly-verify.{domain}' with value '{token}'",
+                "step_2": f"Add a TXT record at '_batchivo-verify.{domain}' with value '{token}'",
                 "step_3": "Wait for DNS propagation (can take up to 48 hours)",
                 "step_4": "Call the verify endpoint to complete verification",
             },
@@ -304,7 +304,7 @@ class DomainVerificationService:
             "verification_started_at": shop_settings.get("verification_started_at"),
             "verification_completed_at": shop_settings.get("verification_completed_at"),
             "cname_target": SHOPS_DOMAIN,
-            "txt_record_host": f"_nozzly-verify.{domain}",
+            "txt_record_host": f"_batchivo-verify.{domain}",
         }
 
     async def _get_tenant(self, tenant_id: UUID) -> Tenant:

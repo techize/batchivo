@@ -321,7 +321,7 @@ async def get_shop_tenant(
 
     Resolution priority:
     1. Custom domain match (e.g., shop.mystmereforge.co.uk)
-    2. Subdomain extraction (e.g., mystmereforge.nozzly.shop)
+    2. Subdomain extraction (e.g., mystmereforge.batchivo.shop)
 
     The shop frontend passes the hostname in the X-Shop-Hostname header.
 

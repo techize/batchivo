@@ -1,4 +1,4 @@
-"""AMSSlotMapping model for mapping Bambu AMS slots to Nozzly spools."""
+"""AMSSlotMapping model for mapping Bambu AMS slots to Batchivo spools."""
 
 import uuid
 from datetime import datetime
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 class AMSSlotMapping(Base, UUIDMixin, TimestampMixin):
     """
-    AMSSlotMapping maps Bambu Lab AMS slots to Nozzly spool inventory.
+    AMSSlotMapping maps Bambu Lab AMS slots to Batchivo spool inventory.
 
     Each AMS unit has 4 trays (slots), identified by:
     - ams_id: 0-3 (which AMS unit in a daisy-chain)
@@ -68,7 +68,7 @@ class AMSSlotMapping(Base, UUIDMixin, TimestampMixin):
         ForeignKey("spools.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Mapped Nozzly spool ID (null if unmapped)",
+        comment="Mapped Batchivo spool ID (null if unmapped)",
     )
 
     # RFID tracking (for Bambu Lab filament auto-detection)

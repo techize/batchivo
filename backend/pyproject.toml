@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "nozzly-backend"
+name = "batchivo-backend"
 version = "0.1.0"
-description = "Nozzly 3D Print Business Management - Backend API"
+description = "Batchivo - Production tracking and ecommerce platform for makers"
 authors = ["Jonathan <jonathan@techize.com>"]
 readme = "README.md"
 packages = [{include = "app"}]

@@ -447,7 +447,7 @@ async def map_ams_slot(
     db: AsyncSession = Depends(get_db),
 ) -> AMSSlotMappingResponse:
     """
-    Map an AMS slot to a Nozzly spool.
+    Map an AMS slot to a Batchivo spool.
 
     Creates or updates the mapping for the specified AMS slot.
     """
@@ -608,7 +608,7 @@ async def sync_ams_to_inventory(
     db: AsyncSession = Depends(get_db),
 ) -> AMSSlotListResponse:
     """
-    Sync AMS remaining percentages to mapped Nozzly spools.
+    Sync AMS remaining percentages to mapped Batchivo spools.
 
     Updates current_weight on mapped spools based on AMS reported
     remaining percentage and initial weight.

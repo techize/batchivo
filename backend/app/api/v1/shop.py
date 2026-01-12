@@ -5,7 +5,7 @@ These endpoints are public (no authentication required) and expose
 product catalog, cart, and checkout functionality for the e-commerce frontend.
 
 Tenant resolution is handled via X-Shop-Hostname header which identifies
-the shop by subdomain (tenant.nozzly.shop) or custom domain.
+the shop by subdomain (tenant.batchivo.shop) or custom domain.
 """
 
 import logging

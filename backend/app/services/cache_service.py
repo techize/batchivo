@@ -30,7 +30,7 @@ COST_CALCULATION_TTL = 3600  # 1 hour
 DASHBOARD_TTL = 60  # 1 minute
 
 # Cache key prefixes for organization and invalidation
-CACHE_PREFIX = "nozzly:cache"
+CACHE_PREFIX = "batchivo:cache"
 PRODUCT_PREFIX = f"{CACHE_PREFIX}:product"
 CATEGORY_PREFIX = f"{CACHE_PREFIX}:category"
 DASHBOARD_PREFIX = f"{CACHE_PREFIX}:dashboard"
@@ -152,7 +152,7 @@ class CacheService:
         Useful for cache invalidation when related data changes.
 
         Args:
-            pattern: Redis pattern (e.g., "nozzly:cache:product:*")
+            pattern: Redis pattern (e.g., "batchivo:cache:product:*")
 
         Returns:
             Number of keys deleted

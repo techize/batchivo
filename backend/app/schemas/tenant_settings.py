@@ -529,7 +529,7 @@ class CustomDomainInitResponse(BaseModel):
 
     domain: str = Field(..., description="The custom domain")
     verification_token: str = Field(..., description="Token for TXT record")
-    cname_target: str = Field(..., description="CNAME target (shops.nozzly.app)")
+    cname_target: str = Field(..., description="CNAME target (shops.batchivo.com)")
     txt_record_host: str = Field(..., description="TXT record hostname")
     instructions: dict[str, str] = Field(..., description="Setup instructions")
 

@@ -245,7 +245,7 @@ class OnboardingService:
         )
 
         return EmailVerificationResponse(
-            message="Email verified successfully. Welcome to Nozzly!",
+            message="Email verified successfully. Welcome to Batchivo!",
             tenant_id=tenant.id,
             tenant_name=tenant.name,
             tenant_slug=tenant.slug,
@@ -386,7 +386,7 @@ class OnboardingService:
             to_email=email,
             customer_name=name,
             verification_token=token,
-            shop_name="Nozzly",
+            shop_name="Batchivo",
         )
 
 

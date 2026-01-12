@@ -147,7 +147,7 @@ class BambuMQTTService:
                 # Create MQTT client
                 client = mqtt.Client(
                     callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
-                    client_id=f"nozzly_{config.serial_number}_{printer_id.hex[:8]}",
+                    client_id=f"batchivo_{config.serial_number}_{printer_id.hex[:8]}",
                     protocol=mqtt.MQTTv311,
                 )
 

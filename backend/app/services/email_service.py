@@ -1074,7 +1074,7 @@ class EmailService:
             logger.warning("Email service not configured - skipping admin password reset email")
             return False
 
-        reset_url = f"https://nozzly.app/reset-password?token={reset_token}"
+        reset_url = f"https://batchivo.com/reset-password?token={reset_token}"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -1085,8 +1085,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #6366f1; margin-bottom: 5px;">Nozzly</h1>
-                <p style="color: #666; margin: 0;">3D Print Business Management</p>
+                <h1 style="color: #6366f1; margin-bottom: 5px;">Batchivo</h1>
+                <p style="color: #666; margin: 0;">Production Tracking for Makers</p>
             </div>
 
             <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
@@ -1123,7 +1123,7 @@ class EmailService:
                 {
                     "from": f"{self.from_name} <{self.from_address}>",
                     "to": [to_email],
-                    "subject": "Reset Your Nozzly Password",
+                    "subject": "Reset Your Batchivo Password",
                     "html": html_content,
                 }
             )

@@ -1,4 +1,4 @@
-"""Middleware modules for the Nozzly backend."""
+"""Middleware modules for the Batchivo backend."""
 
 from app.middleware.security import SecurityHeadersMiddleware
 

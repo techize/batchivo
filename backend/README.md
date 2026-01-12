@@ -1,6 +1,6 @@
-# Nozzly Backend
+# Batchivo Backend
 
-FastAPI backend for Nozzly 3D print business management platform.
+FastAPI backend for Batchivo - production tracking and ecommerce platform for makers.
 
 ## Development
 

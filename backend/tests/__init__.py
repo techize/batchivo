@@ -1,1 +1,1 @@
-"""Tests for Nozzly backend."""
+"""Tests for Batchivo backend."""

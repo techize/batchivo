@@ -274,7 +274,7 @@ class WebhookService:
                 "X-Webhook-Signature": signature,
                 "X-Webhook-Event": delivery.event_type,
                 "X-Webhook-ID": delivery.event_id,
-                "User-Agent": "Nozzly-Webhook/1.0",
+                "User-Agent": "Batchivo-Webhook/1.0",
             }
 
             # Add custom headers
@@ -562,7 +562,7 @@ class WebhookService:
             "X-Webhook-Signature": signature,
             "X-Webhook-Event": f"test.{event_type.value}",
             "X-Webhook-ID": payload["event_id"],
-            "User-Agent": "Nozzly-Webhook/1.0",
+            "User-Agent": "Batchivo-Webhook/1.0",
         }
 
         if subscription.custom_headers:

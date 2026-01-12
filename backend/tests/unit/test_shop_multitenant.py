@@ -11,19 +11,19 @@ from app.services.domain_verification import DomainVerificationService
 class TestSubdomainExtraction:
     """Tests for subdomain extraction from hostnames."""
 
-    def test_extract_subdomain_from_nozzly_shop(self):
-        """Should extract subdomain from *.nozzly.shop."""
-        result = extract_subdomain("mystmereforge.nozzly.shop")
+    def test_extract_subdomain_from_batchivo_shop(self):
+        """Should extract subdomain from *.batchivo.shop."""
+        result = extract_subdomain("mystmereforge.batchivo.shop")
         assert result == "mystmereforge"
 
-    def test_extract_subdomain_from_nozzly_app(self):
-        """Should extract subdomain from *.nozzly.app."""
-        result = extract_subdomain("testshop.nozzly.app")
+    def test_extract_subdomain_from_batchivo_com(self):
+        """Should extract subdomain from *.batchivo.com."""
+        result = extract_subdomain("testshop.batchivo.com")
         assert result == "testshop"
 
     def test_extract_subdomain_preserves_hyphens(self):
         """Should preserve hyphens in subdomain."""
-        result = extract_subdomain("my-cool-shop.nozzly.shop")
+        result = extract_subdomain("my-cool-shop.batchivo.shop")
         assert result == "my-cool-shop"
 
     def test_extract_subdomain_returns_none_for_custom_domain(self):
@@ -33,7 +33,7 @@ class TestSubdomainExtraction:
 
     def test_extract_subdomain_returns_none_for_bare_domain(self):
         """Should return None for bare shop domain."""
-        result = extract_subdomain("nozzly.shop")
+        result = extract_subdomain("batchivo.shop")
         assert result is None
 
     def test_extract_subdomain_handles_localhost(self):
@@ -44,7 +44,7 @@ class TestSubdomainExtraction:
     def test_extract_subdomain_handles_port(self):
         """Should handle hostname with port number."""
         # Note: Port should be stripped before calling extract_subdomain
-        result = extract_subdomain("test.nozzly.shop")
+        result = extract_subdomain("test.batchivo.shop")
         assert result == "test"
 
 
@@ -58,8 +58,8 @@ class TestDomainVerificationService:
 
         token = service.generate_verification_token()
 
-        assert token.startswith("nozzly-verify-")
-        assert len(token) > len("nozzly-verify-")
+        assert token.startswith("batchivo-verify-")
+        assert len(token) > len("batchivo-verify-")
 
     def test_generate_verification_token_uniqueness(self):
         """Should generate unique tokens."""
@@ -79,7 +79,7 @@ class TestDomainVerificationService:
 
         with patch("dns.resolver.resolve") as mock_resolve:
             mock_rdata = MagicMock()
-            mock_rdata.target = "shops.nozzly.app."
+            mock_rdata.target = "shops.batchivo.com."
             mock_resolve.return_value = [mock_rdata]
 
             success, error = await service.verify_cname("shop.example.com")
@@ -125,7 +125,7 @@ class TestDomainVerificationService:
         mock_db = MagicMock()
         service = DomainVerificationService(mock_db)
 
-        token = "nozzly-verify-abc123"
+        token = "batchivo-verify-abc123"
 
         with patch("dns.resolver.resolve") as mock_resolve:
             mock_rdata = MagicMock()
@@ -148,7 +148,7 @@ class TestDomainVerificationService:
             mock_rdata.strings = [b"different-token"]
             mock_resolve.return_value = [mock_rdata]
 
-            success, error = await service.verify_txt("example.com", "nozzly-verify-abc123")
+            success, error = await service.verify_txt("example.com", "batchivo-verify-abc123")
 
         assert success is False
         assert "does not contain verification token" in error
@@ -169,8 +169,8 @@ class TestDomainVerificationService:
                 )
 
         assert result["domain"] == "shop.example.com"
-        assert result["verification_token"].startswith("nozzly-verify-")
-        assert result["cname_target"] == "shops.nozzly.app"
+        assert result["verification_token"].startswith("batchivo-verify-")
+        assert result["cname_target"] == "shops.batchivo.com"
         assert "instructions" in result
         mock_update.assert_awaited_once()
 

@@ -256,7 +256,7 @@ async def initialize_custom_domain(
     The domain must be verified before it becomes active.
 
     Steps:
-    1. Add a CNAME record pointing to shops.nozzly.app
+    1. Add a CNAME record pointing to shops.batchivo.com
     2. Add a TXT record with the verification token
     3. Call POST /custom-domain/verify to complete verification
     """
@@ -324,7 +324,7 @@ async def remove_custom_domain(
     Requires Admin or Owner role.
 
     Removes the custom domain and resets verification status.
-    The shop will revert to using the subdomain (slug.nozzly.shop).
+    The shop will revert to using the subdomain (slug.batchivo.shop).
     """
     _require_admin_role(user, tenant)
 

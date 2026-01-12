@@ -41,7 +41,7 @@ _WORKER_ID = os.environ.get("PYTEST_XDIST_WORKER", "")
 
 if _WORKER_ID and not _BASE_DATABASE_URL.startswith("sqlite"):
     # Append worker ID to database name for isolation
-    # Works with any database name (test_nozzly, test_unit, test_int, test_api, etc.)
+    # Works with any database name (test_batchivo, test_unit, test_int, test_api, etc.)
     # e.g., postgresql://user:pass@host/test_unit -> postgresql://user:pass@host/test_unit_gw0
     import re
 
@@ -607,7 +607,7 @@ async def customer_client(
 # =============================================================================
 
 # Test S3 bucket name for moto mocking
-TEST_S3_BUCKET = "test-nozzly-images"
+TEST_S3_BUCKET = "test-batchivo-images"
 
 
 @pytest.fixture

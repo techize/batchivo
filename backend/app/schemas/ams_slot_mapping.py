@@ -26,7 +26,7 @@ class AMSSlotMappingBase(BaseModel):
 
     spool_id: Optional[UUID] = Field(
         None,
-        description="Mapped Nozzly spool ID (null if unmapped)",
+        description="Mapped Batchivo spool ID (null if unmapped)",
     )
 
 

@@ -17,14 +17,14 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = "Nozzly"
+    app_name: str = "Batchivo"
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
     # Database
     # Note: Using psycopg (not asyncpg) due to Python 3.14 compatibility
-    database_url: str = "postgresql+psycopg://nozzly:nozzly@localhost:5432/nozzly"
+    database_url: str = "postgresql+psycopg://batchivo:batchivo@localhost:5432/batchivo"
 
     # Row-Level Security (RLS)
     # When enabled, uses app_user role which has RLS policies enforced
@@ -42,8 +42,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://localhost:5174",
-        "https://nozzly.app",
-        "https://dev.nozzly.app",
+        "https://batchivo.com",
+        "https://dev.batchivo.com",
         "https://mystmereforge.co.uk",
         "https://www.mystmereforge.co.uk",
         "https://test.mystmereforge.co.uk",
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
     # OpenTelemetry
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
-    otel_service_name: str = "nozzly-backend"
+    otel_service_name: str = "batchivo-backend"
     otel_environment: str = "development"
     enable_tracing: bool = True
     enable_metrics: bool = True
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     # Storage
     storage_type: Literal["local", "s3"] = "local"
     storage_path: str = "./uploads"
-    storage_s3_bucket: str = "nozzly-images"
+    storage_s3_bucket: str = "batchivo-images"
     storage_s3_region: str = "us-east-1"
     storage_s3_endpoint: str = ""  # MinIO endpoint, empty for AWS S3
     storage_s3_access_key: str = ""

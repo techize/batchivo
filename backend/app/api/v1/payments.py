@@ -165,12 +165,12 @@ async def process_payment(
         # Create order items
         # Look up each product to get its real SKU and link properly
         for item in request.items:
-            # Try to find product in Nozzly DB by product ID
+            # Try to find product in Batchivo DB by product ID
             product_result = await db.execute(select(Product).where(Product.id == item.product_id))
             product = product_result.scalar_one_or_none()
 
             if product:
-                # Product exists in Nozzly - use real SKU and link
+                # Product exists in Batchivo - use real SKU and link
                 db_item = OrderItemModel(
                     tenant_id=shop_tenant.id,
                     order_id=db_order.id,

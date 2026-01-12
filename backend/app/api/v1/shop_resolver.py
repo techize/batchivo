@@ -2,8 +2,8 @@
 Multi-tenant shop resolution API endpoints.
 
 These endpoints handle tenant discovery based on:
-- Subdomain (e.g., mystmereforge.nozzly.shop)
-- Path-based routing (e.g., shop.nozzly.app/mystmereforge)
+- Subdomain (e.g., mystmereforge.batchivo.shop)
+- Path-based routing (e.g., shop.batchivo.com/mystmereforge)
 - Custom domains (e.g., shop.mystmereforge.co.uk)
 """
 
@@ -115,11 +115,11 @@ class DomainResolutionResponse(BaseModel):
 
 # Known platform domains (not tenant subdomains)
 PLATFORM_DOMAINS = {
-    "nozzly.app",
-    "nozzly.shop",
-    "www.nozzly.app",
-    "www.nozzly.shop",
-    "api.nozzly.app",
+    "batchivo.com",
+    "batchivo.shop",
+    "www.batchivo.com",
+    "www.batchivo.shop",
+    "api.batchivo.com",
     "localhost",
 }
 
@@ -132,7 +132,7 @@ def extract_subdomain(hostname: str) -> str | None:
     Extract subdomain from hostname.
 
     Args:
-        hostname: Full hostname (e.g., mystmereforge.nozzly.shop)
+        hostname: Full hostname (e.g., mystmereforge.batchivo.shop)
 
     Returns:
         Subdomain or None if no valid subdomain found
@@ -144,8 +144,8 @@ def extract_subdomain(hostname: str) -> str | None:
     if hostname in PLATFORM_DOMAINS:
         return None
 
-    # Check for subdomain pattern (x.nozzly.shop or x.nozzly.app)
-    for base_domain in ["nozzly.shop", "nozzly.app"]:
+    # Check for subdomain pattern (x.batchivo.shop or x.batchivo.com)
+    for base_domain in ["batchivo.shop", "batchivo.com"]:
         if hostname.endswith(f".{base_domain}"):
             subdomain = hostname[: -(len(base_domain) + 1)]
             # Ignore platform subdomains
@@ -288,7 +288,7 @@ def build_shop_config(tenant: Tenant) -> TenantShopConfig:
     description="Resolve tenant configuration from request hostname or custom domain.",
 )
 async def resolve_domain(
-    hostname: str = Query(..., description="Hostname to resolve (e.g., mystmereforge.nozzly.shop)"),
+    hostname: str = Query(..., description="Hostname to resolve (e.g., mystmereforge.batchivo.shop)"),
     db: AsyncSession = Depends(get_db),
 ) -> DomainResolutionResponse:
     """
@@ -296,7 +296,7 @@ async def resolve_domain(
 
     Resolution priority:
     1. Custom domain match
-    2. Subdomain extraction (x.nozzly.shop)
+    2. Subdomain extraction (x.batchivo.shop)
 
     Returns tenant configuration if found.
     """

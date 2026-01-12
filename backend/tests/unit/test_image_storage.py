@@ -22,7 +22,7 @@ from app.services.image_storage import (
 
 
 # Test bucket name for S3 tests
-TEST_BUCKET = "nozzly-test-images"
+TEST_BUCKET = "batchivo-test-images"
 
 
 def create_test_image(width: int = 100, height: int = 100, format: str = "JPEG") -> bytes:

@@ -172,7 +172,7 @@ def upgrade() -> None:
             "spool_id",
             sa.Uuid(),
             nullable=True,
-            comment="Mapped Nozzly spool ID (null if unmapped)",
+            comment="Mapped Batchivo spool ID (null if unmapped)",
         ),
         sa.Column(
             "rfid_tag_uid",

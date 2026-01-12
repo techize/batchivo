@@ -12,7 +12,7 @@ Creates test data for the mystmereforge tenant including:
 Designed to be idempotent - safe to run multiple times.
 
 Run with: DATABASE_URL=<staging_db_url> poetry run python scripts/seed_staging.py
-Or via kubectl exec into the backend pod in nozzly-staging namespace.
+Or via kubectl exec into the backend pod in batchivo-staging namespace.
 """
 
 import asyncio

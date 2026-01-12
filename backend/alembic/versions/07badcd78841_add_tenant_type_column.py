@@ -8,7 +8,7 @@ This migration adds the tenant_type column to the tenants table.
 Tenant type determines which features, modules, and terminology are
 available to a tenant (3D printing, hand knitting, machine knitting, generic).
 
-Existing tenants default to 'three_d_print' since nozzly was originally
+Existing tenants default to 'three_d_print' since Batchivo was originally
 built for 3D printing businesses.
 """
 

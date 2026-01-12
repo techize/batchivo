@@ -54,78 +54,78 @@ meter = metrics.get_meter(__name__)
 
 # HTTP Request Metrics
 http_request_counter = meter.create_counter(
-    name="nozzly.http.requests",
+    name="batchivo.http.requests",
     description="Total HTTP requests",
     unit="1",
 )
 
 http_request_duration = meter.create_histogram(
-    name="nozzly.http.request.duration",
+    name="batchivo.http.request.duration",
     description="HTTP request duration in seconds",
     unit="s",
 )
 
 # Inventory Operation Metrics
 inventory_operation_counter = meter.create_counter(
-    name="nozzly.inventory.operations",
+    name="batchivo.inventory.operations",
     description="Inventory operations by type",
     unit="1",
 )
 
 spool_weight_updated_counter = meter.create_counter(
-    name="nozzly.inventory.spool_weight_updates",
+    name="batchivo.inventory.spool_weight_updates",
     description="Spool weight update operations",
     unit="1",
 )
 
 # Production Run Metrics
 production_runs_completed_counter = meter.create_counter(
-    name="nozzly.production.runs_completed",
+    name="batchivo.production.runs_completed",
     description="Completed production runs",
     unit="1",
 )
 
 production_run_duration = meter.create_histogram(
-    name="nozzly.production.run_duration",
+    name="batchivo.production.run_duration",
     description="Production run duration from creation to completion",
     unit="s",
 )
 
 material_cost_calculated = meter.create_histogram(
-    name="nozzly.production.material_cost",
+    name="batchivo.production.material_cost",
     description="Material cost per production run",
     unit="USD",
 )
 
 # Order Metrics
 order_created_counter = meter.create_counter(
-    name="nozzly.orders.created",
+    name="batchivo.orders.created",
     description="Orders created",
     unit="1",
 )
 
 order_total_amount = meter.create_histogram(
-    name="nozzly.orders.total_amount",
+    name="batchivo.orders.total_amount",
     description="Order total amount",
     unit="USD",
 )
 
 payment_processed_counter = meter.create_counter(
-    name="nozzly.payments.processed",
+    name="batchivo.payments.processed",
     description="Payment transactions processed",
     unit="1",
 )
 
 # Error Metrics
 error_counter = meter.create_counter(
-    name="nozzly.errors",
+    name="batchivo.errors",
     description="Application errors by type",
     unit="1",
 )
 
 # Active Users Gauge
 active_users_gauge = meter.create_up_down_counter(
-    name="nozzly.users.active",
+    name="batchivo.users.active",
     description="Currently active users",
     unit="1",
 )
