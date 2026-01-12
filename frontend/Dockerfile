@@ -24,14 +24,22 @@ RUN npm run build
 # Stage 2: Runtime with nginx
 FROM nginx:1.27-alpine
 
-# Update system packages to patch vulnerabilities (CVE-2025-49794, CVE-2025-49796)
-RUN apk upgrade --no-cache
+# Update system packages and install envsubst (from gettext)
+RUN apk upgrade --no-cache && \
+    apk add --no-cache gettext
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy config template (entrypoint will generate config.js from this)
+COPY public/config.js.template /usr/share/nginx/html/config.js.template
 
 # Create non-root user and set up permissions
 RUN addgroup -g 1000 appuser && \
@@ -50,5 +58,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run nginx
+# Use entrypoint to generate runtime config, then run nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

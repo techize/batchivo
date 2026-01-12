@@ -1,8 +1,9 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosRequestConfig } from "axios";
 import { getAuthTokens, setAuthTokens, isTokenExpired, clearAuthTokens } from "./auth";
+import { config } from "./config";
 
-// API base URL - use relative path so nginx proxy handles it
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+// API base URL - supports runtime config (container env vars) with build-time fallback
+const API_BASE_URL = config.apiUrl;
 
 // Create axios instance with default config
 export const api = axios.create({

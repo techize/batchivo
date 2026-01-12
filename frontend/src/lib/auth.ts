@@ -1,9 +1,10 @@
 /**
  * Authentication utilities and types for JWT-based auth
  */
+import { config } from "./config";
 
-// API base URL - matches api.ts pattern
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+// API base URL - supports runtime config (container env vars) with build-time fallback
+const API_BASE_URL = config.apiUrl;
 const API_V1_PREFIX = '/api/v1'
 const TOKEN_STORAGE_KEY = 'batchivo_auth_tokens'
 const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000 // 5 minutes

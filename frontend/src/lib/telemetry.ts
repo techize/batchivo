@@ -19,11 +19,12 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction'
 import { context, trace, SpanStatusCode, type Span } from '@opentelemetry/api'
 import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from 'web-vitals'
+import { config } from './config'
 
-// Configuration from environment
-const OTEL_ENDPOINT = import.meta.env.VITE_OTEL_ENDPOINT || '/v1/traces'
-const SERVICE_NAME = import.meta.env.VITE_SERVICE_NAME || 'batchivo-frontend'
-const SERVICE_VERSION = import.meta.env.VITE_SERVICE_VERSION || '1.0.0'
+// Configuration - supports runtime config (container env vars) with build-time fallback
+const OTEL_ENDPOINT = config.otelEndpoint
+const SERVICE_NAME = config.serviceName
+const SERVICE_VERSION = config.serviceVersion
 
 let tracerProvider: WebTracerProvider | null = null
 let isInitialized = false
@@ -43,7 +44,7 @@ export function initTelemetry(): void {
     const resource = resourceFromAttributes({
       [ATTR_SERVICE_NAME]: SERVICE_NAME,
       [ATTR_SERVICE_VERSION]: SERVICE_VERSION,
-      'deployment.environment': import.meta.env.MODE,
+      'deployment.environment': config.mode,
       'browser.user_agent': navigator.userAgent,
       'browser.language': navigator.language,
     })
@@ -83,7 +84,7 @@ export function initTelemetry(): void {
             // Allow trace propagation to same-origin API
             new RegExp(`${window.location.origin}/api/.*`),
             // Allow trace propagation to configured API base URL
-            new RegExp(import.meta.env.VITE_API_BASE_URL || ''),
+            new RegExp(config.apiBaseUrl || ''),
           ],
           clearTimingResources: true,
           applyCustomAttributesOnSpan: (span, request, response) => {

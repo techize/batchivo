@@ -1,0 +1,9 @@
+// Runtime configuration - generated at container startup
+// Values are injected from environment variables via envsubst
+window.__RUNTIME_CONFIG__ = {
+  VITE_API_URL: "${VITE_API_URL}",
+  VITE_API_BASE_URL: "${VITE_API_BASE_URL}",
+  VITE_OTEL_ENDPOINT: "${VITE_OTEL_ENDPOINT}",
+  VITE_SERVICE_NAME: "${VITE_SERVICE_NAME}",
+  VITE_SERVICE_VERSION: "${VITE_SERVICE_VERSION}"
+};

@@ -26,9 +26,10 @@ import {
   rotateProductImage,
   type ProductImage,
 } from '@/lib/api/products'
+import { config } from '@/lib/config'
 
-// Get the API base URL for image URLs
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+// Get the API base URL for image URLs - supports runtime config
+const API_BASE_URL = config.apiUrl
 
 // Helper to get full image URL with cache-busting (images are served from API, not frontend)
 function getImageUrl(path: string | undefined, updatedAt?: string): string {

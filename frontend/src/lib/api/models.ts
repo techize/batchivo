@@ -6,6 +6,7 @@
  */
 
 import { apiClient } from '../api'
+import { config } from '../config'
 
 // ==================== Types ====================
 
@@ -296,7 +297,7 @@ export async function importModels(file: File): Promise<ImportModelsResponse> {
   const formData = new FormData()
   formData.append('file', file)
 
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/models/import`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/models/import`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -316,7 +317,7 @@ export async function importModels(file: File): Promise<ImportModelsResponse> {
  * Export all models to CSV file
  */
 export async function exportModels(): Promise<Blob> {
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/models/export`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/models/export`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -362,7 +363,7 @@ export async function uploadModelFile(
   if (options?.isPrimary) formData.append('is_primary', 'true')
   if (options?.notes) formData.append('notes', options.notes)
 
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/models/${modelId}/files`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/models/${modelId}/files`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -406,5 +407,5 @@ export async function deleteModelFile(modelId: string, fileId: string): Promise<
  * Get download URL for a file
  */
 export function getModelFileDownloadUrl(modelId: string, fileId: string): string {
-  return `${import.meta.env.VITE_API_BASE_URL}/api/v1/models/${modelId}/files/${fileId}/download`
+  return `${config.apiBaseUrl}/api/v1/models/${modelId}/files/${fileId}/download`
 }
