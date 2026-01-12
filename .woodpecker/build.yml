@@ -129,7 +129,7 @@ steps:
         - ${CI_COMMIT_SHA}
         - latest
       build_args:
-        - VITE_API_URL=https://api.batchivo
+        - VITE_API_URL=https://api.batchivo.com
       registry: registry.techize.co.uk
       username:
         from_secret: docker_username
