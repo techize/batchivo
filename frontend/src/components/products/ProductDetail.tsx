@@ -24,6 +24,8 @@ import {
   Box,
   ImageIcon,
   History,
+  Scale,
+  Ruler,
 } from 'lucide-react'
 
 import {
@@ -359,6 +361,45 @@ export function ProductDetail({ productId }: ProductDetailProps) {
             label="Assembly Time"
             value={`${product.assembly_minutes || 0} minutes`}
           />
+
+          {/* Product Specifications */}
+          {(product.weight_grams || product.size_cm || product.print_time_hours) && (
+            <div className="pt-3 mt-3 border-t">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <Ruler className="h-4 w-4" />
+                Product Specifications
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {product.weight_grams && (
+                  <div className="flex items-center gap-2">
+                    <Scale className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Weight</p>
+                      <p className="font-medium">{product.weight_grams}g</p>
+                    </div>
+                  </div>
+                )}
+                {product.size_cm && (
+                  <div className="flex items-center gap-2">
+                    <Ruler className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Size</p>
+                      <p className="font-medium">{product.size_cm}cm</p>
+                    </div>
+                  </div>
+                )}
+                {product.print_time_hours && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Print Time</p>
+                      <p className="font-medium">{product.print_time_hours}h</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="pt-3 mt-3 border-t grid grid-cols-2 gap-4 text-xs text-muted-foreground">
             <div>

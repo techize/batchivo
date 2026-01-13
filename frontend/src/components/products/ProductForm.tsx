@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Loader2, Package, RefreshCw, X, Store, Star, Printer } from 'lucide-react'
+import { Loader2, Package, RefreshCw, X, Store, Star, Printer, Ruler, Scale, Clock } from 'lucide-react'
 
 import { useNextSKU } from '@/hooks/useSKU'
 
@@ -84,6 +84,19 @@ const productFormSchema = z.object({
   print_to_order: z.boolean().optional().default(false),
   // Designer
   designer_id: z.string().optional(),
+  // Product specifications
+  weight_grams: z
+    .string()
+    .regex(/^\d*$/, 'Must be a valid number')
+    .optional(),
+  size_cm: z
+    .string()
+    .regex(/^\d*\.?\d*$/, 'Must be a valid number')
+    .optional(),
+  print_time_hours: z
+    .string()
+    .regex(/^\d*\.?\d*$/, 'Must be a valid number')
+    .optional(),
 })
 
 type ProductFormValues = z.infer<typeof productFormSchema>
@@ -134,6 +147,10 @@ export function ProductForm({ product, mode }: ProductFormProps) {
       print_to_order: product?.print_to_order ?? false,
       // Designer
       designer_id: product?.designer_id || '',
+      // Product specifications
+      weight_grams: product?.weight_grams?.toString() || '',
+      size_cm: product?.size_cm || '',
+      print_time_hours: product?.print_time_hours || '',
     },
   })
 
@@ -186,6 +203,10 @@ export function ProductForm({ product, mode }: ProductFormProps) {
       print_to_order: values.print_to_order,
       // Designer
       designer_id: values.designer_id || (mode === 'edit' ? null : undefined),
+      // Product specifications
+      weight_grams: values.weight_grams ? parseInt(values.weight_grams) : (mode === 'edit' ? null : undefined),
+      size_cm: values.size_cm || (mode === 'edit' ? null : undefined),
+      print_time_hours: values.print_time_hours || (mode === 'edit' ? null : undefined),
     }
 
     if (mode === 'create') {
@@ -411,6 +432,82 @@ export function ProductForm({ product, mode }: ProductFormProps) {
                       <Input type="number" min="0" placeholder="0" {...field} />
                     </FormControl>
                     <FormDescription>Finished product inventory</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Product Specifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Ruler className="h-5 w-5" />
+              Product Specifications
+            </CardTitle>
+            <CardDescription>
+              Physical specifications for Etsy listings and product display
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="weight_grams"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Scale className="h-4 w-4" />
+                      Weight (grams)
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" placeholder="e.g., 150" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Auto-captured from production or manual
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="size_cm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Ruler className="h-4 w-4" />
+                      Size (cm)
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.1" min="0" placeholder="e.g., 15.5" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Length or primary dimension
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="print_time_hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Print Time (hours)
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" min="0" placeholder="e.g., 12.5" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Auto-captured from production or manual
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

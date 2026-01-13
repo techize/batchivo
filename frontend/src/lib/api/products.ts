@@ -99,6 +99,10 @@ export interface Product {
   designer_id?: string
   designer_name?: string
   designer_slug?: string
+  // Product specifications
+  weight_grams?: number
+  size_cm?: string
+  print_time_hours?: string
 }
 
 /**
@@ -171,6 +175,10 @@ export interface ProductCreateRequest {
   is_active?: boolean
   models?: ProductModelCreateRequest[]
   child_products?: ProductComponentCreateRequest[]
+  // Product specifications
+  weight_grams?: number
+  size_cm?: string
+  print_time_hours?: string
 }
 
 /**
@@ -196,6 +204,10 @@ export interface ProductUpdateRequest {
   print_to_order?: boolean
   // Designer
   designer_id?: string | null
+  // Product specifications
+  weight_grams?: number | null
+  size_cm?: string | null
+  print_time_hours?: string | null
 }
 
 /**

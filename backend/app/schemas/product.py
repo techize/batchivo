@@ -155,6 +155,16 @@ class ProductBase(BaseModel):
         None, max_length=100, description="Custom title for featured display"
     )
     backstory: Optional[str] = Field(None, description="Backstory/lore for featured items")
+    # Product specifications
+    weight_grams: Optional[int] = Field(
+        None, ge=0, description="Product weight in grams"
+    )
+    size_cm: Optional[Decimal] = Field(
+        None, ge=0, description="Product size/length in centimeters"
+    )
+    print_time_hours: Optional[Decimal] = Field(
+        None, ge=0, description="Print time in hours"
+    )
 
 
 class ProductCreate(ProductBase):
@@ -190,6 +200,10 @@ class ProductUpdate(BaseModel):
     is_dragon: Optional[bool] = None
     feature_title: Optional[str] = Field(None, max_length=100)
     backstory: Optional[str] = None
+    # Product specifications
+    weight_grams: Optional[int] = Field(None, ge=0)
+    size_cm: Optional[Decimal] = Field(None, ge=0)
+    print_time_hours: Optional[Decimal] = Field(None, ge=0)
 
 
 class ProductResponse(ProductBase):

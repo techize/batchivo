@@ -214,6 +214,25 @@ class Product(Base, UUIDMixin, TimestampMixin):
         comment="Backstory/lore for featured items (dragons, special editions)",
     )
 
+    # Product specifications (for Etsy sync and display)
+    weight_grams: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Product weight in grams (auto-captured from production run or manual)",
+    )
+
+    size_cm: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(6, 1),
+        nullable=True,
+        comment="Product size/length in centimeters (manual entry)",
+    )
+
+    print_time_hours: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(6, 2),
+        nullable=True,
+        comment="Print time in hours (auto-captured from production run or manual)",
+    )
+
     # Review statistics (cached for performance)
     average_rating: Mapped[Optional[Decimal]] = mapped_column(
         Numeric(3, 2),
