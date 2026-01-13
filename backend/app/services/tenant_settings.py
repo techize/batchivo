@@ -13,6 +13,9 @@ from app.models.tenant import Tenant
 from app.schemas.tenant_settings import (
     BrandingSettingsResponse,
     BrandingSettingsUpdate,
+    EtsyConnectionTest,
+    EtsySettingsResponse,
+    EtsySettingsUpdate,
     ShopSettingsResponse,
     ShopSettingsUpdate,
     SquareConnectionTest,
@@ -191,6 +194,198 @@ class TenantSettingsService:
             return None
 
         return (access_token, location_id, environment)
+
+    # =========================================================================
+    # Etsy Settings
+    # =========================================================================
+
+    async def get_etsy_settings(self, tenant_id: UUID) -> EtsySettingsResponse:
+        """Get Etsy marketplace settings for a tenant (with masked credentials).
+
+        Args:
+            tenant_id: The tenant's UUID
+
+        Returns:
+            EtsySettingsResponse with masked credentials
+        """
+        tenant = await self._get_tenant(tenant_id)
+        etsy_config = tenant.settings.get("etsy", {})
+
+        # Decrypt and mask credentials
+        api_key = safe_decrypt(etsy_config.get("api_key_encrypted", ""))
+        shared_secret = safe_decrypt(etsy_config.get("shared_secret_encrypted", ""))
+        access_token = safe_decrypt(etsy_config.get("access_token_encrypted", ""))
+        refresh_token = safe_decrypt(etsy_config.get("refresh_token_encrypted", ""))
+
+        # Check if configured (need at least api_key, access_token, and shop_id)
+        shop_id = etsy_config.get("shop_id")
+        is_configured = bool(api_key and access_token and shop_id)
+
+        return EtsySettingsResponse(
+            enabled=etsy_config.get("enabled", False),
+            is_configured=is_configured,
+            api_key_masked=mask_credential(api_key) if api_key else None,
+            shared_secret_masked=mask_credential(shared_secret) if shared_secret else None,
+            access_token_masked=mask_credential(access_token) if access_token else None,
+            refresh_token_set=bool(refresh_token),
+            shop_id=shop_id,
+            shop_name=etsy_config.get("shop_name"),
+            updated_at=etsy_config.get("updated_at"),
+        )
+
+    async def update_etsy_settings(
+        self, tenant_id: UUID, data: EtsySettingsUpdate
+    ) -> EtsySettingsResponse:
+        """Update Etsy marketplace settings for a tenant.
+
+        Args:
+            tenant_id: The tenant's UUID
+            data: The settings update data
+
+        Returns:
+            Updated EtsySettingsResponse
+        """
+        tenant = await self._get_tenant(tenant_id)
+
+        # Get existing settings or create new
+        current_settings = dict(tenant.settings)
+        etsy_config = dict(current_settings.get("etsy", {}))
+
+        # Update provided fields
+        if data.enabled is not None:
+            etsy_config["enabled"] = data.enabled
+
+        if data.shop_id is not None:
+            etsy_config["shop_id"] = data.shop_id
+
+        # Encrypt sensitive credentials
+        if data.api_key is not None:
+            etsy_config["api_key_encrypted"] = encrypt_value(data.api_key)
+
+        if data.shared_secret is not None:
+            etsy_config["shared_secret_encrypted"] = encrypt_value(data.shared_secret)
+
+        if data.access_token is not None:
+            etsy_config["access_token_encrypted"] = encrypt_value(data.access_token)
+
+        if data.refresh_token is not None:
+            etsy_config["refresh_token_encrypted"] = encrypt_value(data.refresh_token)
+
+        # Update timestamp
+        etsy_config["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        # Save to database
+        current_settings["etsy"] = etsy_config
+        await self._update_tenant_settings(tenant_id, current_settings)
+
+        return await self.get_etsy_settings(tenant_id)
+
+    async def test_etsy_connection(self, tenant_id: UUID) -> EtsyConnectionTest:
+        """Test the Etsy connection using tenant's credentials.
+
+        Args:
+            tenant_id: The tenant's UUID
+
+        Returns:
+            EtsyConnectionTest with result details
+        """
+        tenant = await self._get_tenant(tenant_id)
+        etsy_config = tenant.settings.get("etsy", {})
+
+        # Get decrypted credentials
+        api_key = safe_decrypt(etsy_config.get("api_key_encrypted", ""))
+        access_token = safe_decrypt(etsy_config.get("access_token_encrypted", ""))
+        shop_id = etsy_config.get("shop_id")
+
+        if not api_key or not access_token:
+            return EtsyConnectionTest(
+                success=False,
+                message="Etsy API credentials are not configured",
+            )
+
+        if not shop_id:
+            return EtsyConnectionTest(
+                success=False,
+                message="Etsy shop ID is not configured",
+            )
+
+        try:
+            # Use etsyv3 client to test connection
+            from etsyv3 import EtsyAPI
+
+            # Create API client - etsyv3 needs keystring and token
+            api = EtsyAPI(
+                keystring=api_key,
+                token=access_token,
+                refresh_token=None,  # Not needed for connection test
+                expiry=None,  # Not needed for connection test
+            )
+
+            # Get shop info to verify connection
+            shop = api.get_shop(shop_id=int(shop_id))
+
+            if shop:
+                shop_name = shop.shop_name if hasattr(shop, "shop_name") else str(shop_id)
+                shop_url = f"https://www.etsy.com/shop/{shop_name}"
+
+                # Save shop name for display
+                current_settings = dict(tenant.settings)
+                etsy_config = dict(current_settings.get("etsy", {}))
+                etsy_config["shop_name"] = shop_name
+                current_settings["etsy"] = etsy_config
+                await self._update_tenant_settings(tenant_id, current_settings)
+
+                return EtsyConnectionTest(
+                    success=True,
+                    message="Successfully connected to Etsy",
+                    shop_name=shop_name,
+                    shop_url=shop_url,
+                )
+            else:
+                return EtsyConnectionTest(
+                    success=False,
+                    message="Could not retrieve shop information",
+                )
+
+        except Exception as e:
+            return EtsyConnectionTest(
+                success=False,
+                message=f"Connection failed: {str(e)}",
+            )
+
+    def get_etsy_credentials(self, tenant_settings: dict) -> dict | None:
+        """Get decrypted Etsy credentials for API calls.
+
+        This method is used by EtsySyncService to get credentials
+        without an async context.
+
+        Args:
+            tenant_settings: The tenant's settings dict
+
+        Returns:
+            Dict with api_key, access_token, refresh_token, shop_id or None if not configured
+        """
+        etsy_config = tenant_settings.get("etsy", {})
+
+        if not etsy_config.get("enabled", False):
+            return None
+
+        api_key = safe_decrypt(etsy_config.get("api_key_encrypted", ""))
+        shared_secret = safe_decrypt(etsy_config.get("shared_secret_encrypted", ""))
+        access_token = safe_decrypt(etsy_config.get("access_token_encrypted", ""))
+        refresh_token = safe_decrypt(etsy_config.get("refresh_token_encrypted", ""))
+        shop_id = etsy_config.get("shop_id")
+
+        if not api_key or not access_token or not shop_id:
+            return None
+
+        return {
+            "api_key": api_key,
+            "shared_secret": shared_secret,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "shop_id": shop_id,
+        }
 
     # =========================================================================
     # Shop Settings

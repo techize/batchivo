@@ -384,6 +384,47 @@ class TenantSettings(BaseModel):
 
 
 # =============================================================================
+# Etsy Settings Schemas
+# =============================================================================
+
+
+class EtsySettingsUpdate(BaseModel):
+    """Schema for updating Etsy marketplace settings."""
+
+    enabled: bool | None = Field(None, description="Enable/disable Etsy integration")
+    api_key: str | None = Field(None, min_length=1, description="Etsy API key (keystring)")
+    shared_secret: str | None = Field(None, min_length=1, description="Etsy shared secret")
+    access_token: str | None = Field(None, min_length=1, description="Etsy OAuth access token")
+    refresh_token: str | None = Field(None, min_length=1, description="Etsy OAuth refresh token")
+    shop_id: str | None = Field(None, min_length=1, description="Etsy shop ID")
+
+
+class EtsySettingsResponse(BaseModel):
+    """Schema for Etsy settings response (with masked credentials)."""
+
+    enabled: bool = Field(default=False, description="Whether Etsy integration is enabled")
+    is_configured: bool = Field(
+        default=False, description="Whether all required credentials are set"
+    )
+    api_key_masked: str | None = Field(None, description="Masked API key (last 4 chars)")
+    shared_secret_masked: str | None = Field(None, description="Masked shared secret (last 4 chars)")
+    access_token_masked: str | None = Field(None, description="Masked access token (last 4 chars)")
+    refresh_token_set: bool = Field(default=False, description="Whether refresh token is set")
+    shop_id: str | None = Field(None, description="Etsy shop ID")
+    shop_name: str | None = Field(None, description="Etsy shop name (from last connection test)")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
+
+
+class EtsyConnectionTest(BaseModel):
+    """Schema for Etsy connection test response."""
+
+    success: bool = Field(..., description="Whether the connection test succeeded")
+    message: str = Field(..., description="Test result message")
+    shop_name: str | None = Field(None, description="Etsy shop name if found")
+    shop_url: str | None = Field(None, description="Etsy shop URL if found")
+
+
+# =============================================================================
 # Square Settings Schemas
 # =============================================================================
 

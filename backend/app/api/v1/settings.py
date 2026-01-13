@@ -13,6 +13,9 @@ from app.schemas.tenant_settings import (
     CustomDomainRequest,
     CustomDomainStatusResponse,
     CustomDomainVerifyResponse,
+    EtsyConnectionTest,
+    EtsySettingsResponse,
+    EtsySettingsUpdate,
     ShopSettingsResponse,
     ShopSettingsUpdate,
     SquareConnectionTest,
@@ -109,6 +112,70 @@ async def test_square_connection(
 
     service = TenantSettingsService(db)
     return await service.test_square_connection(tenant.id)
+
+
+# =============================================================================
+# Etsy Marketplace Settings
+# =============================================================================
+
+
+@router.get("/etsy", response_model=EtsySettingsResponse)
+async def get_etsy_settings(
+    tenant: CurrentTenant,
+    user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> EtsySettingsResponse:
+    """Get Etsy marketplace settings.
+
+    Returns the current Etsy configuration with masked credentials.
+    Only shows last 4 characters of sensitive values.
+    """
+    service = TenantSettingsService(db)
+    return await service.get_etsy_settings(tenant.id)
+
+
+@router.put("/etsy", response_model=EtsySettingsResponse)
+async def update_etsy_settings(
+    data: EtsySettingsUpdate,
+    tenant: CurrentTenant,
+    user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> EtsySettingsResponse:
+    """Update Etsy marketplace settings.
+
+    Requires Admin or Owner role.
+    Credentials are encrypted before storage.
+
+    Required fields for Etsy sync:
+    - api_key: Your Etsy API key (keystring)
+    - access_token: OAuth access token
+    - shop_id: Your Etsy shop ID
+
+    Optional fields:
+    - shared_secret: Etsy shared secret
+    - refresh_token: OAuth refresh token (for token refresh)
+    """
+    _require_admin_role(user, tenant)
+
+    service = TenantSettingsService(db)
+    return await service.update_etsy_settings(tenant.id, data)
+
+
+@router.post("/etsy/test", response_model=EtsyConnectionTest)
+async def test_etsy_connection(
+    tenant: CurrentTenant,
+    user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> EtsyConnectionTest:
+    """Test Etsy connection with current credentials.
+
+    Attempts to connect to Etsy API and retrieve shop details.
+    Returns success status, shop name, and any error messages.
+    """
+    _require_admin_role(user, tenant)
+
+    service = TenantSettingsService(db)
+    return await service.test_etsy_connection(tenant.id)
 
 
 # =============================================================================

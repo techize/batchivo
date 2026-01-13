@@ -9,6 +9,35 @@ import { apiClient } from '../api'
 
 // ==================== Types ====================
 
+// Etsy Settings
+export interface EtsySettings {
+  enabled: boolean
+  is_configured: boolean
+  api_key_masked: string | null
+  shared_secret_masked: string | null
+  access_token_masked: string | null
+  refresh_token_set: boolean
+  shop_id: string | null
+  shop_name: string | null
+  updated_at: string | null
+}
+
+export interface EtsySettingsUpdate {
+  enabled?: boolean
+  api_key?: string
+  shared_secret?: string
+  access_token?: string
+  refresh_token?: string
+  shop_id?: string
+}
+
+export interface EtsyConnectionTest {
+  success: boolean
+  message: string
+  shop_name: string | null
+  shop_url: string | null
+}
+
 // Square Settings
 export interface SquareSettings {
   enabled: boolean
@@ -98,6 +127,29 @@ export async function updateSquareSettings(data: SquareSettingsUpdate): Promise<
  */
 export async function testSquareConnection(): Promise<SquareConnectionTest> {
   return apiClient.post<SquareConnectionTest>('/api/v1/settings/square/test', {})
+}
+
+// ==================== Etsy Settings API ====================
+
+/**
+ * Get Etsy marketplace settings
+ */
+export async function getEtsySettings(): Promise<EtsySettings> {
+  return apiClient.get<EtsySettings>('/api/v1/settings/etsy')
+}
+
+/**
+ * Update Etsy marketplace settings
+ */
+export async function updateEtsySettings(data: EtsySettingsUpdate): Promise<EtsySettings> {
+  return apiClient.put<EtsySettings>('/api/v1/settings/etsy', data)
+}
+
+/**
+ * Test Etsy connection with current credentials
+ */
+export async function testEtsyConnection(): Promise<EtsyConnectionTest> {
+  return apiClient.post<EtsyConnectionTest>('/api/v1/settings/etsy/test', {})
 }
 
 // ==================== Tenant Settings API ====================

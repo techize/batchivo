@@ -5,11 +5,12 @@
  */
 
 import { AppLayout } from '@/components/layout/AppLayout'
+import { EtsySettings } from '@/components/settings/EtsySettings'
 import { GeneralSettings } from '@/components/settings/GeneralSettings'
 import { SquareSettings } from '@/components/settings/SquareSettings'
 import { TeamSettings } from '@/components/settings/TeamSettings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Building2, CreditCard, Users } from 'lucide-react'
+import { Building2, CreditCard, Store, Users } from 'lucide-react'
 
 export function Settings() {
   return (
@@ -32,6 +33,10 @@ export function Settings() {
               <CreditCard className="h-4 w-4" />
               Payments
             </TabsTrigger>
+            <TabsTrigger value="marketplace" className="gap-2">
+              <Store className="h-4 w-4" />
+              Marketplace
+            </TabsTrigger>
             <TabsTrigger value="team" className="gap-2">
               <Users className="h-4 w-4" />
               Team
@@ -44,6 +49,10 @@ export function Settings() {
 
           <TabsContent value="payments">
             <SquareSettings />
+          </TabsContent>
+
+          <TabsContent value="marketplace">
+            <EtsySettings />
           </TabsContent>
 
           <TabsContent value="team">
