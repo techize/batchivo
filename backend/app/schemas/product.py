@@ -237,6 +237,20 @@ class ProductCategoryBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Brief external listing info for product responses
+class ExternalListingBrief(BaseModel):
+    """Brief external listing info for product responses."""
+
+    id: UUID
+    platform: str
+    external_id: str
+    external_url: Optional[str] = None
+    sync_status: str
+    last_synced_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ProductDetailResponse(ProductResponse):
     """Schema for detailed product response (with models, child products, pricing, and cost)."""
 
@@ -259,6 +273,10 @@ class ProductDetailResponse(ProductResponse):
     # Categories this product belongs to
     categories: list[ProductCategoryBrief] = Field(
         default_factory=list, description="Categories this product belongs to"
+    )
+    # External marketplace listings
+    external_listings: list[ExternalListingBrief] = Field(
+        default_factory=list, description="External marketplace listings (Etsy, eBay, etc.)"
     )
 
     model_config = ConfigDict(from_attributes=True)

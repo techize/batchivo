@@ -31,6 +31,9 @@ from app.models.product_pricing import ProductPricing
 # Sales channels
 from app.models.sales_channel import SalesChannel
 
+# External listings (marketplace integrations)
+from app.models.external_listing import ExternalListing
+
 # Orders
 from app.models.order import Order, OrderItem, OrderStatus
 
@@ -117,6 +120,8 @@ __all__ = [
     "ProductPricing",
     # Sales
     "SalesChannel",
+    # External listings
+    "ExternalListing",
     # Orders
     "Order",
     "OrderItem",

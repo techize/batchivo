@@ -40,8 +40,10 @@ from app.schemas.product_image import (
     ProductImageListResponse,
 )
 from app.services.costing import CostingService
+from app.services.etsy_sync import EtsySyncService, EtsySyncError
 from app.services.image_storage import ImageStorage, ImageStorageError, get_image_storage
 from app.services.search_service import SearchService, get_search_service
+from app.schemas.external_listing import SyncToEtsyRequest, SyncToEtsyResponse, ExternalListingResponse
 
 router = APIRouter()
 
@@ -1498,3 +1500,70 @@ async def rotate_product_image(
     await db.refresh(image)
 
     return ProductImageResponse.model_validate(image)
+
+
+# ==================== Etsy Sync ====================
+
+
+@router.post("/{product_id}/sync/etsy", response_model=SyncToEtsyResponse)
+async def sync_product_to_etsy(
+    product_id: UUID,
+    request: SyncToEtsyRequest = SyncToEtsyRequest(),
+    db: AsyncSession = Depends(get_db),
+    tenant: CurrentTenant = Depends(),
+    user: CurrentUser = Depends(),
+    _admin: RequireAdmin = Depends(),
+):
+    """
+    Sync a product to Etsy.
+
+    Creates a new Etsy listing if one doesn't exist, or updates the existing listing.
+    Batchivo is always the source of truth - sync overwrites Etsy data.
+
+    Note: Full Etsy API integration pending. This endpoint prepares the listing
+    data and creates a tracking record.
+    """
+    # Get product with all relationships needed for sync
+    query = select(Product).where(
+        Product.id == product_id,
+        Product.tenant_id == tenant.id,
+    ).options(
+        selectinload(Product.images),
+        selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
+        selectinload(Product.external_listings),
+    )
+    result = await db.execute(query)
+    product = result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+
+    if not product.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot sync inactive product",
+        )
+
+    # Perform sync
+    try:
+        sync_service = EtsySyncService(db, tenant.id)
+        success, message, listing = await sync_service.sync_product(product, force=request.force)
+
+        await db.commit()
+
+        return SyncToEtsyResponse(
+            success=success,
+            message=message,
+            listing=ExternalListingResponse.model_validate(listing) if listing else None,
+            etsy_url=listing.external_url if listing else None,
+        )
+
+    except EtsySyncError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )

@@ -115,6 +115,18 @@ export interface ProductCategoryBrief {
 }
 
 /**
+ * External listing info (Etsy, eBay, etc.)
+ */
+export interface ExternalListing {
+  id: string
+  platform: string
+  external_id: string
+  external_url?: string
+  sync_status: 'synced' | 'pending' | 'error'
+  last_synced_at?: string
+}
+
+/**
  * Full product detail with models, child products, pricing, and cost breakdown
  */
 export interface ProductDetail extends Product {
@@ -128,6 +140,8 @@ export interface ProductDetail extends Product {
   packaging_consumable_cost?: string
   // Categories
   categories: ProductCategoryBrief[]
+  // External marketplace listings
+  external_listings: ExternalListing[]
 }
 
 export interface ProductListResponse {
@@ -499,4 +513,30 @@ export async function rotateProductImage(
     `/api/v1/products/${productId}/images/${imageId}/rotate?degrees=${degrees}`
   )
   return response
+}
+
+// ==================== Etsy Sync ====================
+
+/**
+ * Sync response from Etsy sync operation
+ */
+export interface SyncToEtsyResponse {
+  success: boolean
+  message: string
+  listing?: ExternalListing
+  etsy_url?: string
+}
+
+/**
+ * Sync a product to Etsy
+ * Creates a new listing or updates existing one
+ */
+export async function syncProductToEtsy(
+  productId: string,
+  force: boolean = false
+): Promise<SyncToEtsyResponse> {
+  return apiClient.post<SyncToEtsyResponse>(
+    `/api/v1/products/${productId}/sync/etsy`,
+    { force }
+  )
 }

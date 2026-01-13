@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from app.models.category import Category
     from app.models.consumable import ConsumableType
     from app.models.designer import Designer
+    from app.models.external_listing import ExternalListing
     from app.models.print_job import PrintJob
     from app.models.product_component import ProductComponent
     from app.models.product_image import ProductImage
@@ -336,6 +337,14 @@ class Product(Base, UUIDMixin, TimestampMixin):
         "PrintJob",
         back_populates="product",
         lazy="select",
+    )
+
+    # External marketplace listings
+    external_listings: Mapped[List["ExternalListing"]] = relationship(
+        "ExternalListing",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     # Constraints and indexes

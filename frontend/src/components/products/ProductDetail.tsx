@@ -26,12 +26,18 @@ import {
   History,
   Scale,
   Ruler,
+  RefreshCw,
+  ExternalLink,
+  CheckCircle,
+  AlertCircle,
+  CloudUpload,
 } from 'lucide-react'
 
 import {
   getProduct,
   deleteProduct,
   formatCurrency,
+  syncProductToEtsy,
 } from '@/lib/api/products'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -104,6 +110,13 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       navigate({ to: '/products' })
+    },
+  })
+
+  const etsySyncMutation = useMutation({
+    mutationFn: (force: boolean = false) => syncProductToEtsy(productId, force),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product', productId] })
     },
   })
 
@@ -486,6 +499,112 @@ export function ProductDetail({ productId }: ProductDetailProps) {
             pricing={product.pricing || []}
             makeCost={totalMakeCost}
           />
+        </CardContent>
+      </Card>
+
+      {/* Etsy Sync */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CloudUpload className="h-5 w-5" />
+            Etsy Marketplace
+          </CardTitle>
+          <CardDescription>
+            Sync this product to your Etsy shop
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const etsyListing = product.external_listings?.find((l) => l.platform === 'etsy')
+
+            return (
+              <div className="space-y-4">
+                {/* Sync Status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {etsyListing ? (
+                      <>
+                        {etsyListing.sync_status === 'synced' && (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        )}
+                        {etsyListing.sync_status === 'pending' && (
+                          <RefreshCw className="h-5 w-5 text-amber-500" />
+                        )}
+                        {etsyListing.sync_status === 'error' && (
+                          <AlertCircle className="h-5 w-5 text-red-500" />
+                        )}
+                        <div>
+                          <p className="font-medium capitalize">{etsyListing.sync_status}</p>
+                          {etsyListing.last_synced_at && (
+                            <p className="text-xs text-muted-foreground">
+                              Last synced: {new Date(etsyListing.last_synced_at).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">Not synced to Etsy yet</p>
+                    )}
+                  </div>
+
+                  {etsyListing?.external_url && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={etsyListing.external_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View on Etsy
+                      </a>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Sync Button */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => etsySyncMutation.mutate(false)}
+                    disabled={etsySyncMutation.isPending || !product.is_active}
+                  >
+                    {etsySyncMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {!etsySyncMutation.isPending && (
+                      <CloudUpload className="mr-2 h-4 w-4" />
+                    )}
+                    {etsyListing ? 'Update on Etsy' : 'Sync to Etsy'}
+                  </Button>
+
+                  {etsyListing && (
+                    <Button
+                      variant="outline"
+                      onClick={() => etsySyncMutation.mutate(true)}
+                      disabled={etsySyncMutation.isPending}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Force Re-sync
+                    </Button>
+                  )}
+                </div>
+
+                {/* Sync Result Message */}
+                {etsySyncMutation.isSuccess && (
+                  <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+                    {etsySyncMutation.data.message}
+                  </div>
+                )}
+
+                {etsySyncMutation.isError && (
+                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                    Sync failed: {(etsySyncMutation.error as Error).message}
+                  </div>
+                )}
+
+                {!product.is_active && (
+                  <p className="text-sm text-muted-foreground">
+                    Activate the product to enable Etsy sync
+                  </p>
+                )}
+              </div>
+            )
+          })()}
         </CardContent>
       </Card>
 
