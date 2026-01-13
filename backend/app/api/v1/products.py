@@ -1510,9 +1510,9 @@ async def sync_product_to_etsy(
     product_id: UUID,
     request: SyncToEtsyRequest = SyncToEtsyRequest(),
     db: AsyncSession = Depends(get_db),
-    tenant: CurrentTenant = Depends(),
-    user: CurrentUser = Depends(),
-    _admin: RequireAdmin = Depends(),
+    tenant: CurrentTenant = None,
+    user: CurrentUser = None,
+    _admin: RequireAdmin = None,
 ):
     """
     Sync a product to Etsy.
