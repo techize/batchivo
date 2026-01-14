@@ -11,8 +11,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import cast, func, select
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -169,14 +168,26 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
     hostname = hostname.split(":")[0].lower()
 
     # Query tenants where settings.shop.custom_domain matches
-    # Cast JSON to JSONB and use jsonb_extract_path_text for proper nested path access
-    result = await db.execute(
-        select(Tenant).where(
-            func.jsonb_extract_path_text(cast(Tenant.settings, JSONB), "shop", "custom_domain")
-            == hostname,
-            Tenant.is_active.is_(True),
+    # Use dialect-aware JSON extraction (works with both PostgreSQL and SQLite)
+    dialect = db.bind.dialect.name if db.bind else "postgresql"
+
+    if dialect == "sqlite":
+        # SQLite uses json_extract with path syntax
+        result = await db.execute(
+            select(Tenant).where(
+                func.json_extract(Tenant.settings, "$.shop.custom_domain") == hostname,
+                Tenant.is_active.is_(True),
+            )
         )
-    )
+    else:
+        # PostgreSQL uses jsonb_extract_path_text
+        result = await db.execute(
+            select(Tenant).where(
+                func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain")
+                == hostname,
+                Tenant.is_active.is_(True),
+            )
+        )
     return result.scalar_one_or_none()
 
 

@@ -579,7 +579,14 @@ class ProductionRunService:
 
                 # Calculate duration if not set
                 if not production_run.duration_hours and production_run.completed_at:
-                    duration = production_run.completed_at - production_run.started_at
+                    # Ensure both timestamps are timezone-aware for comparison
+                    completed = production_run.completed_at
+                    started = production_run.started_at
+                    if started.tzinfo is None:
+                        started = started.replace(tzinfo=timezone.utc)
+                    if completed.tzinfo is None:
+                        completed = completed.replace(tzinfo=timezone.utc)
+                    duration = completed - started
                     production_run.duration_hours = Decimal(
                         str(duration.total_seconds() / 3600)
                     ).quantize(Decimal("0.01"))
