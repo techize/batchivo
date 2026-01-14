@@ -2,7 +2,7 @@
 # Using Alpine for smaller image size and faster security updates
 
 # Stage 1: Builder
-FROM python:3.12-alpine as builder
+FROM python:3.14-alpine as builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN poetry config virtualenvs.in-project true && \
     poetry install --only main --no-interaction --no-ansi
 
 # Stage 2: Runtime
-FROM python:3.12-alpine
+FROM python:3.14-alpine
 
 WORKDIR /app
 
