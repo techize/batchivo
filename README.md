@@ -2,9 +2,11 @@
 
 **Complete 3D printing business management platform**
 
+[![CI](https://github.com/gullinmedia/batchivo/actions/workflows/ci.yml/badge.svg)](https://github.com/gullinmedia/batchivo/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gullinmedia/batchivo/graph/badge.svg)](https://codecov.io/gh/gullinmedia/batchivo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.124+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
