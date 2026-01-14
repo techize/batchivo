@@ -4,10 +4,13 @@ from typing import Annotated, List, Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_tenant
+from app.database import get_db
 from app.models.tenant import Tenant
 from app.modules import get_module_registry
+from app.services.tenant_module_service import TenantModuleService
 
 router = APIRouter()
 
@@ -113,6 +116,7 @@ MODULE_ORDER: dict[str, int] = {
 )
 async def list_modules(
     tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
     include_disabled: bool = Query(
         False, description="Include modules not enabled for this tenant"
     ),
@@ -120,8 +124,9 @@ async def list_modules(
     """
     List available feature modules for the current tenant.
 
-    Returns modules filtered by tenant type with their routes and status.
-    Use include_disabled=true to see all modules regardless of tenant type.
+    Returns modules filtered by tenant_modules table configuration.
+    Falls back to tenant_type defaults if no configuration exists.
+    Use include_disabled=true to see all modules regardless of status.
     """
     registry = get_module_registry()
 
@@ -129,35 +134,43 @@ async def list_modules(
     if not registry.get_all_modules():
         registry.discover_modules()
 
-    # Get module info for tenant
-    module_infos = registry.get_module_info_for_tenant(tenant, include_disabled=include_disabled)
+    # Get enabled modules from tenant_modules table (with fallback to defaults)
+    module_service = TenantModuleService(db=db, tenant=tenant)
+    enabled_module_names = await module_service.get_enabled_modules(tenant.id)
 
-    # Determine tenant type (default to three_d_print for now)
-    # TODO: Add tenant_type column to tenant model
-    tenant_type: TenantType = "three_d_print"
+    # Get tenant type from model
+    tenant_type: TenantType = tenant.tenant_type or "three_d_print"
 
-    # Convert to response format with navigation routes
-    modules = [
-        ModuleInfoResponse(
-            name=info.name,
-            display_name=info.display_name,
-            description=info.description,
-            icon=info.icon,
-            status="active" if info.enabled else "disabled",
-            order=MODULE_ORDER.get(info.name, 99),
-            routes=[
-                NavigationRouteResponse(
-                    path=nav["path"],
-                    label=nav["label"],
-                    icon=nav.get("icon"),
-                    exact=nav.get("exact", False),
-                    badge=nav.get("badge"),
-                )
-                for nav in MODULE_NAVIGATION.get(info.name, [])
-            ],
+    # Build module list from registry
+    modules = []
+    for module in registry.get_all_modules():
+        enabled = module.name in enabled_module_names
+
+        # Skip disabled modules unless include_disabled is True
+        if not enabled and not include_disabled:
+            continue
+
+        info = module.get_info(enabled=enabled)
+        modules.append(
+            ModuleInfoResponse(
+                name=info.name,
+                display_name=info.display_name,
+                description=info.description,
+                icon=info.icon,
+                status="active" if enabled else "disabled",
+                order=MODULE_ORDER.get(info.name, 99),
+                routes=[
+                    NavigationRouteResponse(
+                        path=nav["path"],
+                        label=nav["label"],
+                        icon=nav.get("icon"),
+                        exact=nav.get("exact", False),
+                        badge=nav.get("badge"),
+                    )
+                    for nav in MODULE_NAVIGATION.get(info.name, [])
+                ],
+            )
         )
-        for info in module_infos
-    ]
 
     # Sort by order
     modules.sort(key=lambda m: m.order)
@@ -177,11 +190,13 @@ async def list_modules(
 async def get_module(
     module_name: str,
     tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
 ) -> ModuleInfoResponse:
     """
     Get detailed information about a specific module.
 
-    Returns module info including whether it's enabled for the current tenant.
+    Returns module info including whether it's enabled for the current tenant
+    based on tenant_modules configuration.
     """
     from fastapi import HTTPException, status
 
@@ -198,7 +213,9 @@ async def get_module(
             detail=f"Module '{module_name}' not found",
         )
 
-    enabled = module.is_enabled_for_tenant(tenant)
+    # Check enabled status from tenant_modules table
+    module_service = TenantModuleService(db=db, tenant=tenant)
+    enabled = await module_service.is_module_enabled(tenant.id, module_name)
     info = module.get_info(enabled=enabled)
 
     return ModuleInfoResponse(
@@ -206,7 +223,7 @@ async def get_module(
         display_name=info.display_name,
         description=info.description,
         icon=info.icon,
-        status="active" if info.enabled else "disabled",
+        status="active" if enabled else "disabled",
         order=MODULE_ORDER.get(info.name, 99),
         routes=[
             NavigationRouteResponse(

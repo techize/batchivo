@@ -136,3 +136,46 @@ class TenantActionResponse(BaseModel):
     name: str
     is_active: bool
     message: str
+
+
+# Tenant module management
+class TenantModuleStatus(BaseModel):
+    """Status of a module for a tenant."""
+
+    module_name: str = Field(..., description="Module identifier")
+    enabled: bool = Field(..., description="Whether module is enabled")
+    is_default: bool = Field(..., description="Whether status matches tenant type default")
+    configured: bool = Field(..., description="Whether explicitly configured in tenant_modules")
+    enabled_by_user_id: UUID | None = Field(None, description="User who last changed status")
+    updated_at: datetime | None = Field(None, description="When status was last changed")
+
+
+class TenantModulesResponse(BaseModel):
+    """Response containing all module statuses for a tenant."""
+
+    tenant_id: UUID
+    tenant_type: str
+    modules: list[TenantModuleStatus]
+
+
+class TenantModuleUpdate(BaseModel):
+    """Request to update a module's enabled status."""
+
+    enabled: bool = Field(..., description="Whether to enable or disable the module")
+
+
+class TenantModuleActionResponse(BaseModel):
+    """Response for module enable/disable action."""
+
+    module_name: str
+    enabled: bool
+    message: str
+
+
+class TenantModulesResetResponse(BaseModel):
+    """Response for resetting modules to defaults."""
+
+    tenant_id: UUID
+    tenant_type: str
+    modules_reset: int
+    message: str

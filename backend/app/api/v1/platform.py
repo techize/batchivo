@@ -12,9 +12,15 @@ from app.schemas.platform_admin import (
     PaginatedTenantsResponse,
     TenantActionResponse,
     TenantDetailResponse,
+    TenantModuleActionResponse,
+    TenantModulesResetResponse,
+    TenantModulesResponse,
+    TenantModuleStatus,
+    TenantModuleUpdate,
     TenantResponse,
 )
 from app.services.platform_admin import PlatformAdminService
+from app.services.tenant_module_service import TenantModuleService
 
 router = APIRouter(prefix="/platform", tags=["Platform Admin"])
 
@@ -262,4 +268,150 @@ async def list_audit_logs(
         total=total,
         skip=skip,
         limit=limit,
+    )
+
+
+# ============================================================
+# Tenant Module Management
+# ============================================================
+
+
+@router.get("/tenants/{tenant_id}/modules", response_model=TenantModulesResponse)
+async def list_tenant_modules(
+    request: Request,
+    tenant_id: UUID,
+    admin: PlatformAdmin,
+    db: PlatformAdminDB,
+):
+    """
+    List all modules and their status for a tenant.
+
+    Requires platform admin access.
+
+    Returns status for each module including:
+    - Whether enabled or disabled
+    - Whether it's the default for the tenant type
+    - Whether explicitly configured or using defaults
+    - Who last changed the status and when
+    """
+    platform_service = PlatformAdminService(db, admin, _get_request_info(request))
+    tenant = await platform_service.get_tenant_by_id(tenant_id)
+
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant {tenant_id} not found",
+        )
+
+    module_service = TenantModuleService(db=db, user=admin)
+    module_status = await module_service.get_module_status(tenant_id)
+
+    modules = [
+        TenantModuleStatus(
+            module_name=name,
+            enabled=info["enabled"],
+            is_default=info["is_default"],
+            configured=info["configured"],
+            enabled_by_user_id=UUID(info["enabled_by_user_id"]) if info["enabled_by_user_id"] else None,
+            updated_at=info["updated_at"],
+        )
+        for name, info in module_status.items()
+    ]
+
+    return TenantModulesResponse(
+        tenant_id=tenant_id,
+        tenant_type=tenant.tenant_type,
+        modules=modules,
+    )
+
+
+@router.put("/tenants/{tenant_id}/modules/{module_name}", response_model=TenantModuleActionResponse)
+async def update_tenant_module(
+    request: Request,
+    tenant_id: UUID,
+    module_name: str,
+    update: TenantModuleUpdate,
+    admin: PlatformAdmin,
+    db: PlatformAdminDB,
+):
+    """
+    Enable or disable a module for a tenant.
+
+    Requires platform admin access.
+
+    Creates a tenant_modules record if one doesn't exist.
+    All changes are logged with the admin user ID.
+    """
+    platform_service = PlatformAdminService(db, admin, _get_request_info(request))
+    tenant = await platform_service.get_tenant_by_id(tenant_id)
+
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant {tenant_id} not found",
+        )
+
+    module_service = TenantModuleService(db=db, user=admin)
+
+    try:
+        await module_service.set_module_enabled(
+            tenant_id=tenant_id,
+            module_name=module_name,
+            enabled=update.enabled,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    action = "enabled" if update.enabled else "disabled"
+    return TenantModuleActionResponse(
+        module_name=module_name,
+        enabled=update.enabled,
+        message=f"Module '{module_name}' has been {action} for tenant '{tenant.name}'",
+    )
+
+
+@router.post("/tenants/{tenant_id}/modules/reset-defaults", response_model=TenantModulesResetResponse)
+async def reset_tenant_modules(
+    request: Request,
+    tenant_id: UUID,
+    admin: PlatformAdmin,
+    db: PlatformAdminDB,
+):
+    """
+    Reset a tenant's module configuration to defaults based on tenant type.
+
+    Requires platform admin access.
+
+    This will:
+    - Delete all existing tenant_modules records for this tenant
+    - Create new records with default enabled status based on tenant_type
+    - Log the reset action
+    """
+    platform_service = PlatformAdminService(db, admin, _get_request_info(request))
+    tenant = await platform_service.get_tenant_by_id(tenant_id)
+
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant {tenant_id} not found",
+        )
+
+    module_service = TenantModuleService(db=db, user=admin)
+
+    try:
+        reset_modules = await module_service.reset_to_defaults(tenant_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return TenantModulesResetResponse(
+        tenant_id=tenant_id,
+        tenant_type=tenant.tenant_type,
+        modules_reset=len(reset_modules),
+        message=f"Reset {len(reset_modules)} modules to defaults for tenant '{tenant.name}'",
     )

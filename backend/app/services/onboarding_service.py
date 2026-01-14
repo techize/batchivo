@@ -23,6 +23,7 @@ from app.schemas.onboarding import (
 )
 from app.schemas.tenant_settings import TenantSettings
 from app.services.email_service import get_email_service
+from app.services.tenant_module_service import TenantModuleService
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +199,10 @@ class OnboardingService:
         )
         self.db.add(tenant)
         await self.db.flush()  # Get tenant.id
+
+        # Initialize default modules for tenant based on tenant_type
+        module_service = TenantModuleService(db=self.db)
+        await module_service.initialize_tenant_modules(tenant.id)
 
         # Create user
         user = User(
