@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "batchivo-backend"
-version = "0.1.0"
+version = "0.2.0-alpha"
 description = "Batchivo - Production tracking and ecommerce platform for makers"
 authors = ["Jonathan <jonathan@techize.com>"]
 readme = "README.md"
