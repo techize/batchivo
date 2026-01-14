@@ -166,7 +166,13 @@ async def process_payment(
         # Look up each product to get its real SKU and link properly
         for item in request.items:
             # Try to find product in Batchivo DB by product ID
-            product_result = await db.execute(select(Product).where(Product.id == item.product_id))
+            # SECURITY: Must filter by tenant_id to prevent cross-tenant data leakage
+            product_result = await db.execute(
+                select(Product).where(
+                    Product.id == item.product_id,
+                    Product.tenant_id == shop_tenant.id,  # Enforce tenant isolation
+                )
+            )
             product = product_result.scalar_one_or_none()
 
             if product:

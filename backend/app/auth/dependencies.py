@@ -119,14 +119,40 @@ async def get_current_tenant(
 
     # If tenant ID specified in header, verify access
     if x_tenant_id:
+        # SECURITY: Validate UUID format explicitly
         try:
             tenant_uuid = uuid.UUID(x_tenant_id)
-            for ut in user_tenants:
-                if ut.tenant_id == tenant_uuid:
-                    result = await db.execute(select(Tenant).where(Tenant.id == tenant_uuid))
-                    return result.scalar_one()
-        except (ValueError, Exception):
-            pass
+        except ValueError:
+            logger.warning(f"Invalid X-Tenant-ID format from user {user.id}: {x_tenant_id}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid tenant ID format",
+            )
+
+        # SECURITY: Check if user has access to requested tenant
+        user_tenant = next((ut for ut in user_tenants if ut.tenant_id == tenant_uuid), None)
+
+        if not user_tenant:
+            # SECURITY: Log unauthorized tenant access attempt
+            logger.warning(
+                f"User {user.id} attempted to access unauthorized tenant {tenant_uuid}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to the requested tenant",
+            )
+
+        # User has access - fetch and return the tenant
+        result = await db.execute(select(Tenant).where(Tenant.id == tenant_uuid))
+        tenant = result.scalar_one_or_none()
+
+        if not tenant or not tenant.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tenant not found or inactive",
+            )
+
+        return tenant
 
     # Return user's first tenant (default)
     result = await db.execute(select(Tenant).where(Tenant.id == user_tenants[0].tenant_id))
