@@ -13,8 +13,8 @@ RUN apk add --no-cache \
     libffi-dev \
     postgresql-dev
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry==1.8.0
+# Install Poetry 2.x for PEP 621 support
+RUN pip install --no-cache-dir poetry>=2.0.0
 
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
