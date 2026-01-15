@@ -1,0 +1,18 @@
+# Umami Analytics IngressRoute
+# Exposes Umami at analytics.batchivo.com
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: umami
+  namespace: umami
+spec:
+  entryPoints:
+  - web
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host(`analytics.batchivo.com`)
+    services:
+    - name: umami
+      port: 3000

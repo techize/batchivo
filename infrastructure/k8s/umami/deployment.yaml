@@ -1,0 +1,176 @@
+# Umami Analytics - Self-hosted web analytics
+# https://umami.is/docs
+#
+# PREREQUISITES: Create the umami-secrets secret before deploying:
+#   kubectl create namespace umami
+#   kubectl create secret generic umami-secrets -n umami \
+#     --from-literal=APP_SECRET="$(openssl rand -base64 32)" \
+#     --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)"
+#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: umami
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: umami-config
+  namespace: umami
+data:
+  DATABASE_TYPE: "postgresql"
+  POSTGRES_USER: "umami"
+  POSTGRES_DB: "umami"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: umami-postgres-pvc
+  namespace: umami
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami-postgres
+  namespace: umami
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: umami-postgres
+  template:
+    metadata:
+      labels:
+        app: umami-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: umami-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: umami-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: umami-config
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: umami-postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami-postgres
+  namespace: umami
+spec:
+  selector:
+    app: umami-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami
+  namespace: umami
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: umami
+  template:
+    metadata:
+      labels:
+        app: umami
+    spec:
+      containers:
+      - name: umami
+        image: ghcr.io/umami-software/umami:postgresql-latest
+        ports:
+        - containerPort: 3000
+        env:
+        # These must come BEFORE DATABASE_URL for $(VAR) substitution to work
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: umami-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: umami-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: umami-config
+              key: POSTGRES_DB
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@umami-postgres:5432/$(POSTGRES_DB)"
+        - name: APP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: umami-secrets
+              key: APP_SECRET
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/heartbeat
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/heartbeat
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami
+  namespace: umami
+spec:
+  selector:
+    app: umami
+  ports:
+  - port: 3000
+    targetPort: 3000
