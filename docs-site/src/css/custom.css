@@ -1,0 +1,103 @@
+/**
+ * Batchivo Documentation Theme
+ * Based on Infima with custom brand colors
+ */
+
+/* Light mode */
+:root {
+  --ifm-color-primary: #0891b2;
+  --ifm-color-primary-dark: #0782a1;
+  --ifm-color-primary-darker: #077b98;
+  --ifm-color-primary-darkest: #06657d;
+  --ifm-color-primary-light: #09a0c3;
+  --ifm-color-primary-lighter: #0aa7cc;
+  --ifm-color-primary-lightest: #0bbde7;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-footer-background-color: #1e293b;
+}
+
+/* Dark mode */
+[data-theme='dark'] {
+  --ifm-color-primary: #22d3ee;
+  --ifm-color-primary-dark: #0ec6e2;
+  --ifm-color-primary-darker: #0ebcd6;
+  --ifm-color-primary-darkest: #0b9bb0;
+  --ifm-color-primary-light: #45daf1;
+  --ifm-color-primary-lighter: #51ddf2;
+  --ifm-color-primary-lightest: #7ae6f6;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-background-color: #0f172a;
+  --ifm-navbar-background-color: #1e293b;
+  --ifm-footer-background-color: #0f172a;
+}
+
+/* Hero section styling */
+.hero--primary {
+  --ifm-hero-background-color: #0891b2;
+  --ifm-hero-text-color: #ffffff;
+}
+
+[data-theme='dark'] .hero--primary {
+  --ifm-hero-background-color: #164e63;
+}
+
+/* Code blocks */
+.prism-code {
+  font-size: 14px;
+}
+
+/* Navbar */
+.navbar__title {
+  font-weight: 700;
+}
+
+/* Feature cards */
+.feature-card {
+  background: var(--ifm-card-background-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .feature-card {
+  background: #1e293b;
+}
+
+/* Links */
+a {
+  transition: color 0.2s ease;
+}
+
+/* Buttons */
+.button--primary {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}
+
+.button--primary:hover {
+  background-color: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-dark);
+}
+
+/* Tables */
+table {
+  display: table;
+  width: 100%;
+}
+
+/* Sidebar */
+.menu__link--active {
+  font-weight: 600;
+}
+
+/* Admonitions */
+.admonition {
+  border-radius: 8px;
+}
+
+/* Search */
+.DocSearch-Button {
+  border-radius: 8px;
+}
