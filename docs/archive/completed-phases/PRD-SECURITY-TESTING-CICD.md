@@ -95,8 +95,8 @@ env:
 
 **Current State**: Credentials in `.env` file (committed to git)
 ```bash
-SQUARE_ACCESS_TOKEN=***REMOVED***
-SQUARE_LOCATION_ID=***REMOVED***
+SQUARE_ACCESS_TOKEN=<your-square-sandbox-token>
+SQUARE_LOCATION_ID=<your-location-id>
 ```
 
 **Risk**: Payment API credential exposure (MEDIUM for private repo)
@@ -107,7 +107,7 @@ SQUARE_LOCATION_ID=***REMOVED***
 ```bash
 kubectl create secret generic square-credentials \
   --from-literal=access-token='<token>' \
-  --from-literal=location-id='***REMOVED***' \
+  --from-literal=location-id='<your-location-id>' \
   --from-literal=environment='sandbox' \
   -n batchivo
 ```
