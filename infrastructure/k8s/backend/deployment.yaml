@@ -14,7 +14,7 @@ data:
   LOG_LEVEL: "INFO"
   ENABLE_TRACING: "false"  # Disable until observability stack is deployed
   ACCESS_TOKEN_EXPIRE_MINUTES: "1440"  # 24 hours
-  CORS_ORIGINS: '["https://batchivo.com", "https://www.batchivo.com", "https://mystmereforge.co.uk", "https://www.mystmereforge.co.uk"]'
+  CORS_ORIGINS: '["https://batchivo.com", "https://www.batchivo.com", "https://app.batchivo.com", "https://app.batchivo.co.uk", "https://mystmereforge.co.uk", "https://www.mystmereforge.co.uk"]'
   # S3/MinIO storage configuration
   STORAGE_TYPE: "s3"
   STORAGE_S3_BUCKET: "batchivo-images"

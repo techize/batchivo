@@ -45,6 +45,9 @@ spec:
       - name: frontend
         image: registry.techize.co.uk/batchivo/batchivo-frontend:feb3c963d091a96dceffae948cba721a70bdf39d
         imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: frontend-config
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
