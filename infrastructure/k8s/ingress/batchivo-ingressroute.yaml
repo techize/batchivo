@@ -14,28 +14,28 @@ spec:
     services:
     - name: backend
       port: 8000
-  # Main domain - frontend (batchivo.com)
+  # App subdomain - dashboard (app.batchivo.com)
   - kind: Rule
-    match: Host(`batchivo.com`) && PathPrefix(`/uploads`)
+    match: Host(`app.batchivo.com`) && PathPrefix(`/uploads`)
     priority: 100
     services:
     - name: backend
       port: 8000
   - kind: Rule
-    match: Host(`batchivo.com`)
+    match: Host(`app.batchivo.com`)
     priority: 1
     services:
     - name: frontend
       port: 8080
-  # WWW redirect (www.batchivo.com)
+  # App subdomain for .co.uk (app.batchivo.co.uk)
   - kind: Rule
-    match: Host(`www.batchivo.com`) && PathPrefix(`/uploads`)
+    match: Host(`app.batchivo.co.uk`) && PathPrefix(`/uploads`)
     priority: 100
     services:
     - name: backend
       port: 8000
   - kind: Rule
-    match: Host(`www.batchivo.com`)
+    match: Host(`app.batchivo.co.uk`)
     priority: 1
     services:
     - name: frontend
