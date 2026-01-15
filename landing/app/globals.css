@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #0891b2;
+  --primary-dark: #0e7490;
+  --secondary: #f8fafc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+    --secondary: #1e293b;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom gradient for hero */
+.hero-gradient {
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%);
+}
+
+/* Dark mode hero gradient */
+@media (prefers-color-scheme: dark) {
+  .hero-gradient {
+    background: linear-gradient(135deg, #164e63 0%, #155e75 50%, #0e7490 100%);
+  }
+}
+
+/* Feature card hover effect */
+.feature-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+}
