@@ -1,0 +1,23 @@
+# Batchivo Code Owners
+# These owners will be requested for review when someone opens a pull request.
+
+# Default owners for everything
+* @techize
+
+# Backend (Python/FastAPI)
+/backend/ @techize
+
+# Frontend (React/TypeScript)
+/frontend/ @techize
+
+# Infrastructure (Kubernetes, Docker)
+/infrastructure/ @techize
+/docker-compose.yml @techize
+/Makefile @techize
+
+# Documentation
+*.md @techize
+/docs/ @techize
+
+# CI/CD
+/.github/ @techize

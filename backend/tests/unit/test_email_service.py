@@ -6,33 +6,44 @@ from unittest.mock import MagicMock, patch
 from app.services.email_service import EmailService, get_email_service
 
 
+def get_mock_settings(**overrides):
+    """Helper to create mock settings with shop branding defaults."""
+    defaults = {
+        "resend_api_key": "test-api-key",
+        "email_from_address": "orders@testshop.com",
+        "email_from_name": "Test Shop",
+        "frontend_base_url": "http://localhost:5173",
+        "shop_name": "Test Shop",
+        "shop_tagline": "Test Tagline",
+        "shop_website_url": "https://testshop.com",
+        "shop_orders_email": "orders@testshop.com",
+        "shop_support_email": "support@testshop.com",
+        "shop_social_handle": "@testshop",
+        "shop_brand_color": "#6366f1",
+    }
+    defaults.update(overrides)
+    return MagicMock(**defaults)
+
+
 class TestEmailService:
     """Tests for EmailService class."""
 
     def test_init_with_api_key(self):
         """Test initialization when API key is configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 service = EmailService()
 
                 assert service.api_key == "test-api-key"
-                assert service.from_address == "test@example.com"
-                assert service.from_name == "Test Sender"
+                assert service.from_address == "orders@testshop.com"
+                assert service.from_name == "Test Shop"
                 mock_resend.api_key = "test-api-key"
 
     def test_init_without_api_key(self):
         """Test initialization when API key is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings(resend_api_key="")
             service = EmailService()
 
             assert service.api_key == ""
@@ -41,11 +52,7 @@ class TestEmailService:
     def test_is_configured_true(self):
         """Test is_configured returns True when API key exists."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings()
             service = EmailService()
 
             assert service.is_configured is True
@@ -53,11 +60,7 @@ class TestEmailService:
     def test_is_configured_false(self):
         """Test is_configured returns False when API key is empty."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings(resend_api_key="")
             service = EmailService()
 
             assert service.is_configured is False
@@ -65,11 +68,7 @@ class TestEmailService:
     def test_is_configured_false_when_none(self):
         """Test is_configured returns False when API key is None."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key=None,
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings(resend_api_key=None)
             service = EmailService()
 
             assert service.is_configured is False
@@ -81,11 +80,7 @@ class TestSendOrderConfirmation:
     def test_send_order_confirmation_not_configured(self):
         """Test that email is not sent when service is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings(resend_api_key="")
             service = EmailService()
 
             result = service.send_order_confirmation(
@@ -109,11 +104,7 @@ class TestSendOrderConfirmation:
     def test_send_order_confirmation_success(self):
         """Test successful order confirmation email."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -146,7 +137,7 @@ class TestSendOrderConfirmation:
                 # Verify the email was sent with correct parameters
                 call_args = mock_resend.Emails.send.call_args[0][0]
                 assert call_args["to"] == ["customer@example.com"]
-                assert call_args["from"] == "Mystmereforge <orders@mystmereforge.co.uk>"
+                assert call_args["from"] == "Test Shop <orders@testshop.com>"
                 assert "Order Confirmation - MF-20251218-001" in call_args["subject"]
                 assert "John Doe" in call_args["html"]
                 assert "MF-20251218-001" in call_args["html"]
@@ -157,11 +148,7 @@ class TestSendOrderConfirmation:
     def test_send_order_confirmation_without_receipt_url(self):
         """Test order confirmation email without receipt URL."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -192,11 +179,7 @@ class TestSendOrderConfirmation:
     def test_send_order_confirmation_minimal_address(self):
         """Test order confirmation with minimal address fields."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -221,11 +204,7 @@ class TestSendOrderConfirmation:
     def test_send_order_confirmation_exception(self):
         """Test that exceptions are handled gracefully."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.side_effect = Exception("Resend API error")
 
@@ -251,11 +230,7 @@ class TestSendOrderConfirmation:
     def test_send_order_confirmation_multiple_items(self):
         """Test email with multiple order items."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -298,11 +273,7 @@ class TestEmailServiceSingleton:
         email_module._email_service = None
 
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-key",
-                email_from_address="test@example.com",
-                email_from_name="Test",
-            )
+            mock_settings.return_value = get_mock_settings()
 
             service1 = get_email_service()
             service2 = get_email_service()
@@ -319,11 +290,7 @@ class TestEmailServiceSingleton:
         email_module._email_service = None
 
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-key",
-                email_from_address="test@example.com",
-                email_from_name="Test",
-            )
+            mock_settings.return_value = get_mock_settings()
 
             service = get_email_service()
 
@@ -339,11 +306,7 @@ class TestEmailContent:
     def test_email_html_contains_order_details(self):
         """Test that email HTML contains all expected order details."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -391,18 +354,14 @@ class TestEmailContent:
                 assert "https://receipt.test/abc123" in html
                 assert "View Payment Receipt" in html
 
-                # Check branding
-                assert "Mystmereforge" in html
-                assert "orders@mystmereforge.co.uk" in html
+                # Check branding (from config)
+                assert "Test Shop" in html
+                assert "orders@testshop.com" in html
 
     def test_email_escapes_special_characters(self):
         """Test that email handles special characters in input."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -432,11 +391,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_not_configured(self):
         """Test that refund email is not sent when service is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings(resend_api_key="")
             service = EmailService()
 
             result = service.send_refund_confirmation(
@@ -451,11 +406,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_success(self):
         """Test successful refund confirmation email."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -475,7 +426,7 @@ class TestSendRefundConfirmation:
                 # Verify the email was sent with correct parameters
                 call_args = mock_resend.Emails.send.call_args[0][0]
                 assert call_args["to"] == ["customer@example.com"]
-                assert call_args["from"] == "Mystmereforge <orders@mystmereforge.co.uk>"
+                assert call_args["from"] == "Test Shop <orders@testshop.com>"
                 assert "Refund Confirmation - MF-20251219-001" in call_args["subject"]
                 assert "John Doe" in call_args["html"]
                 assert "MF-20251219-001" in call_args["html"]
@@ -485,11 +436,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_without_reason(self):
         """Test refund confirmation email without reason."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -511,11 +458,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_gbp_currency(self):
         """Test refund email uses GBP symbol."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -535,11 +478,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_usd_currency(self):
         """Test refund email uses USD symbol."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -558,11 +497,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_eur_currency(self):
         """Test refund email uses EUR symbol."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -581,11 +516,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_unknown_currency(self):
         """Test refund email uses currency code for unknown currencies."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -604,11 +535,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_exception(self):
         """Test that exceptions are handled gracefully."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.side_effect = Exception("Resend API error")
 
@@ -623,13 +550,9 @@ class TestSendRefundConfirmation:
                 assert result is False
 
     def test_send_refund_confirmation_contains_branding(self):
-        """Test refund email contains Mystmereforge branding."""
+        """Test refund email contains shop branding from config."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -642,18 +565,14 @@ class TestSendRefundConfirmation:
                 )
 
                 call_args = mock_resend.Emails.send.call_args[0][0]
-                assert "Mystmereforge" in call_args["html"]
-                assert "mystmereforge.co.uk" in call_args["html"]
-                assert "orders@mystmereforge.co.uk" in call_args["html"]
+                assert "Test Shop" in call_args["html"]
+                assert "testshop.com" in call_args["html"]
+                assert "orders@testshop.com" in call_args["html"]
 
     def test_send_refund_confirmation_contains_bank_notice(self):
         """Test refund email contains bank processing time notice."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -671,11 +590,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_default_currency(self):
         """Test refund email uses GBP as default currency."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -695,11 +610,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_special_characters_in_reason(self):
         """Test refund email handles special characters in reason."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -719,11 +630,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_zero_amount(self):
         """Test refund email with zero amount."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -742,11 +649,7 @@ class TestSendRefundConfirmation:
     def test_send_refund_confirmation_large_amount(self):
         """Test refund email with large amount."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmereforge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -769,11 +672,7 @@ class TestSendContactNotification:
     def test_send_contact_notification_not_configured(self):
         """Test that contact email is not sent when service is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="",
-                email_from_address="test@example.com",
-                email_from_name="Test Sender",
-            )
+            mock_settings.return_value = get_mock_settings(resend_api_key="")
             service = EmailService()
 
             result = service.send_contact_notification(
@@ -789,11 +688,7 @@ class TestSendContactNotification:
     def test_send_contact_notification_success(self):
         """Test successful contact notification email to owner and customer."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmere Forge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -813,11 +708,7 @@ class TestSendContactNotification:
     def test_send_contact_notification_with_order_number(self):
         """Test contact notification with related order number."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmere Forge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -839,11 +730,7 @@ class TestSendContactNotification:
     def test_send_contact_notification_subject_labels(self):
         """Test contact notification maps subject codes to labels."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmere Forge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -862,11 +749,7 @@ class TestSendContactNotification:
     def test_send_contact_notification_exception(self):
         """Test that exceptions are handled gracefully."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmere Forge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.side_effect = Exception("Resend API error")
 
@@ -882,13 +765,9 @@ class TestSendContactNotification:
                 assert result is False
 
     def test_send_contact_notification_sends_to_owner(self):
-        """Test contact notification sends to hello@mystmereforge.co.uk."""
+        """Test contact notification sends to shop support email from config."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmere Forge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 
@@ -901,19 +780,15 @@ class TestSendContactNotification:
                     reference="REF-005",
                 )
 
-                # First call should be to shop owner
+                # First call should be to shop owner (support email from config)
                 first_call = mock_resend.Emails.send.call_args_list[0][0][0]
-                assert first_call["to"] == ["hello@mystmereforge.co.uk"]
+                assert first_call["to"] == ["support@testshop.com"]
                 assert first_call["reply_to"] == "customer@example.com"
 
     def test_send_contact_notification_customer_confirmation(self):
         """Test contact notification sends confirmation to customer."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(
-                resend_api_key="test-api-key",
-                email_from_address="orders@mystmereforge.co.uk",
-                email_from_name="Mystmere Forge",
-            )
+            mock_settings.return_value = get_mock_settings()
             with patch("app.services.email_service.resend") as mock_resend:
                 mock_resend.Emails.send.return_value = {"id": "email-123"}
 

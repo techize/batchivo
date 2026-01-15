@@ -98,6 +98,15 @@ class Settings(BaseSettings):
     email_from_name: str = "Batchivo"
     frontend_base_url: str = "http://localhost:5173"  # Base URL for email links
 
+    # Shop Branding - configure for your shop's email templates
+    shop_name: str = "Your Shop"  # Display name in emails
+    shop_tagline: str = "Welcome to our shop"  # Tagline shown in email headers
+    shop_website_url: str = "http://localhost:5173"  # Website URL for email footers
+    shop_orders_email: str = "orders@example.com"  # Email for order inquiries
+    shop_support_email: str = "support@example.com"  # Email for contact form notifications
+    shop_social_handle: str = ""  # Social media handle (e.g., "@yourshop")
+    shop_brand_color: str = "#6366f1"  # Primary brand color (hex) for emails
+
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
         """Validate that secret_key meets security requirements."""

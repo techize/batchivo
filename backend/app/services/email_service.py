@@ -22,6 +22,15 @@ class EmailService:
         self.from_name = settings.email_from_name
         self.frontend_base_url = settings.frontend_base_url.rstrip("/")
 
+        # Shop branding configuration
+        self.shop_name = settings.shop_name
+        self.shop_tagline = settings.shop_tagline
+        self.shop_website_url = settings.shop_website_url.rstrip("/")
+        self.shop_orders_email = settings.shop_orders_email
+        self.shop_support_email = settings.shop_support_email
+        self.shop_social_handle = settings.shop_social_handle
+        self.shop_brand_color = settings.shop_brand_color
+
         if self.api_key:
             resend.api_key = self.api_key
 
@@ -138,8 +147,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">Mystmereforge</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
@@ -192,9 +201,9 @@ class EmailService:
             {receipt_section}
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
-                <p>Questions about your order? Reply to this email or contact us at orders@mystmereforge.co.uk</p>
+                <p>Questions about your order? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -264,8 +273,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">Mystmereforge</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
@@ -296,9 +305,9 @@ class EmailService:
             </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
-                <p>Questions about your refund? Reply to this email or contact us at orders@mystmereforge.co.uk</p>
+                <p>Questions about your refund? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -376,7 +385,7 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #D97754; margin-bottom: 5px;">Mystmere Forge</h1>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
                 <p style="color: #666; margin: 0;">New Contact Form Submission</p>
             </div>
 
@@ -395,7 +404,7 @@ class EmailService:
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Email:</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                            <a href="mailto:{email}" style="color: #D97754;">{email}</a>
+                            <a href="mailto:{email}" style="color: {self.shop_brand_color};">{email}</a>
                         </td>
                     </tr>
                     <tr>
@@ -413,7 +422,7 @@ class EmailService:
 
             <div style="text-align: center; margin-top: 20px;">
                 <a href="mailto:{email}?subject=Re: {subject_label} - {reference}"
-                   style="display: inline-block; background: #D97754; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                   style="display: inline-block; background: {self.shop_brand_color}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                     Reply to {name}
                 </a>
             </div>
@@ -431,8 +440,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #D97754; margin-bottom: 5px;">Mystmere Forge</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #172c3c; border-radius: 8px; padding: 20px; margin-bottom: 20px; color: #BDBCB9;">
@@ -455,7 +464,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>In the meantime, feel free to browse our shop!</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://www.mystmereforge.co.uk/shop" style="color: #D97754;">www.mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -467,7 +476,7 @@ class EmailService:
             resend.Emails.send(
                 {
                     "from": f"{self.from_name} <{self.from_address}>",
-                    "to": ["hello@mystmereforge.co.uk"],
+                    "to": [self.shop_support_email],
                     "reply_to": email,
                     "subject": f"[Contact Form] {subject_label} from {name} - {reference}",
                     "html": owner_html,
@@ -559,8 +568,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">Mystmereforge</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
@@ -586,9 +595,9 @@ class EmailService:
             </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
-                <p>Questions about your delivery? Reply to this email or contact us at orders@mystmereforge.co.uk</p>
+                <p>Questions about your delivery? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -631,6 +640,19 @@ class EmailService:
             logger.warning("Email service not configured - skipping delivered notification")
             return False
 
+        # Build social section only if handle is configured
+        social_section = ""
+        if self.shop_social_handle:
+            social_section = f"""
+                <div style="background: #faf5ff; border: 1px solid {self.shop_brand_color}; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                    <p style="margin: 0 0 15px; color: #5b21b6; font-weight: bold;">We'd love to hear from you!</p>
+                    <p style="margin: 0; color: #666; font-size: 0.95em;">
+                        If you're happy with your purchase, please consider sharing a photo on social media
+                        and tagging us <strong>{self.shop_social_handle}</strong>
+                    </p>
+                </div>
+            """
+
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -640,8 +662,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">Mystmereforge</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
@@ -654,13 +676,7 @@ class EmailService:
                 <p>Hi {customer_name},</p>
                 <p>Your order has been delivered! We hope you love your new items. 🎉</p>
 
-                <div style="background: #faf5ff; border: 1px solid #8b5cf6; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-                    <p style="margin: 0 0 15px; color: #5b21b6; font-weight: bold;">We'd love to hear from you!</p>
-                    <p style="margin: 0; color: #666; font-size: 0.95em;">
-                        If you're happy with your purchase, please consider sharing a photo on social media
-                        and tagging us <strong>@mystmereforge</strong>
-                    </p>
-                </div>
+                {social_section}
 
                 <div style="background: #f9fafb; border-radius: 4px; padding: 15px; margin-top: 20px;">
                     <p style="margin: 0 0 10px; font-weight: bold;">Something not right?</p>
@@ -672,10 +688,10 @@ class EmailService:
             </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
-                <p>Thank you for shopping with Mystmereforge!</p>
-                <p>Questions or feedback? Reply to this email or contact us at orders@mystmereforge.co.uk</p>
+                <p>Thank you for shopping with {self.shop_name}!</p>
+                <p>Questions or feedback? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -751,8 +767,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">Mystmereforge</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #fef2f2; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
@@ -778,9 +794,9 @@ class EmailService:
             </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
-                <p>Questions about your cancellation? Reply to this email or contact us at orders@mystmereforge.co.uk</p>
+                <p>Questions about your cancellation? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -809,7 +825,7 @@ class EmailService:
         to_email: str,
         customer_name: str,
         verification_token: str,
-        shop_name: str = "Mystmereforge",
+        shop_name: str | None = None,
     ) -> bool:
         """
         Send welcome email to new customer with verification link.
@@ -818,7 +834,7 @@ class EmailService:
             to_email: Customer email address
             customer_name: Customer name
             verification_token: Email verification token
-            shop_name: Shop name for branding
+            shop_name: Shop name for branding (uses config default if not provided)
 
         Returns:
             True if email sent successfully, False otherwise
@@ -827,6 +843,9 @@ class EmailService:
             logger.warning("Email service not configured - skipping welcome email")
             return False
 
+        # Use configured shop name if not provided
+        display_shop_name = shop_name or self.shop_name
+
         verification_url = f"{self.frontend_base_url}/verify-email?token={verification_token}"
 
         html_content = f"""
@@ -834,12 +853,12 @@ class EmailService:
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Welcome to {shop_name}!</title>
+            <title>Welcome to {display_shop_name}!</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">{shop_name}</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{display_shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #faf5ff; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
@@ -849,7 +868,7 @@ class EmailService:
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <p>Hi {customer_name},</p>
-                <p>Thank you for creating an account with {shop_name}! We're excited to have you.</p>
+                <p>Thank you for creating an account with {display_shop_name}! We're excited to have you.</p>
                 <p>With your account, you can:</p>
                 <ul style="color: #666;">
                     <li>Track your orders easily</li>
@@ -858,21 +877,21 @@ class EmailService:
                 </ul>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{verification_url}" style="display: inline-block; background: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                    <a href="{verification_url}" style="display: inline-block; background: {self.shop_brand_color}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                         Verify Your Email
                     </a>
                 </div>
 
                 <p style="color: #666; font-size: 0.9em; text-align: center;">
                     Or copy and paste this link: <br>
-                    <a href="{verification_url}" style="color: #8b5cf6; word-break: break-all;">{verification_url}</a>
+                    <a href="{verification_url}" style="color: {self.shop_brand_color}; word-break: break-all;">{verification_url}</a>
                 </p>
             </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>Happy shopping!</p>
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -899,7 +918,7 @@ class EmailService:
         to_email: str,
         customer_name: str,
         verification_token: str,
-        shop_name: str = "Mystmereforge",
+        shop_name: str | None = None,
     ) -> bool:
         """
         Send email verification (resend).
@@ -908,7 +927,7 @@ class EmailService:
             to_email: Customer email address
             customer_name: Customer name
             verification_token: Email verification token
-            shop_name: Shop name for branding
+            shop_name: Shop name for branding (uses config default if not provided)
 
         Returns:
             True if email sent successfully, False otherwise
@@ -916,6 +935,9 @@ class EmailService:
         if not self.is_configured:
             logger.warning("Email service not configured - skipping verification email")
             return False
+
+        # Use configured shop name if not provided
+        display_shop_name = shop_name or self.shop_name
 
         verification_url = f"{self.frontend_base_url}/verify-email?token={verification_token}"
 
@@ -928,8 +950,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">{shop_name}</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{display_shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
@@ -937,7 +959,7 @@ class EmailService:
                 <p>Please verify your email address by clicking the button below:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{verification_url}" style="display: inline-block; background: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                    <a href="{verification_url}" style="display: inline-block; background: {self.shop_brand_color}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                         Verify Your Email
                     </a>
                 </div>
@@ -949,7 +971,7 @@ class EmailService:
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p style="margin-top: 15px;">
-                    <a href="https://mystmereforge.co.uk" style="color: #8b5cf6;">mystmereforge.co.uk</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
                 </p>
             </div>
         </body>
@@ -976,7 +998,7 @@ class EmailService:
         to_email: str,
         customer_name: str,
         reset_token: str,
-        shop_name: str = "Mystmereforge",
+        shop_name: str | None = None,
     ) -> bool:
         """
         Send password reset email.
@@ -985,7 +1007,7 @@ class EmailService:
             to_email: Customer email address
             customer_name: Customer name
             reset_token: Password reset token
-            shop_name: Shop name for branding
+            shop_name: Shop name for branding (uses config default if not provided)
 
         Returns:
             True if email sent successfully, False otherwise
@@ -993,6 +1015,9 @@ class EmailService:
         if not self.is_configured:
             logger.warning("Email service not configured - skipping password reset email")
             return False
+
+        # Use configured shop name if not provided
+        display_shop_name = shop_name or self.shop_name
 
         reset_url = f"{self.frontend_base_url}/reset-password?token={reset_token}"
 
@@ -1005,8 +1030,8 @@ class EmailService:
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b5cf6; margin-bottom: 5px;">{shop_name}</h1>
-                <p style="color: #666; margin: 0;">Handcrafted 3D Printed Creations</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{display_shop_name}</h1>
+                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
             </div>
 
             <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
@@ -1018,7 +1043,7 @@ class EmailService:
                 <p>We received a request to reset your password. Click the button below to create a new password:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{reset_url}" style="display: inline-block; background: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                    <a href="{reset_url}" style="display: inline-block; background: {self.shop_brand_color}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                         Reset Password
                     </a>
                 </div>
@@ -1031,7 +1056,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>If you're having trouble with the button, copy and paste this URL into your browser:</p>
                 <p style="word-break: break-all;">
-                    <a href="{reset_url}" style="color: #8b5cf6;">{reset_url}</a>
+                    <a href="{reset_url}" style="color: {self.shop_brand_color};">{reset_url}</a>
                 </p>
             </div>
         </body>
