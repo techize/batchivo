@@ -4,6 +4,13 @@ import os
 from typing import AsyncGenerator
 from uuid import uuid4
 
+# SECURITY: Set test SECRET_KEY before any app imports trigger Settings loading
+# This is a cryptographically secure test key (not used in production)
+os.environ.setdefault(
+    "SECRET_KEY",
+    "test-secret-key-for-pytest-only-do-not-use-in-production-minimum-32-chars",
+)
+
 import boto3
 import pytest
 import pytest_asyncio

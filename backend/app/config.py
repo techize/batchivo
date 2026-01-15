@@ -3,7 +3,19 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Known weak secrets that should be rejected
+WEAK_SECRETS = [
+    "dev-secret-key-change-in-production",
+    "secret",
+    "change-me",
+    "changeme",
+    "password",
+    "your-secret-key",
+    "supersecret",
+]
 
 
 class Settings(BaseSettings):
@@ -71,7 +83,9 @@ class Settings(BaseSettings):
     storage_s3_secret_key: str = ""
 
     # Security
-    secret_key: str = "dev-secret-key-change-in-production"
+    # SECURITY: No default - must be set via SECRET_KEY environment variable
+    # Generate with: python -c "import secrets; print(secrets.token_urlsafe(64))"
+    secret_key: str
     access_token_expire_minutes: int = 60 * 24  # 24 hours
 
     # Square Payments (Mystmereforge Shop)
@@ -86,6 +100,29 @@ class Settings(BaseSettings):
     email_from_address: str = "orders@mystmereforge.co.uk"
     email_from_name: str = "Mystmereforge"
     frontend_base_url: str = "https://www.mystmereforge.co.uk"  # Base URL for email links
+
+    @model_validator(mode="after")
+    def validate_secret_key(self) -> "Settings":
+        """Validate that secret_key meets security requirements."""
+        if not self.secret_key:
+            raise ValueError(
+                "SECRET_KEY environment variable is required. "
+                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            )
+
+        if len(self.secret_key) < 32:
+            raise ValueError(
+                f"SECRET_KEY must be at least 32 characters (got {len(self.secret_key)}). "
+                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            )
+
+        if self.secret_key.lower() in WEAK_SECRETS:
+            raise ValueError(
+                "SECRET_KEY is using a known weak default value. "
+                "Generate a secure key with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            )
+
+        return self
 
     @property
     def is_development(self) -> bool:
