@@ -1,17 +1,15 @@
 import { test, expect } from '@playwright/test'
+import { registerAndLogin } from './helpers'
 
 /**
  * Test product-category management functionality
  */
 test.describe('Product Categories', () => {
   test.beforeEach(async ({ page }) => {
-    // Login
-    await page.goto('/login')
-    await page.fill('#email', 'jonathan@techize.co.uk')
-    await page.fill('#password', 'NewPassword123')
-    await page.click('button[type="submit"]')
+    // Register and login with a fresh test user
+    await registerAndLogin(page)
 
-    // Wait for redirect to dashboard
+    // Should be on dashboard after login
     await expect(page).toHaveURL(/\/(dashboard)?$/, { timeout: 15000 })
   })
 

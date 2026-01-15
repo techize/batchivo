@@ -50,15 +50,12 @@ class Settings(BaseSettings):
     cache_enabled: bool = True
     cache_default_ttl: int = 300  # 5 minutes
 
-    # CORS
+    # CORS - add your tenant domains via CORS_ORIGINS environment variable
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://localhost:5174",
         "https://batchivo.com",
         "https://dev.batchivo.com",
-        "https://mystmereforge.co.uk",
-        "https://www.mystmereforge.co.uk",
-        "https://test.mystmereforge.co.uk",
     ]
     cors_allow_credentials: bool = True
 
@@ -88,18 +85,18 @@ class Settings(BaseSettings):
     secret_key: str
     access_token_expire_minutes: int = 60 * 24  # 24 hours
 
-    # Square Payments (Mystmereforge Shop)
+    # Square Payments (optional - for shop checkout)
     square_app_id: str = ""  # Application ID for Web Payments SDK
     square_access_token: str = ""
     square_location_id: str = ""
     square_environment: Literal["sandbox", "production"] = "sandbox"
     square_webhook_signature_key: str = ""
 
-    # Email (Resend)
+    # Email (Resend) - configure via environment variables
     resend_api_key: str = ""
-    email_from_address: str = "orders@mystmereforge.co.uk"
-    email_from_name: str = "Mystmereforge"
-    frontend_base_url: str = "https://www.mystmereforge.co.uk"  # Base URL for email links
+    email_from_address: str = "noreply@example.com"
+    email_from_name: str = "Batchivo"
+    frontend_base_url: str = "http://localhost:5173"  # Base URL for email links
 
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
