@@ -1,10 +1,17 @@
-# Batchivo
+<p align="center">
+  <img src="frontend/public/logo.svg" alt="Batchivo Logo" width="400">
+</p>
 
-**Complete 3D printing business management platform**
+<h1 align="center">Batchivo</h1>
 
-[![CI](https://github.com/gullinmedia/batchivo/actions/workflows/ci.yml/badge.svg)](https://github.com/gullinmedia/batchivo/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/gullinmedia/batchivo/graph/badge.svg)](https://codecov.io/gh/gullinmedia/batchivo)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <strong>Complete 3D printing business management platform</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/techize/batchivo/actions/workflows/ci.yml"><img src="https://github.com/techize/batchivo/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://codecov.io/gh/techize/batchivo"><img src="https://codecov.io/gh/techize/batchivo/graph/badge.svg" alt="codecov"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.124+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://react.dev/)
