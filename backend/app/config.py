@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "Batchivo"
-    environment: Literal["development", "staging", "production"] = "development"
+    environment: Literal["development", "staging", "production", "test"] = "development"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
