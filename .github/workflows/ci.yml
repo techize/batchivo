@@ -81,12 +81,13 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests
+        timeout-minutes: 10
         env:
           DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: test-secret-key-for-ci-must-be-at-least-32-characters-long
           ENVIRONMENT: test
-        run: uv run pytest --cov=app --cov-report=xml -v
+        run: uv run pytest --cov=app --cov-report=xml -v --timeout=300
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
