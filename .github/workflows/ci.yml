@@ -32,10 +32,10 @@ jobs:
         run: uv sync --dev --no-install-project
 
       - name: Run ruff check
-        run: uv run ruff check .
+        run: uv run --no-project ruff check .
 
       - name: Run ruff format check
-        run: uv run ruff format --check .
+        run: uv run --no-project ruff format --check .
 
   backend-test:
     name: Backend Tests
@@ -86,7 +86,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: test-secret-key-for-ci
           ENVIRONMENT: test
-        run: uv run pytest --cov=app --cov-report=xml -v
+        run: uv run --no-project pytest --cov=app --cov-report=xml -v
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
