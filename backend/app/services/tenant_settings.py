@@ -6,7 +6,8 @@ from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from square.client import Client as SquareClient
+from square import Square
+from square.core.api_error import ApiError
 
 from app.core.encryption import encrypt_value, mask_credential, safe_decrypt
 from app.models.tenant import Tenant
@@ -135,30 +136,30 @@ class TenantSettingsService:
 
         try:
             # Initialize Square client
-            client = SquareClient(
-                access_token=access_token,
+            client = Square(
+                token=access_token,
                 environment=environment,
             )
 
             # Test by fetching the location
-            result = client.locations.retrieve_location(location_id=location_id)
+            result = client.locations.get(location_id=location_id)
+            location = result.location
 
-            if result.is_success():
-                location = result.body.get("location", {})
-                return SquareConnectionTest(
-                    success=True,
-                    message="Successfully connected to Square",
-                    environment=environment,
-                    location_name=location.get("name"),
-                )
-            else:
-                errors = result.errors or []
-                error_msg = errors[0].get("detail", "Unknown error") if errors else "Unknown error"
-                return SquareConnectionTest(
-                    success=False,
-                    message=f"Square API error: {error_msg}",
-                    environment=environment,
-                )
+            return SquareConnectionTest(
+                success=True,
+                message="Successfully connected to Square",
+                environment=environment,
+                location_name=location.name if location else None,
+            )
+
+        except ApiError as e:
+            errors = e.errors or []
+            error_msg = errors[0].detail if errors else "Unknown error"
+            return SquareConnectionTest(
+                success=False,
+                message=f"Square API error: {error_msg}",
+                environment=environment,
+            )
 
         except Exception as e:
             return SquareConnectionTest(
