@@ -156,15 +156,9 @@ class ProductBase(BaseModel):
     )
     backstory: Optional[str] = Field(None, description="Backstory/lore for featured items")
     # Product specifications
-    weight_grams: Optional[int] = Field(
-        None, ge=0, description="Product weight in grams"
-    )
-    size_cm: Optional[Decimal] = Field(
-        None, ge=0, description="Product size/length in centimeters"
-    )
-    print_time_hours: Optional[Decimal] = Field(
-        None, ge=0, description="Print time in hours"
-    )
+    weight_grams: Optional[int] = Field(None, ge=0, description="Product weight in grams")
+    size_cm: Optional[Decimal] = Field(None, ge=0, description="Product size/length in centimeters")
+    print_time_hours: Optional[Decimal] = Field(None, ge=0, description="Print time in hours")
 
 
 class ProductCreate(ProductBase):

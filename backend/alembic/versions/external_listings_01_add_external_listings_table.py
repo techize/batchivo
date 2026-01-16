@@ -46,7 +46,9 @@ def upgrade() -> None:
     op.create_index("ix_external_listings_tenant_id", "external_listings", ["tenant_id"])
     op.create_index("ix_external_listings_product_id", "external_listings", ["product_id"])
     op.create_index("ix_external_listings_platform", "external_listings", ["platform"])
-    op.create_index("ix_external_listings_platform_tenant", "external_listings", ["platform", "tenant_id"])
+    op.create_index(
+        "ix_external_listings_platform_tenant", "external_listings", ["platform", "tenant_id"]
+    )
 
 
 def downgrade() -> None:

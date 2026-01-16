@@ -312,7 +312,9 @@ async def list_tenant_modules(
             enabled=info["enabled"],
             is_default=info["is_default"],
             configured=info["configured"],
-            enabled_by_user_id=UUID(info["enabled_by_user_id"]) if info["enabled_by_user_id"] else None,
+            enabled_by_user_id=UUID(info["enabled_by_user_id"])
+            if info["enabled_by_user_id"]
+            else None,
             updated_at=info["updated_at"],
         )
         for name, info in module_status.items()
@@ -373,7 +375,9 @@ async def update_tenant_module(
     )
 
 
-@router.post("/tenants/{tenant_id}/modules/reset-defaults", response_model=TenantModulesResetResponse)
+@router.post(
+    "/tenants/{tenant_id}/modules/reset-defaults", response_model=TenantModulesResetResponse
+)
 async def reset_tenant_modules(
     request: Request,
     tenant_id: UUID,

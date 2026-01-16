@@ -144,7 +144,4 @@ class AuditLog(Base, UUIDMixin, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<AuditLog(action={self.action.value}, "
-            f"entity={self.entity_type}:{self.entity_id})>"
-        )
+        return f"<AuditLog(action={self.action.value}, entity={self.entity_type}:{self.entity_id})>"

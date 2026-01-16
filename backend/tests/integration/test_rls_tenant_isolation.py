@@ -130,7 +130,7 @@ async def spools_tenant_a(
             id=uuid4(),
             tenant_id=tenant_a.id,
             material_type_id=test_material_type.id,
-            spool_id=f"TENANT-A-SPOOL-{i+1:03d}",
+            spool_id=f"TENANT-A-SPOOL-{i + 1:03d}",
             brand="Bambu Lab",
             color=["Red", "Blue", "Green"][i],
             initial_weight=1000.0,
@@ -157,7 +157,7 @@ async def spools_tenant_b(
             id=uuid4(),
             tenant_id=tenant_b.id,
             material_type_id=test_material_type.id,
-            spool_id=f"TENANT-B-SPOOL-{i+1:03d}",
+            spool_id=f"TENANT-B-SPOOL-{i + 1:03d}",
             brand="Prusa",
             color=["White", "Black"][i],
             initial_weight=750.0,
@@ -432,9 +432,9 @@ class TestApplicationLevelIsolation:
                 )
 
                 # Should only see Tenant A's 3 spools
-                assert (
-                    len(spools) == 3
-                ), f"Expected 3 spools, got {len(spools)}: {[s.get('spool_id') for s in spools]}"
+                assert len(spools) == 3, (
+                    f"Expected 3 spools, got {len(spools)}: {[s.get('spool_id') for s in spools]}"
+                )
 
                 # Verify all spools belong to Tenant A
                 spool_ids = {s["spool_id"] for s in spools}

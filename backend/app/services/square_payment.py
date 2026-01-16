@@ -321,8 +321,7 @@ class SquarePaymentService:
             if result.is_success():
                 refund = result.body.get("refund", {})
                 logger.info(
-                    f"Refund successful: refund_id={refund.get('id')} "
-                    f"status={refund.get('status')}"
+                    f"Refund successful: refund_id={refund.get('id')} status={refund.get('status')}"
                 )
                 return {
                     "success": True,

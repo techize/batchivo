@@ -407,7 +407,9 @@ class EtsySettingsResponse(BaseModel):
         default=False, description="Whether all required credentials are set"
     )
     api_key_masked: str | None = Field(None, description="Masked API key (last 4 chars)")
-    shared_secret_masked: str | None = Field(None, description="Masked shared secret (last 4 chars)")
+    shared_secret_masked: str | None = Field(
+        None, description="Masked shared secret (last 4 chars)"
+    )
     access_token_masked: str | None = Field(None, description="Masked access token (last 4 chars)")
     refresh_token_set: bool = Field(default=False, description="Whether refresh token is set")
     shop_id: str | None = Field(None, description="Etsy shop ID")

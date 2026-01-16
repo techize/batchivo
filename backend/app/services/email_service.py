@@ -136,9 +136,9 @@ class EmailService:
         for item in order_items:
             items_html += f"""
             <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item['name']}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">{item['quantity']}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">£{item['price']:.2f}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item["name"]}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">{item["quantity"]}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">£{item["price"]:.2f}</td>
             </tr>
             """
 
@@ -227,7 +227,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>Questions about your order? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -323,7 +323,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>Questions about your refund? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -472,7 +472,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>In the meantime, feel free to browse our shop!</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -603,14 +603,16 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>Questions about your delivery? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Your Order Has Shipped! - {order_number}", html_content):
+        if self._send_email_sync(
+            to_email, f"Your Order Has Shipped! - {order_number}", html_content
+        ):
             logger.info(f"Shipped notification email sent to {to_email} for order {order_number}")
             return True
         else:
@@ -689,14 +691,16 @@ class EmailService:
                 <p>Thank you for shopping with {self.shop_name}!</p>
                 <p>Questions or feedback? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Your Order Has Been Delivered! - {order_number}", html_content):
+        if self._send_email_sync(
+            to_email, f"Your Order Has Been Delivered! - {order_number}", html_content
+        ):
             logger.info(f"Delivered notification email sent to {to_email} for order {order_number}")
             return True
         else:
@@ -786,7 +790,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>Questions about your cancellation? Reply to this email or contact us at {self.shop_orders_email}</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -873,7 +877,7 @@ class EmailService:
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>Happy shopping!</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -945,7 +949,7 @@ class EmailService:
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace('https://', '').replace('http://', '')}</a>
+                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -1326,7 +1330,9 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Return Request Update - RMA #{rma_number}", html_content):
+        if self._send_email_sync(
+            to_email, f"Return Request Update - RMA #{rma_number}", html_content
+        ):
             logger.info(f"Return rejected email sent to {to_email} for RMA {rma_number}")
             return True
         else:

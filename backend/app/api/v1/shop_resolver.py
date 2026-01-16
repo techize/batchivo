@@ -183,8 +183,7 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
         # PostgreSQL uses jsonb_extract_path_text
         result = await db.execute(
             select(Tenant).where(
-                func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain")
-                == hostname,
+                func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain") == hostname,
                 Tenant.is_active.is_(True),
             )
         )

@@ -113,19 +113,19 @@ class Settings(BaseSettings):
         if not self.secret_key:
             raise ValueError(
                 "SECRET_KEY environment variable is required. "
-                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                'Generate with: python -c "import secrets; print(secrets.token_urlsafe(64))"'
             )
 
         if len(self.secret_key) < 32:
             raise ValueError(
                 f"SECRET_KEY must be at least 32 characters (got {len(self.secret_key)}). "
-                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                'Generate with: python -c "import secrets; print(secrets.token_urlsafe(64))"'
             )
 
         if self.secret_key.lower() in WEAK_SECRETS:
             raise ValueError(
                 "SECRET_KEY is using a known weak default value. "
-                "Generate a secure key with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                'Generate a secure key with: python -c "import secrets; print(secrets.token_urlsafe(64))"'
             )
 
         return self

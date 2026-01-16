@@ -84,7 +84,7 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
           REDIS_URL: redis://localhost:6379/0
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: test-secret-key-for-ci-must-be-at-least-32-characters-long
           ENVIRONMENT: test
         run: uv run pytest --cov=app --cov-report=xml -v
 

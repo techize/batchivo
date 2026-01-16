@@ -134,9 +134,7 @@ async def get_current_tenant(
 
         if not user_tenant:
             # SECURITY: Log unauthorized tenant access attempt
-            logger.warning(
-                f"User {user.id} attempted to access unauthorized tenant {tenant_uuid}"
-            )
+            logger.warning(f"User {user.id} attempted to access unauthorized tenant {tenant_uuid}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have access to the requested tenant",

@@ -8,6 +8,7 @@ This data migration populates tenant_modules with default enabled modules
 for all existing tenants based on their tenant_type. New tenants created
 after this migration will have defaults set via OnboardingService.
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -15,8 +16,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd59377f9563e'
-down_revision: Union[str, Sequence[str], None] = 'external_listings_01'
+revision: str = "d59377f9563e"
+down_revision: Union[str, Sequence[str], None] = "external_listings_01"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

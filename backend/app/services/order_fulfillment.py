@@ -194,8 +194,7 @@ class OrderFulfillmentService:
         await self.db.flush()
 
         logger.info(
-            f"Order {order.order_number}: Successfully fulfilled with "
-            f"{len(deducted_items)} item(s)"
+            f"Order {order.order_number}: Successfully fulfilled with {len(deducted_items)} item(s)"
         )
 
         return FulfillmentResult(
@@ -262,9 +261,7 @@ class OrderFulfillmentService:
 
         await self.db.flush()
 
-        logger.info(
-            f"Order {order.order_number}: Reverted inventory for " f"{reverted_count} item(s)"
-        )
+        logger.info(f"Order {order.order_number}: Reverted inventory for {reverted_count} item(s)")
 
         return FulfillmentResult(
             success=True,

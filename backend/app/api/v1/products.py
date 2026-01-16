@@ -43,7 +43,11 @@ from app.services.costing import CostingService
 from app.services.etsy_sync import EtsySyncService, EtsySyncError
 from app.services.image_storage import ImageStorage, ImageStorageError, get_image_storage
 from app.services.search_service import SearchService, get_search_service
-from app.schemas.external_listing import SyncToEtsyRequest, SyncToEtsyResponse, ExternalListingResponse
+from app.schemas.external_listing import (
+    SyncToEtsyRequest,
+    SyncToEtsyResponse,
+    ExternalListingResponse,
+)
 
 router = APIRouter()
 
@@ -1524,13 +1528,17 @@ async def sync_product_to_etsy(
     data and creates a tracking record.
     """
     # Get product with all relationships needed for sync
-    query = select(Product).where(
-        Product.id == product_id,
-        Product.tenant_id == tenant.id,
-    ).options(
-        selectinload(Product.images),
-        selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
-        selectinload(Product.external_listings),
+    query = (
+        select(Product)
+        .where(
+            Product.id == product_id,
+            Product.tenant_id == tenant.id,
+        )
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
+            selectinload(Product.external_listings),
+        )
     )
     result = await db.execute(query)
     product = result.scalar_one_or_none()

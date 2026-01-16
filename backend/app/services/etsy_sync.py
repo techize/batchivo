@@ -193,7 +193,9 @@ class EtsySyncService:
                 raise EtsySyncError("Failed to create listing - no response from Etsy")
 
             # Extract listing ID and URL
-            listing_id = str(etsy_listing.listing_id) if hasattr(etsy_listing, "listing_id") else None
+            listing_id = (
+                str(etsy_listing.listing_id) if hasattr(etsy_listing, "listing_id") else None
+            )
             if not listing_id:
                 raise EtsySyncError("Failed to get listing ID from Etsy response")
 
@@ -319,7 +321,9 @@ class EtsySyncService:
                 try:
                     api.update_listing_inventory(listing_id, inventory_request)
                 except Exception as inv_err:
-                    logger.warning(f"Could not update inventory for listing {listing_id}: {inv_err}")
+                    logger.warning(
+                        f"Could not update inventory for listing {listing_id}: {inv_err}"
+                    )
 
             # Update our record
             listing.last_synced_at = datetime.now(timezone.utc)
@@ -388,7 +392,9 @@ class EtsySyncService:
         price = None
         if product.pricing:
             etsy_pricing = [
-                p for p in product.pricing if p.is_active and p.sales_channel.platform_type == "etsy"
+                p
+                for p in product.pricing
+                if p.is_active and p.sales_channel.platform_type == "etsy"
             ]
             if etsy_pricing:
                 price = float(etsy_pricing[0].list_price)

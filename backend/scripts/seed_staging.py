@@ -459,7 +459,7 @@ async def seed_orders(session, tenant_id, channel_id, products, customers) -> li
 
         product = products[order_data["product_idx"]]
         customer = customers[order_data["customer_idx"]]
-        order_number = f"MF-STAGING-{i+1:03d}"
+        order_number = f"MF-STAGING-{i + 1:03d}"
 
         # Check if order exists
         result = await session.execute(select(Order).where(Order.order_number == order_number))
@@ -513,7 +513,7 @@ async def seed_orders(session, tenant_id, channel_id, products, customers) -> li
 
             if order_data["status"] in [OrderStatus.SHIPPED, OrderStatus.DELIVERED]:
                 order.shipped_at = order_date + timedelta(days=1)
-                order.tracking_number = f"STAGING{i+1:06d}GB"
+                order.tracking_number = f"STAGING{i + 1:06d}GB"
                 order.shipped_email_sent = True
 
             if order_data["status"] == OrderStatus.DELIVERED:

@@ -1117,8 +1117,7 @@ class ProductionRunService:
                 await self.db.refresh(production_run)
 
                 logger.info(
-                    f"Cancelled production run {production_run.run_number} "
-                    f"with mode: {cancel_mode}"
+                    f"Cancelled production run {production_run.run_number} with mode: {cancel_mode}"
                 )
 
                 span.set_status(Status(StatusCode.OK))
@@ -1347,8 +1346,7 @@ class ProductionRunService:
             )
         else:
             logger.warning(
-                f"No successful items for run {production_run.run_number}, "
-                "skipping cost analysis"
+                f"No successful items for run {production_run.run_number}, skipping cost analysis"
             )
 
     async def _get_model_weight(self, model_id: UUID) -> Decimal:
