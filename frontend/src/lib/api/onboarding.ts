@@ -4,6 +4,8 @@
 
 import { api } from '@/lib/api'
 
+const API_V1_PREFIX = '/api/v1'
+
 export interface TenantRegistrationRequest {
   email: string
   password: string
@@ -53,7 +55,7 @@ export interface OnboardingStatusResponse {
 export async function registerTenant(
   data: TenantRegistrationRequest
 ): Promise<TenantRegistrationResponse> {
-  const response = await api.post('/onboarding/register', data)
+  const response = await api.post(`${API_V1_PREFIX}/onboarding/register`, data)
   return response.data
 }
 
@@ -61,7 +63,7 @@ export async function registerTenant(
  * Verify email with token
  */
 export async function verifyEmail(token: string): Promise<EmailVerificationResponse> {
-  const response = await api.post('/onboarding/verify-email', { token })
+  const response = await api.post(`${API_V1_PREFIX}/onboarding/verify-email`, { token })
   return response.data
 }
 
@@ -69,7 +71,7 @@ export async function verifyEmail(token: string): Promise<EmailVerificationRespo
  * Resend verification email
  */
 export async function resendVerification(email: string): Promise<ResendVerificationResponse> {
-  const response = await api.post('/onboarding/resend-verification', { email })
+  const response = await api.post(`${API_V1_PREFIX}/onboarding/resend-verification`, { email })
   return response.data
 }
 
@@ -77,7 +79,7 @@ export async function resendVerification(email: string): Promise<ResendVerificat
  * Get onboarding wizard status
  */
 export async function getOnboardingStatus(): Promise<OnboardingStatusResponse> {
-  const response = await api.get('/onboarding/wizard/status')
+  const response = await api.get(`${API_V1_PREFIX}/onboarding/wizard/status`)
   return response.data
 }
 
@@ -89,7 +91,7 @@ export async function updateOnboardingStep1(data: {
   slug?: string
   business_description?: string
 }): Promise<{ message: string; step_completed: number; next_step: number | null; is_completed: boolean }> {
-  const response = await api.put('/onboarding/wizard/step/1', data)
+  const response = await api.put(`${API_V1_PREFIX}/onboarding/wizard/step/1`, data)
   return response.data
 }
 
@@ -99,7 +101,7 @@ export async function updateOnboardingStep1(data: {
 export async function updateOnboardingStep2(data: {
   tenant_type: 'GENERIC' | 'THREED_PRINT' | 'HAND_KNITTING' | 'MACHINE_KNITTING'
 }): Promise<{ message: string; step_completed: number; next_step: number | null; is_completed: boolean }> {
-  const response = await api.put('/onboarding/wizard/step/2', data)
+  const response = await api.put(`${API_V1_PREFIX}/onboarding/wizard/step/2`, data)
   return response.data
 }
 
@@ -112,7 +114,7 @@ export async function updateOnboardingStep3(data: {
   timezone?: string
   primary_color?: string
 }): Promise<{ message: string; step_completed: number; next_step: number | null; is_completed: boolean }> {
-  const response = await api.put('/onboarding/wizard/step/3', data)
+  const response = await api.put(`${API_V1_PREFIX}/onboarding/wizard/step/3`, data)
   return response.data
 }
 
@@ -125,7 +127,7 @@ export async function updateOnboardingStep4(data: {
   product_description?: string
   product_price?: number
 }): Promise<{ message: string; step_completed: number; next_step: number | null; is_completed: boolean }> {
-  const response = await api.put('/onboarding/wizard/step/4', data)
+  const response = await api.put(`${API_V1_PREFIX}/onboarding/wizard/step/4`, data)
   return response.data
 }
 
@@ -135,7 +137,7 @@ export async function updateOnboardingStep4(data: {
 export async function uploadLogo(file: File): Promise<{ message: string; logo_url: string }> {
   const formData = new FormData()
   formData.append('file', file)
-  const response = await api.post('/onboarding/wizard/logo', formData, {
+  const response = await api.post(`${API_V1_PREFIX}/onboarding/wizard/logo`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
   return response.data
