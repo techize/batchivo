@@ -3098,22 +3098,6 @@ requests = ">=2.0.0"
 rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 
 [[package]]
-name = "resend"
-version = "2.19.0"
-description = "Resend Python SDK"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "resend-2.19.0-py2.py3-none-any.whl", hash = "sha256:1a8b9fcacbe058876ebce757ac2542103ed7227caec10e5c58613ee58615acaa"},
-    {file = "resend-2.19.0.tar.gz", hash = "sha256:b11191561cdb0ed7aa193212b7c8865bf635013c4d11bd81caf471d1b362be02"},
-]
-
-[package.dependencies]
-requests = ">=2.31.0"
-typing-extensions = ">=4.4.0"
-
-[[package]]
 name = "responses"
 version = "0.25.8"
 description = "A utility library for mocking out the `requests` Python library."
@@ -3917,4 +3901,4 @@ dev = ["black", "fakeredis", "httpx", "moto", "mypy", "pytest", "pytest-asyncio"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "aa716c01ad80849a374ad184179b41e0e6f567c415fc463a94279bfd1eab6b9e"
+content-hash = "f3cc8c5b86612727949ce05c789182e89f6a257b3e53228f84c8b4304417e499"
