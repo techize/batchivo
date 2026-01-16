@@ -6,8 +6,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from square.client import Client
-from square.http.api_response import ApiResponse
+from square import Square
+from square.core.api_error import ApiError
 
 from app.config import get_settings
 from app.schemas.payment import PaymentRequest, PaymentResponse, PaymentError
@@ -86,12 +86,10 @@ class SquarePaymentService:
         self.location_id = location_id or settings.square_location_id
         self.environment = environment or settings.square_environment
 
-        self.client = Client(
-            access_token=self._access_token,
+        self.client = Square(
+            token=self._access_token,
             environment=self.environment,
         )
-        self.payments_api = self.client.payments
-        self.refunds_api = self.client.refunds
 
     def _get_user_friendly_message(self, error_code: str, detail: str = "") -> str:
         """Map Square error code to user-friendly message."""
@@ -181,54 +179,52 @@ class SquarePaymentService:
                     f"idempotency_key={idempotency_key}"
                 )
 
-                result: ApiResponse = self.payments_api.create_payment(body=body)
+                result = self.client.payments.create(**body)
+                payment = result.payment
 
-                if result.is_success():
-                    payment = result.body.get("payment", {})
-                    logger.info(
-                        f"Payment successful: payment_id={payment.get('id')} "
-                        f"status={payment.get('status')} amount={request.amount}"
-                    )
-                    return PaymentResponse(
-                        success=True,
-                        order_id=f"MF-{payment.get('id', '')[:8].upper()}",
-                        payment_id=payment.get("id", ""),
-                        amount=payment.get("amount_money", {}).get("amount", 0),
-                        currency=payment.get("amount_money", {}).get("currency", "GBP"),
-                        status=payment.get("status", "UNKNOWN"),
-                        receipt_url=payment.get("receipt_url"),
-                        created_at=datetime.now(timezone.utc),
-                    )
-                else:
-                    # Payment failed - check if retriable
-                    errors = result.errors or []
-                    error_code = (
-                        errors[0].get("code", "PAYMENT_FAILED") if errors else "PAYMENT_FAILED"
-                    )
-                    error_detail = errors[0].get("detail", "") if errors else ""
+                logger.info(
+                    f"Payment successful: payment_id={payment.id} "
+                    f"status={payment.status} amount={request.amount}"
+                )
+                return PaymentResponse(
+                    success=True,
+                    order_id=f"MF-{(payment.id or '')[:8].upper()}",
+                    payment_id=payment.id or "",
+                    amount=payment.amount_money.amount if payment.amount_money else 0,
+                    currency=payment.amount_money.currency if payment.amount_money else "GBP",
+                    status=payment.status or "UNKNOWN",
+                    receipt_url=payment.receipt_url,
+                    created_at=datetime.now(timezone.utc),
+                )
 
-                    logger.warning(
-                        f"Payment failed: error_code={error_code} "
-                        f"detail={error_detail} attempt={attempt + 1}"
-                    )
+            except ApiError as e:
+                # Payment failed via API error
+                errors = e.errors or []
+                error_code = errors[0].code if errors else "PAYMENT_FAILED"
+                error_detail = errors[0].detail if errors else ""
 
-                    last_error_code = error_code
-                    last_error = error_detail
+                logger.warning(
+                    f"Payment failed: error_code={error_code} "
+                    f"detail={error_detail} attempt={attempt + 1}"
+                )
 
-                    # Only retry on retriable errors
-                    if self._is_retriable_error(error_code) and attempt < self.MAX_RETRIES - 1:
-                        delay = self._calculate_retry_delay(attempt)
-                        logger.info(f"Retrying payment in {delay:.1f}s...")
-                        time.sleep(delay)
-                        continue
+                last_error_code = error_code
+                last_error = error_detail
 
-                    # Non-retriable error - return immediately
-                    return PaymentError(
-                        success=False,
-                        error_code=error_code,
-                        error_message=self._get_user_friendly_message(error_code, error_detail),
-                        detail=str(errors),
-                    )
+                # Only retry on retriable errors
+                if self._is_retriable_error(error_code) and attempt < self.MAX_RETRIES - 1:
+                    delay = self._calculate_retry_delay(attempt)
+                    logger.info(f"Retrying payment in {delay:.1f}s...")
+                    time.sleep(delay)
+                    continue
+
+                # Non-retriable error - return immediately
+                return PaymentError(
+                    success=False,
+                    error_code=error_code,
+                    error_message=self._get_user_friendly_message(error_code, error_detail),
+                    detail=str(errors),
+                )
 
             except Exception as e:
                 logger.error(f"Payment exception: {e} attempt={attempt + 1}")
@@ -269,10 +265,24 @@ class SquarePaymentService:
             Payment details dict or None if not found
         """
         try:
-            result = self.payments_api.get_payment(payment_id=payment_id)
-            if result.is_success():
-                return result.body.get("payment")
-            logger.warning(f"Failed to get payment {payment_id}: {result.errors}")
+            result = self.client.payments.get(payment_id=payment_id)
+            payment = result.payment
+            if payment:
+                return {
+                    "id": payment.id,
+                    "status": payment.status,
+                    "amount_money": {
+                        "amount": payment.amount_money.amount if payment.amount_money else 0,
+                        "currency": payment.amount_money.currency
+                        if payment.amount_money
+                        else "GBP",
+                    },
+                    "receipt_url": payment.receipt_url,
+                    "created_at": payment.created_at,
+                }
+            return None
+        except ApiError as e:
+            logger.warning(f"Failed to get payment {payment_id}: {e.errors}")
             return None
         except Exception as e:
             logger.error(f"Exception getting payment {payment_id}: {e}")
@@ -301,46 +311,37 @@ class SquarePaymentService:
         """
         idempotency_key = idempotency_key or f"refund-{payment_id}-{uuid.uuid4()}"
 
-        body = {
-            "idempotency_key": idempotency_key,
-            "payment_id": payment_id,
-            "amount_money": {
-                "amount": amount,
-                "currency": currency,
-            },
-        }
-
-        if reason:
-            body["reason"] = reason
-
         logger.info(f"Processing refund: payment_id={payment_id} amount={amount}")
 
         try:
-            result = self.refunds_api.refund_payment(body=body)
+            result = self.client.refunds.refund_payment(
+                idempotency_key=idempotency_key,
+                payment_id=payment_id,
+                amount_money={"amount": amount, "currency": currency},
+                reason=reason,
+            )
+            refund = result.refund
 
-            if result.is_success():
-                refund = result.body.get("refund", {})
-                logger.info(
-                    f"Refund successful: refund_id={refund.get('id')} status={refund.get('status')}"
-                )
-                return {
-                    "success": True,
-                    "refund_id": refund.get("id"),
-                    "status": refund.get("status"),
-                    "amount": refund.get("amount_money", {}).get("amount", 0),
-                    "currency": refund.get("amount_money", {}).get("currency", "GBP"),
-                }
-            else:
-                errors = result.errors or []
-                error_code = errors[0].get("code", "REFUND_FAILED") if errors else "REFUND_FAILED"
-                error_detail = errors[0].get("detail", "") if errors else ""
-                logger.error(f"Refund failed: error_code={error_code} detail={error_detail}")
-                return {
-                    "success": False,
-                    "error_code": error_code,
-                    "error_message": self._get_user_friendly_message(error_code, error_detail),
-                    "detail": str(errors),
-                }
+            logger.info(f"Refund successful: refund_id={refund.id} status={refund.status}")
+            return {
+                "success": True,
+                "refund_id": refund.id,
+                "status": refund.status,
+                "amount": refund.amount_money.amount if refund.amount_money else 0,
+                "currency": refund.amount_money.currency if refund.amount_money else "GBP",
+            }
+
+        except ApiError as e:
+            errors = e.errors or []
+            error_code = errors[0].code if errors else "REFUND_FAILED"
+            error_detail = errors[0].detail if errors else ""
+            logger.error(f"Refund failed: error_code={error_code} detail={error_detail}")
+            return {
+                "success": False,
+                "error_code": error_code,
+                "error_message": self._get_user_friendly_message(error_code, error_detail),
+                "detail": str(errors),
+            }
 
         except Exception as e:
             logger.error(f"Refund exception: {e}")
@@ -369,15 +370,30 @@ class SquarePaymentService:
             List of payment dicts
         """
         try:
-            result = self.payments_api.list_payments(
+            result = self.client.payments.list(
                 location_id=self.location_id,
                 begin_time=begin_time,
                 end_time=end_time,
                 limit=limit,
             )
-            if result.is_success():
-                return result.body.get("payments", [])
-            logger.warning(f"Failed to list payments: {result.errors}")
+            payments = []
+            for payment in result.payments or []:
+                payments.append(
+                    {
+                        "id": payment.id,
+                        "status": payment.status,
+                        "amount_money": {
+                            "amount": payment.amount_money.amount if payment.amount_money else 0,
+                            "currency": payment.amount_money.currency
+                            if payment.amount_money
+                            else "GBP",
+                        },
+                        "created_at": payment.created_at,
+                    }
+                )
+            return payments
+        except ApiError as e:
+            logger.warning(f"Failed to list payments: {e.errors}")
             return []
         except Exception as e:
             logger.error(f"Exception listing payments: {e}")
