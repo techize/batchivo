@@ -1,8 +1,6 @@
 """Tests for email service."""
 
 from unittest.mock import MagicMock, patch, Mock
-import httpx
-
 
 from app.services.email_service import EmailService, get_email_service
 

@@ -1,6 +1,5 @@
 """Email service using Brevo for transactional emails."""
 
-import asyncio
 import logging
 from typing import Optional
 
