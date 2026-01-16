@@ -1,23 +1,26 @@
-"""Email service using Resend for transactional emails."""
+"""Email service using Brevo for transactional emails."""
 
 import asyncio
 import logging
 from typing import Optional
 
-import resend
+import httpx
 
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Brevo API endpoint for transactional emails
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+
 
 class EmailService:
-    """Service for sending transactional emails via Resend."""
+    """Service for sending transactional emails via Brevo."""
 
     def __init__(self):
-        """Initialize Resend client."""
+        """Initialize Brevo client."""
         settings = get_settings()
-        self.api_key = settings.resend_api_key
+        self.api_key = settings.brevo_api_key
         self.from_address = settings.email_from_address
         self.from_name = settings.email_from_name
         self.frontend_base_url = settings.frontend_base_url.rstrip("/")
@@ -31,9 +34,6 @@ class EmailService:
         self.shop_social_handle = settings.shop_social_handle
         self.shop_brand_color = settings.shop_brand_color
 
-        if self.api_key:
-            resend.api_key = self.api_key
-
     @property
     def is_configured(self) -> bool:
         """Check if email service is configured."""
@@ -44,17 +44,26 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
+        reply_to: str | None = None,
     ) -> bool:
-        """Synchronous email sending via Resend (internal helper)."""
+        """Synchronous email sending via Brevo (internal helper)."""
         try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": subject,
-                    "html": html_content,
-                }
-            )
+            headers = {
+                "api-key": self.api_key,
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "sender": {"name": self.from_name, "email": self.from_address},
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+            }
+            if reply_to:
+                payload["replyTo"] = {"email": reply_to}
+
+            with httpx.Client(timeout=30.0) as client:
+                response = client.post(BREVO_API_URL, json=payload, headers=headers)
+                response.raise_for_status()
             return True
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {e}")
@@ -65,14 +74,30 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
+        reply_to: str | None = None,
     ) -> bool:
-        """Async email sending - wraps sync call in thread pool to avoid blocking."""
-        return await asyncio.to_thread(
-            self._send_email_sync,
-            to_email,
-            subject,
-            html_content,
-        )
+        """Async email sending via Brevo."""
+        try:
+            headers = {
+                "api-key": self.api_key,
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "sender": {"name": self.from_name, "email": self.from_address},
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+            }
+            if reply_to:
+                payload["replyTo"] = {"email": reply_to}
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(BREVO_API_URL, json=payload, headers=headers)
+                response.raise_for_status()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email to {to_email}: {e}")
+            return False
 
     def send_order_confirmation(
         self,
@@ -210,19 +235,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Order Confirmation - {order_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Order Confirmation - {order_number}", html_content):
             logger.info(f"Order confirmation email sent to {to_email} for order {order_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send order confirmation email: {e}")
+        else:
+            logger.error(f"Failed to send order confirmation email to {to_email}")
             return False
 
     def send_refund_confirmation(
@@ -314,19 +331,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Refund Confirmation - {order_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Refund Confirmation - {order_number}", html_content):
             logger.info(f"Refund confirmation email sent to {to_email} for order {order_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send refund confirmation email: {e}")
+        else:
+            logger.error(f"Failed to send refund confirmation email to {to_email}")
             return False
 
     def send_contact_notification(
@@ -473,26 +482,24 @@ class EmailService:
 
         try:
             # Send to shop owner
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [self.shop_support_email],
-                    "reply_to": email,
-                    "subject": f"[Contact Form] {subject_label} from {name} - {reference}",
-                    "html": owner_html,
-                }
-            )
+            if not self._send_email_sync(
+                self.shop_support_email,
+                f"[Contact Form] {subject_label} from {name} - {reference}",
+                owner_html,
+                reply_to=email,
+            ):
+                logger.error(f"Failed to send contact notification to shop owner for {reference}")
+                return False
             logger.info(f"Contact notification sent to shop owner for {reference}")
 
             # Send confirmation to customer
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [email],
-                    "subject": f"We've received your message - {reference}",
-                    "html": customer_html,
-                }
-            )
+            if not self._send_email_sync(
+                email,
+                f"We've received your message - {reference}",
+                customer_html,
+            ):
+                logger.error(f"Failed to send contact confirmation to {email}")
+                return False
             logger.info(f"Contact confirmation sent to {email} for {reference}")
 
             return True
@@ -604,19 +611,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Your Order Has Shipped! 📦 - {order_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Your Order Has Shipped! - {order_number}", html_content):
             logger.info(f"Shipped notification email sent to {to_email} for order {order_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send shipped notification email: {e}")
+        else:
+            logger.error(f"Failed to send shipped notification email to {to_email}")
             return False
 
     def send_order_delivered(
@@ -698,19 +697,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Your Order Has Been Delivered! ✅ - {order_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Your Order Has Been Delivered! - {order_number}", html_content):
             logger.info(f"Delivered notification email sent to {to_email} for order {order_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send delivered notification email: {e}")
+        else:
+            logger.error(f"Failed to send delivered notification email to {to_email}")
             return False
 
     def send_order_cancelled(
@@ -803,21 +794,13 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Order Cancelled - {order_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Order Cancelled - {order_number}", html_content):
             logger.info(
                 f"Cancellation notification email sent to {to_email} for order {order_number}"
             )
             return True
-        except Exception as e:
-            logger.error(f"Failed to send cancellation notification email: {e}")
+        else:
+            logger.error(f"Failed to send cancellation notification email to {to_email}")
             return False
 
     def send_customer_welcome(
@@ -898,19 +881,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Welcome to {shop_name}! 🎉",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Welcome to {display_shop_name}!", html_content):
             logger.info(f"Welcome email sent to {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send welcome email: {e}")
+        else:
+            logger.error(f"Failed to send welcome email to {to_email}")
             return False
 
     def send_customer_verification(
@@ -978,19 +953,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": "Verify Your Email",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, "Verify Your Email", html_content):
             logger.info(f"Verification email sent to {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send verification email: {e}")
+        else:
+            logger.error(f"Failed to send verification email to {to_email}")
             return False
 
     def send_customer_password_reset(
@@ -1063,19 +1030,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": "Reset Your Password",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, "Reset Your Password", html_content):
             logger.info(f"Password reset email sent to {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send password reset email: {e}")
+        else:
+            logger.error(f"Failed to send password reset email to {to_email}")
             return False
 
     def send_admin_password_reset(
@@ -1143,19 +1102,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": "Reset Your Batchivo Password",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, "Reset Your Batchivo Password", html_content):
             logger.info(f"Admin password reset email sent to {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send admin password reset email: {e}")
+        else:
+            logger.error(f"Failed to send admin password reset email to {to_email}")
             return False
 
     def send_return_approved(
@@ -1233,19 +1184,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Return Approved - RMA #{rma_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Return Approved - RMA #{rma_number}", html_content):
             logger.info(f"Return approved email sent to {to_email} for RMA {rma_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send return approved email: {e}")
+        else:
+            logger.error(f"Failed to send return approved email to {to_email}")
             return False
 
     def send_return_completed(
@@ -1319,19 +1262,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Return Completed - RMA #{rma_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Return Completed - RMA #{rma_number}", html_content):
             logger.info(f"Return completed email sent to {to_email} for RMA {rma_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send return completed email: {e}")
+        else:
+            logger.error(f"Failed to send return completed email to {to_email}")
             return False
 
     def send_return_rejected(
@@ -1392,19 +1327,11 @@ class EmailService:
         </html>
         """
 
-        try:
-            resend.Emails.send(
-                {
-                    "from": f"{self.from_name} <{self.from_address}>",
-                    "to": [to_email],
-                    "subject": f"Return Request Update - RMA #{rma_number}",
-                    "html": html_content,
-                }
-            )
+        if self._send_email_sync(to_email, f"Return Request Update - RMA #{rma_number}", html_content):
             logger.info(f"Return rejected email sent to {to_email} for RMA {rma_number}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send return rejected email: {e}")
+        else:
+            logger.error(f"Failed to send return rejected email to {to_email}")
             return False
 
 

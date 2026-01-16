@@ -92,8 +92,8 @@ class Settings(BaseSettings):
     square_environment: Literal["sandbox", "production"] = "sandbox"
     square_webhook_signature_key: str = ""
 
-    # Email (Resend) - configure via environment variables
-    resend_api_key: str = ""
+    # Email (Brevo) - configure via environment variables
+    brevo_api_key: str = ""
     email_from_address: str = "noreply@example.com"
     email_from_name: str = "Batchivo"
     frontend_base_url: str = "http://localhost:5173"  # Base URL for email links

@@ -23,6 +23,10 @@ data:
   # Row-Level Security (RLS) configuration
   # Set to "true" after RLS policies are deployed and tested
   RLS_ENABLED: "false"
+  # Email configuration (Brevo)
+  EMAIL_FROM_ADDRESS: "noreply@batchivo.com"
+  EMAIL_FROM_NAME: "Batchivo"
+  FRONTEND_BASE_URL: "https://app.batchivo.com"
 ---
 apiVersion: v1
 kind: Service
@@ -107,7 +111,7 @@ spec:
         - secretRef:
             name: square-credentials
         - secretRef:
-            name: resend-credentials
+            name: brevo-credentials
         - secretRef:
             name: rls-credentials
             optional: true  # Allow deployment without RLS secret initially

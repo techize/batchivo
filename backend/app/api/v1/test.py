@@ -26,7 +26,7 @@ async def send_test_email(
     tenant: CurrentTenant,
 ) -> dict:
     """
-    Send a test email to verify Resend configuration.
+    Send a test email to verify Brevo configuration.
 
     Requires authentication. Sends a test order confirmation email.
     """
@@ -35,7 +35,7 @@ async def send_test_email(
     if not email_service.is_configured:
         raise HTTPException(
             status_code=503,
-            detail="Email service not configured - RESEND_API_KEY not set",
+            detail="Email service not configured - BREVO_API_KEY not set",
         )
 
     # Send test order confirmation
