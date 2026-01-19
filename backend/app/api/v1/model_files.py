@@ -119,6 +119,43 @@ async def list_files(
     )
 
 
+# NOTE: This route must be defined BEFORE /{model_id}/files/{file_id}
+# to prevent "primary" from being interpreted as a file_id
+@router.get(
+    "/{model_id}/files/primary",
+    response_model=ModelFileResponse,
+    summary="Get primary file",
+    description="Get the primary file for a model, optionally filtered by type.",
+)
+async def get_primary_file(
+    model_id: UUID,
+    file_type: Optional[SchemaFileType] = Query(None, description="Filter by file type"),
+    user: CurrentUser = None,
+    tenant: CurrentTenant = None,
+    db: AsyncSession = Depends(get_db),
+) -> ModelFileResponse:
+    """
+    Get the primary file for a model.
+
+    Returns the file marked as is_primary=true.
+    Optionally filter by file type.
+    """
+    service = get_file_service(db, tenant, user)
+
+    model_file = await service.get_primary_file(
+        model_id=model_id,
+        file_type=ModelFileType(file_type.value) if file_type else None,
+    )
+
+    if not model_file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No primary file found",
+        )
+
+    return ModelFileResponse.model_validate(model_file)
+
+
 @router.get(
     "/{model_id}/files/{file_id}",
     response_model=ModelFileResponse,
@@ -275,38 +312,3 @@ async def delete_file(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete file",
         )
-
-
-@router.get(
-    "/{model_id}/files/primary",
-    response_model=ModelFileResponse,
-    summary="Get primary file",
-    description="Get the primary file for a model, optionally filtered by type.",
-)
-async def get_primary_file(
-    model_id: UUID,
-    file_type: Optional[SchemaFileType] = Query(None, description="Filter by file type"),
-    user: CurrentUser = None,
-    tenant: CurrentTenant = None,
-    db: AsyncSession = Depends(get_db),
-) -> ModelFileResponse:
-    """
-    Get the primary file for a model.
-
-    Returns the file marked as is_primary=true.
-    Optionally filter by file type.
-    """
-    service = get_file_service(db, tenant, user)
-
-    model_file = await service.get_primary_file(
-        model_id=model_id,
-        file_type=ModelFileType(file_type.value) if file_type else None,
-    )
-
-    if not model_file:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No primary file found",
-        )
-
-    return ModelFileResponse.model_validate(model_file)

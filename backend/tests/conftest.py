@@ -14,7 +14,7 @@ os.environ.setdefault(
 import boto3
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from moto import mock_aws
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -230,7 +230,9 @@ async def client(
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
 
     # Re-enable rate limiting after test
@@ -259,7 +261,9 @@ async def unauthenticated_client(
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
 
     # Re-enable rate limiting after test
@@ -601,7 +605,9 @@ async def customer_client(
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
 
     # Re-enable rate limiting after test
