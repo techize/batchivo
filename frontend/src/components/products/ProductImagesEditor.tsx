@@ -5,10 +5,28 @@
  * Used on the ProductDetail page.
  */
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
   Eye,
+  GripVertical,
   ImagePlus,
   Loader2,
   RotateCw,
@@ -24,6 +42,7 @@ import {
   setPrimaryImage,
   deleteProductImage,
   rotateProductImage,
+  updateProductImage,
   type ProductImage,
 } from '@/lib/api/products'
 import { config } from '@/lib/config'
@@ -72,6 +91,19 @@ export function ProductImagesEditor({ productId }: ProductImagesEditorProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewImage, setPreviewImage] = useState<ProductImage | null>(null)
+  const [isReordering, setIsReordering] = useState(false)
+
+  // DnD sensors with keyboard support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before starting drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Fetch images
   const { data: images = [], isLoading } = useQuery({
@@ -118,6 +150,54 @@ export function ProductImagesEditor({ productId }: ProductImagesEditorProps) {
       queryClient.invalidateQueries({ queryKey: ['product', productId] })
     },
   })
+
+  // Sort images: primary first, then by display_order
+  const sortedImages = [...images].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1
+    if (!a.is_primary && b.is_primary) return 1
+    return a.display_order - b.display_order
+  })
+
+  // Handle drag end - update display orders
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) return
+
+    // Find indices
+    const oldIndex = sortedImages.findIndex((img) => img.id === active.id)
+    const newIndex = sortedImages.findIndex((img) => img.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    // Optimistically update the order locally
+    const newOrder = arrayMove(sortedImages, oldIndex, newIndex)
+
+    // Update display_order for all affected images
+    setIsReordering(true)
+    try {
+      // Update each image that changed position
+      await Promise.all(
+        newOrder.map((img, index) => {
+          // Only update if display_order changed
+          if (img.display_order !== index) {
+            return updateProductImage(productId, img.id, { display_order: index })
+          }
+          return Promise.resolve()
+        })
+      )
+
+      // Invalidate queries to refresh
+      queryClient.invalidateQueries({ queryKey: ['product-images', productId] })
+      queryClient.invalidateQueries({ queryKey: ['product', productId] })
+    } catch (error) {
+      console.error('Failed to update image order:', error)
+      // Refresh to revert optimistic update
+      queryClient.invalidateQueries({ queryKey: ['product-images', productId] })
+    } finally {
+      setIsReordering(false)
+    }
+  }, [sortedImages, productId, queryClient])
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -169,13 +249,6 @@ export function ProductImagesEditor({ productId }: ProductImagesEditorProps) {
     event.preventDefault()
     event.stopPropagation()
   }
-
-  // Sort images: primary first, then by display_order
-  const sortedImages = [...images].sort((a, b) => {
-    if (a.is_primary && !b.is_primary) return -1
-    if (!a.is_primary && b.is_primary) return 1
-    return a.display_order - b.display_order
-  })
 
   if (isLoading) {
     return (
@@ -235,23 +308,42 @@ export function ProductImagesEditor({ productId }: ProductImagesEditorProps) {
         </div>
       )}
 
-      {/* Images Grid */}
-      {sortedImages.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {sortedImages.map((image) => (
-            <ImageCard
-              key={`${image.id}-${image.updated_at}`}
-              image={image}
-              onSetPrimary={() => setPrimaryMutation.mutate(image.id)}
-              onDelete={() => deleteMutation.mutate(image.id)}
-              onRotate={() => rotateMutation.mutate(image.id)}
-              onPreview={() => setPreviewImage(image)}
-              isSettingPrimary={setPrimaryMutation.isPending}
-              isDeleting={deleteMutation.isPending}
-              isRotating={rotateMutation.isPending}
-            />
-          ))}
+      {/* Reordering Indicator */}
+      {isReordering && (
+        <div className="bg-primary/10 text-primary text-sm p-3 rounded-lg flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Saving new order...</span>
         </div>
+      )}
+
+      {/* Images Grid with Drag and Drop */}
+      {sortedImages.length > 0 ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortedImages.map((img) => img.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sortedImages.map((image) => (
+                <SortableImageCard
+                  key={`${image.id}-${image.updated_at}`}
+                  image={image}
+                  onSetPrimary={() => setPrimaryMutation.mutate(image.id)}
+                  onDelete={() => deleteMutation.mutate(image.id)}
+                  onRotate={() => rotateMutation.mutate(image.id)}
+                  onPreview={() => setPreviewImage(image)}
+                  isSettingPrimary={setPrimaryMutation.isPending}
+                  isDeleting={deleteMutation.isPending}
+                  isRotating={rotateMutation.isPending}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="text-center py-8 text-muted-foreground">
           <ImagePlus className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -293,6 +385,42 @@ interface ImageCardProps {
   isSettingPrimary: boolean
   isDeleting: boolean
   isRotating: boolean
+}
+
+/**
+ * SortableImageCard - Wrapper for ImageCard with drag-and-drop support
+ */
+function SortableImageCard(props: ImageCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.image.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : undefined,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-2 right-2 z-10 cursor-grab active:cursor-grabbing p-1 rounded bg-black/50 hover:bg-black/70 transition-colors"
+        title="Drag to reorder"
+      >
+        <GripVertical className="h-4 w-4 text-white" />
+      </div>
+      <ImageCard {...props} />
+    </div>
+  )
 }
 
 function ImageCard({
