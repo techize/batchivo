@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 
 import { getOrders, shipOrder, deliverOrder, cancelOrder, type Order } from '@/lib/api/orders'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
@@ -83,13 +84,6 @@ function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-  }).format(amount)
 }
 
 function exportToCSV(orders: Order[]) {
@@ -153,6 +147,7 @@ export function OrderList() {
   const [cancelReason, setCancelReason] = useState('')
 
   const queryClient = useQueryClient()
+  const { formatCurrency } = useCurrency()
 
   // Debounced search - use useMemo to avoid recreating the value on every render
   const debouncedSearch = useMemo(() => searchQuery, [searchQuery])

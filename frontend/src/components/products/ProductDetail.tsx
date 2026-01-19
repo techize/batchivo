@@ -38,9 +38,9 @@ import {
 import {
   getProduct,
   deleteProduct,
-  formatCurrency,
   syncProductToEtsy,
 } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -101,6 +101,7 @@ function DetailItem({ label, value }: { label: string; value: string | React.Rea
 export function ProductDetail({ productId }: ProductDetailProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { formatCurrency } = useCurrency()
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', productId],

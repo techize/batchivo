@@ -1,6 +1,7 @@
 """Model file service for managing 3D model files (STL, 3MF, gcode, etc.)."""
 
 import logging
+import os
 import uuid
 import zipfile
 from datetime import datetime
@@ -16,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.models.model import Model
-from app.models.model_file import ModelFile, ModelFileType
+from app.models.model_file import FileLocation, ModelFile, ModelFileType
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.services.image_storage import ImageStorageError, get_image_storage
@@ -294,7 +295,9 @@ class ModelFileService:
             tenant_id=self.tenant.id,
             model_id=model_id,
             file_type=file_type.value,
+            file_location=FileLocation.UPLOADED.value,
             file_url=file_url,
+            local_path=None,
             original_filename=original_filename,
             file_size=len(file_content),
             content_type=content_type,
@@ -315,6 +318,132 @@ class ModelFileService:
             f"(file_id={model_file.id}, size={len(file_content)})"
         )
         return model_file
+
+    async def create_local_reference(
+        self,
+        model_id: UUID,
+        local_path: str,
+        file_type: ModelFileType,
+        part_name: Optional[str] = None,
+        version: Optional[str] = None,
+        is_primary: bool = False,
+        notes: Optional[str] = None,
+    ) -> ModelFile:
+        """
+        Create a local file reference (no upload, just store the path).
+
+        Args:
+            model_id: UUID of the model to attach file to
+            local_path: Local filesystem path to the file
+            file_type: Type of file (source_stl, slicer_project, etc.)
+            part_name: Optional part name for multi-part models
+            version: Optional version string
+            is_primary: Whether this is the primary file
+            notes: Optional user notes
+
+        Returns:
+            Created ModelFile instance with file_location='local_reference'
+
+        Raises:
+            ModelFileStorageError: If model not found
+        """
+        logger.debug(
+            f"create_local_reference called: model_id={model_id}, path={local_path}, "
+            f"file_type={file_type}"
+        )
+
+        # Validate the model exists and belongs to this tenant
+        model = await self._get_model(model_id)
+        if not model:
+            logger.warning(f"Model not found: {model_id} for tenant {self.tenant.id}")
+            raise ModelFileStorageError(f"Model not found: {model_id}")
+
+        # Extract filename from path
+        path_obj = Path(local_path)
+        original_filename = path_obj.name
+
+        # Get file info if path exists
+        file_size = None
+        if path_obj.exists() and path_obj.is_file():
+            file_size = path_obj.stat().st_size
+
+        # Determine content type from extension
+        extension = path_obj.suffix.lower()
+        content_type = self._get_content_type_from_extension(extension)
+
+        # If setting as primary, unset other primary files of same type
+        if is_primary:
+            await self._unset_primary_files(model_id, file_type)
+
+        # Create database record
+        model_file = ModelFile(
+            tenant_id=self.tenant.id,
+            model_id=model_id,
+            file_type=file_type.value,
+            file_location=FileLocation.LOCAL_REFERENCE.value,
+            file_url=None,
+            local_path=local_path,
+            original_filename=original_filename,
+            file_size=file_size,
+            content_type=content_type,
+            part_name=part_name,
+            version=version,
+            is_primary=is_primary,
+            notes=notes,
+            uploaded_at=datetime.utcnow(),
+            uploaded_by_user_id=self.user.id if self.user else None,
+        )
+
+        self.db.add(model_file)
+        await self.db.commit()
+        await self.db.refresh(model_file)
+
+        logger.info(
+            f"Created local reference for model {model_id}: '{local_path}' "
+            f"(file_id={model_file.id})"
+        )
+        return model_file
+
+    def _get_content_type_from_extension(self, extension: str) -> Optional[str]:
+        """Get MIME content type from file extension."""
+        content_types = {
+            ".stl": "model/stl",
+            ".3mf": "model/3mf",
+            ".gcode": "text/x-gcode",
+            ".gco": "text/x-gcode",
+            ".g": "text/x-gcode",
+        }
+        return content_types.get(extension)
+
+    @staticmethod
+    def validate_local_path(path: str) -> dict:
+        """
+        Validate a local filesystem path.
+
+        Args:
+            path: Local filesystem path to validate
+
+        Returns:
+            dict with: exists, is_file, file_size, filename
+        """
+        path_obj = Path(path)
+        exists = path_obj.exists()
+        is_file = path_obj.is_file() if exists else False
+        file_size = path_obj.stat().st_size if is_file else None
+        filename = path_obj.name if path_obj.name else None
+
+        return {
+            "path": path,
+            "exists": exists,
+            "is_file": is_file,
+            "file_size": file_size,
+            "filename": filename,
+        }
+
+    def check_local_path_exists(self, local_path: str) -> bool:
+        """Check if a local file path exists and is a file."""
+        path_obj = Path(local_path)
+        return path_obj.exists() and path_obj.is_file()
 
     async def _save_local(
         self,
@@ -595,11 +724,13 @@ class ModelFileService:
         if not model_file:
             return False
 
-        # Delete from storage
-        if self.storage_type == "local":
-            await self._delete_local(model_file.file_url)
-        else:
-            await self._delete_s3(model_file.file_url)
+        # Delete from storage (only for uploaded files, not local references)
+        if model_file.file_location != FileLocation.LOCAL_REFERENCE.value:
+            if self.storage_type == "local":
+                await self._delete_local(model_file.file_url)
+            else:
+                await self._delete_s3(model_file.file_url)
+        # Note: Local references just remove the DB record, not the actual file
 
         # Delete database record
         await self.db.delete(model_file)
@@ -648,7 +779,12 @@ class ModelFileService:
         if not model_file:
             raise ModelFileStorageError("File not found")
 
-        if self.storage_type == "local":
+        # Handle local reference files
+        if model_file.file_location == FileLocation.LOCAL_REFERENCE.value:
+            if not model_file.local_path:
+                raise ModelFileStorageError("Local path not set for local reference file")
+            content = await self._get_local_reference(model_file.local_path)
+        elif self.storage_type == "local":
             content = await self._get_local(model_file.file_url)
         else:
             content = await self._get_s3(model_file.file_url)
@@ -658,6 +794,15 @@ class ModelFileService:
             model_file.content_type or "application/octet-stream",
             model_file.original_filename,
         )
+
+    async def _get_local_reference(self, local_path: str) -> bytes:
+        """Get file from local filesystem reference path."""
+        path_obj = Path(local_path)
+        if not path_obj.exists():
+            raise ModelFileStorageError(f"Local file not found: {local_path}")
+        if not path_obj.is_file():
+            raise ModelFileStorageError(f"Path is not a file: {local_path}")
+        return path_obj.read_bytes()
 
     async def _get_local(self, file_url: str) -> bytes:
         """Get file from local filesystem."""

@@ -394,10 +394,15 @@ export async function removeProductComponent(productId: string, componentId: str
 
 /**
  * Format currency value for display
+ * @param value - The numeric value to format
+ * @param symbol - Optional currency symbol (defaults to £ for backward compatibility)
  */
-export function formatCurrency(value: string | number): string {
+export function formatCurrency(value: string | number, symbol: string = '£'): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value
-  return `£${numValue.toFixed(2)}`
+  if (isNaN(numValue)) {
+    return `${symbol}0.00`
+  }
+  return `${symbol}${numValue.toFixed(2)}`
 }
 
 /**

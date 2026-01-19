@@ -9,9 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentTenant, CurrentUser
 from app.database import get_db
-from app.models.model_file import ModelFileType
+from app.models.model_file import FileLocation, ModelFileType
 from app.schemas.model_file import (
+    LocalPathValidationRequest,
+    LocalPathValidationResponse,
     ModelFileListResponse,
+    ModelFileLocalCreate,
     ModelFileResponse,
     ModelFileUpdate,
     ModelFileUploadResponse,
@@ -29,6 +32,19 @@ def get_file_service(
 ) -> ModelFileService:
     """Create ModelFileService instance."""
     return ModelFileService(db=db, tenant=tenant, user=user)
+
+
+def enrich_file_response(model_file, service: ModelFileService) -> ModelFileResponse:
+    """
+    Convert ModelFile to response, adding local_path_exists for local references.
+    """
+    response = ModelFileResponse.model_validate(model_file)
+
+    # Add local_path_exists field for local reference files
+    if model_file.file_location == FileLocation.LOCAL_REFERENCE.value and model_file.local_path:
+        response.local_path_exists = service.check_local_path_exists(model_file.local_path)
+
+    return response
 
 
 @router.post(
@@ -87,6 +103,73 @@ async def upload_file(
         )
 
 
+@router.post(
+    "/{model_id}/files/link-local",
+    response_model=ModelFileUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Link a local file",
+    description="Create a reference to a local filesystem file instead of uploading.",
+)
+async def link_local_file(
+    model_id: UUID,
+    data: ModelFileLocalCreate,
+    user: CurrentUser = None,
+    tenant: CurrentTenant = None,
+    db: AsyncSession = Depends(get_db),
+) -> ModelFileUploadResponse:
+    """
+    Create a local file reference (no upload).
+
+    Instead of uploading the file, stores a reference to a local filesystem path.
+    Useful for large files like OrcaSlicer projects that exist on the local machine.
+    The file is not copied - only the path is stored.
+    """
+    service = get_file_service(db, tenant, user)
+
+    try:
+        model_file = await service.create_local_reference(
+            model_id=model_id,
+            local_path=data.local_path,
+            file_type=ModelFileType(data.file_type.value),
+            part_name=data.part_name,
+            version=data.version,
+            is_primary=data.is_primary,
+            notes=data.notes,
+        )
+
+        return ModelFileUploadResponse(
+            file=enrich_file_response(model_file, service),
+            message=f"Local file linked: '{data.local_path}'",
+        )
+
+    except ModelFileStorageError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post(
+    "/validate-local-path",
+    response_model=LocalPathValidationResponse,
+    summary="Validate local file path",
+    description="Check if a local filesystem path exists and get file info.",
+)
+async def validate_local_path(
+    data: LocalPathValidationRequest,
+    user: CurrentUser = None,
+    tenant: CurrentTenant = None,
+) -> LocalPathValidationResponse:
+    """
+    Validate a local filesystem path.
+
+    Returns whether the path exists, is a file, and file size if available.
+    Use this before linking a local file to verify the path is correct.
+    """
+    result = ModelFileService.validate_local_path(data.path)
+    return LocalPathValidationResponse(**result)
+
+
 @router.get(
     "/{model_id}/files",
     response_model=ModelFileListResponse,
@@ -105,6 +188,7 @@ async def list_files(
 
     Optionally filter by file type.
     Results are sorted with primary files first, then by upload date.
+    For local_reference files, includes local_path_exists status.
     """
     service = get_file_service(db, tenant, user)
 
@@ -114,7 +198,7 @@ async def list_files(
     )
 
     return ModelFileListResponse(
-        files=[ModelFileResponse.model_validate(f) for f in files],
+        files=[enrich_file_response(f, service) for f in files],
         total=len(files),
     )
 
@@ -153,7 +237,7 @@ async def get_primary_file(
             detail="No primary file found",
         )
 
-    return ModelFileResponse.model_validate(model_file)
+    return enrich_file_response(model_file, service)
 
 
 @router.get(
@@ -180,7 +264,7 @@ async def get_file(
             detail="File not found",
         )
 
-    return ModelFileResponse.model_validate(model_file)
+    return enrich_file_response(model_file, service)
 
 
 @router.get(
@@ -273,7 +357,7 @@ async def update_file(
         notes=update_data.notes,
     )
 
-    return ModelFileResponse.model_validate(model_file)
+    return enrich_file_response(model_file, service)
 
 
 @router.delete(

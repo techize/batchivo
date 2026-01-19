@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 
 // https://vite.dev/config/
@@ -7,8 +8,32 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiTarget = env.VITE_API_URL || 'http://localhost:8000'
 
+  // Sentry plugin config (only in production builds with auth token)
+  const sentryPlugins = env.SENTRY_AUTH_TOKEN
+    ? [
+        sentryVitePlugin({
+          org: env.SENTRY_ORG || 'batchivo',
+          project: env.SENTRY_PROJECT || 'batchivo-frontend',
+          authToken: env.SENTRY_AUTH_TOKEN,
+          // Upload source maps to Sentry
+          sourcemaps: {
+            assets: './dist/**/*.js',
+            filesToDeleteAfterUpload: './dist/**/*.js.map',
+          },
+          // Release tracking
+          release: {
+            name: `batchivo-frontend@${process.env.npm_package_version || '0.0.0'}`,
+            create: true,
+            finalize: true,
+          },
+          // Telemetry disabled by default
+          telemetry: false,
+        }),
+      ]
+    : []
+
   return {
-    plugins: [react()],
+    plugins: [react(), ...sentryPlugins],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

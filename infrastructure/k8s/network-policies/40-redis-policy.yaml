@@ -1,0 +1,31 @@
+# Redis Network Policy
+# Redis is used for caching and session storage
+#
+# Ingress:
+#   - Backend pods only
+#
+# Egress:
+#   - None required (Redis is an in-memory data store)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-policy
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from backend
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress: []  # No egress needed

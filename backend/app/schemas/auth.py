@@ -53,6 +53,8 @@ class UserResponse(BaseModel):
     name: str
     tenant_id: str | None
     tenant_name: str | None
+    currency_code: str = "GBP"
+    currency_symbol: str = "£"
     is_platform_admin: bool = False
 
     class Config:

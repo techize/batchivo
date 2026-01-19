@@ -41,13 +41,19 @@ export interface ModelComponent {
 // File types for 3D model files
 export type ModelFileType = 'source_stl' | 'source_3mf' | 'slicer_project' | 'gcode' | 'plate_layout'
 
+// Where the file is stored
+export type FileLocation = 'uploaded' | 'local_reference'
+
 export interface ModelFile {
   id: string
   model_id: string
   file_type: ModelFileType
-  file_url: string
+  file_location: FileLocation
+  file_url?: string
+  local_path?: string
+  local_path_exists?: boolean
   original_filename: string
-  file_size: number
+  file_size?: number
   content_type?: string
   part_name?: string
   version?: string
@@ -57,6 +63,14 @@ export interface ModelFile {
   uploaded_by_user_id?: string
   created_at: string
   updated_at: string
+}
+
+export interface LocalPathValidationResponse {
+  path: string
+  exists: boolean
+  is_file: boolean
+  file_size?: number
+  filename?: string
 }
 
 export interface ModelFileListResponse {
@@ -412,4 +426,41 @@ export async function deleteModelFile(modelId: string, fileId: string): Promise<
  */
 export function getModelFileDownloadUrl(modelId: string, fileId: string): string {
   return `${config.apiBaseUrl}/api/v1/models/${modelId}/files/${fileId}/download`
+}
+
+/**
+ * Link a local file to a model (no upload, just store path reference)
+ */
+export async function linkLocalModelFile(
+  modelId: string,
+  localPath: string,
+  fileType: ModelFileType,
+  options?: {
+    partName?: string
+    version?: string
+    isPrimary?: boolean
+    notes?: string
+  }
+): Promise<ModelFile> {
+  const response = await apiClient.post<{ file: ModelFile; message: string }>(
+    `/api/v1/models/${modelId}/files/link-local`,
+    {
+      local_path: localPath,
+      file_type: fileType,
+      part_name: options?.partName,
+      version: options?.version,
+      is_primary: options?.isPrimary ?? false,
+      notes: options?.notes,
+    }
+  )
+  return response.file
+}
+
+/**
+ * Validate a local file path
+ */
+export async function validateLocalPath(path: string): Promise<LocalPathValidationResponse> {
+  return apiClient.post<LocalPathValidationResponse>('/api/v1/models/validate-local-path', {
+    path,
+  })
 }

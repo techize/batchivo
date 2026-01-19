@@ -44,6 +44,8 @@ async def get_current_user_info(
             name=current_user.full_name or current_user.email.split("@")[0],
             tenant_id=str(tenant.id) if tenant else None,
             tenant_name=tenant.name if tenant else None,
+            currency_code=tenant.currency_code if tenant else "GBP",
+            currency_symbol=tenant.currency_symbol if tenant else "£",
             is_platform_admin=current_user.is_platform_admin,
         )
 
@@ -54,5 +56,7 @@ async def get_current_user_info(
         name=current_user.full_name or current_user.email.split("@")[0],
         tenant_id=None,
         tenant_name=None,
+        currency_code="GBP",
+        currency_symbol="£",
         is_platform_admin=current_user.is_platform_admin,
     )

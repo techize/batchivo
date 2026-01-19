@@ -1,0 +1,31 @@
+# Kustomization for Batchivo Network Policies
+# Apply with: kubectl apply -k infrastructure/k8s/network-policies/
+#
+# IMPORTANT: Apply order matters! The default-deny policy must be in place
+# before other policies to ensure the "deny all by default" baseline.
+#
+# To apply manually in correct order:
+#   kubectl apply -f 00-default-deny.yaml
+#   kubectl apply -f 01-allow-dns.yaml
+#   kubectl apply -f 10-frontend-policy.yaml
+#   kubectl apply -f 20-backend-policy.yaml
+#   kubectl apply -f 30-postgres-policy.yaml
+#   kubectl apply -f 40-redis-policy.yaml
+#   kubectl apply -f 50-minio-policy.yaml
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: batchivo
+
+resources:
+  - 00-default-deny.yaml
+  - 01-allow-dns.yaml
+  - 10-frontend-policy.yaml
+  - 20-backend-policy.yaml
+  - 30-postgres-policy.yaml
+  - 40-redis-policy.yaml
+  - 50-minio-policy.yaml
+
+# Note: Do NOT use commonLabels here as kustomize applies them to
+# podSelectors which breaks NetworkPolicy matching against existing pods

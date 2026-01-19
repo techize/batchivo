@@ -15,6 +15,8 @@ export interface User {
   name: string
   tenant_id: string
   tenant_name: string
+  currency_code: string
+  currency_symbol: string
   is_platform_admin: boolean
 }
 

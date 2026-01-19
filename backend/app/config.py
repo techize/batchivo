@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     email_from_name: str = "Batchivo"
     frontend_base_url: str = "http://localhost:5173"  # Base URL for email links
 
+    # Sentry Error Monitoring
+    sentry_dsn: str = ""  # Sentry DSN for error tracking (leave empty to disable)
+    sentry_traces_sample_rate: float = 0.1  # Performance monitoring sample rate
+
     # Shop Branding - configure for your shop's email templates
     shop_name: str = "Your Shop"  # Display name in emails
     shop_tagline: str = "Welcome to our shop"  # Tagline shown in email headers

@@ -3,15 +3,20 @@
  *
  * Manages 3D model files: upload, set primary, delete.
  * Supports STL, 3MF, and gcode files.
+ * Supports both uploading files and linking local file paths.
  */
 
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  AlertCircle,
+  CheckCircle2,
   Download,
   File,
   FileBox,
   FileCog,
+  FolderOpen,
+  Link2,
   Loader2,
   Star,
   Trash2,
@@ -24,8 +29,11 @@ import {
   updateModelFile,
   deleteModelFile,
   getModelFileDownloadUrl,
+  linkLocalModelFile,
+  validateLocalPath,
   type ModelFile,
   type ModelFileType,
+  type LocalPathValidationResponse,
 } from '@/lib/api/models'
 
 import { Button } from '@/components/ui/button'
@@ -48,6 +56,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -94,6 +104,12 @@ export function ModelFilesEditor({ modelId }: ModelFilesEditorProps) {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [selectedFileType, setSelectedFileType] = useState<ModelFileType>('source_3mf')
 
+  // Local file linking state
+  const [localPath, setLocalPath] = useState('')
+  const [isValidatingPath, setIsValidatingPath] = useState(false)
+  const [pathValidation, setPathValidation] = useState<LocalPathValidationResponse | null>(null)
+  const [isLinking, setIsLinking] = useState(false)
+
   // Fetch files
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['model-files', modelId],
@@ -130,6 +146,55 @@ export function ModelFilesEditor({ modelId }: ModelFilesEditorProps) {
       queryClient.invalidateQueries({ queryKey: ['model-files', modelId] })
     },
   })
+
+  // Link local file mutation
+  const linkMutation = useMutation({
+    mutationFn: ({ path, fileType }: { path: string; fileType: ModelFileType }) =>
+      linkLocalModelFile(modelId, path, fileType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['model-files', modelId] })
+      queryClient.invalidateQueries({ queryKey: ['model', modelId] })
+      setLocalPath('')
+      setPathValidation(null)
+      setUploadError(null)
+    },
+    onError: (error: Error) => {
+      setUploadError(error.message || 'Failed to link local file')
+    },
+  })
+
+  // Validate local path when it changes (debounced)
+  const handlePathChange = async (path: string) => {
+    setLocalPath(path)
+    setPathValidation(null)
+
+    if (!path.trim()) return
+
+    setIsValidatingPath(true)
+    try {
+      const result = await validateLocalPath(path)
+      setPathValidation(result)
+    } catch {
+      setPathValidation(null)
+    } finally {
+      setIsValidatingPath(false)
+    }
+  }
+
+  const handleLinkLocalFile = async () => {
+    if (!localPath.trim() || !pathValidation?.exists || !pathValidation?.is_file) return
+
+    setIsLinking(true)
+    setUploadError(null)
+
+    try {
+      await linkMutation.mutateAsync({ path: localPath, fileType: selectedFileType })
+    } catch {
+      // Error handled by mutation
+    } finally {
+      setIsLinking(false)
+    }
+  }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputFiles = event.target.files
@@ -237,66 +302,182 @@ export function ModelFilesEditor({ modelId }: ModelFilesEditorProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Upload area */}
-        <div
-          className={cn(
-            'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
-            'hover:border-primary/50 hover:bg-muted/50',
-            isUploading && 'opacity-50 pointer-events-none'
-          )}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept=".stl,.3mf,.gcode,.gco,.g"
-            multiple
-            onChange={handleFileSelect}
-          />
+        {/* Upload/Link tabs */}
+        <Tabs defaultValue="upload" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="upload" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Upload File
+            </TabsTrigger>
+            <TabsTrigger value="link" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              Link Local File
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="flex flex-col items-center gap-3">
-            <Upload className="h-8 w-8 text-muted-foreground" />
-            <div className="text-sm text-muted-foreground">
-              Drag and drop files here, or click to select
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Supports STL, 3MF, and G-code files (up to 500MB)
-            </div>
+          {/* Upload tab content */}
+          <TabsContent value="upload">
+            <div
+              className={cn(
+                'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
+                'hover:border-primary/50 hover:bg-muted/50',
+                isUploading && 'opacity-50 pointer-events-none'
+              )}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".stl,.3mf,.gcode,.gco,.g"
+                multiple
+                onChange={handleFileSelect}
+              />
 
-            <div className="flex items-center gap-2 mt-2">
-              <Select
-                value={selectedFileType}
-                onValueChange={(v) => setSelectedFileType(v as ModelFileType)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="source_stl">STL File</SelectItem>
-                  <SelectItem value="source_3mf">3MF File</SelectItem>
-                  <SelectItem value="slicer_project">Slicer Project</SelectItem>
-                  <SelectItem value="gcode">G-code</SelectItem>
-                  <SelectItem value="plate_layout">Plate Layout</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col items-center gap-3">
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <div className="text-sm text-muted-foreground">
+                  Drag and drop files here, or click to select
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Supports STL, 3MF, and G-code files (up to 500MB)
+                </div>
 
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
-                {isUploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Select Files
-              </Button>
+                <div className="flex items-center gap-2 mt-2">
+                  <Select
+                    value={selectedFileType}
+                    onValueChange={(v) => setSelectedFileType(v as ModelFileType)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="source_stl">STL File</SelectItem>
+                      <SelectItem value="source_3mf">3MF File</SelectItem>
+                      <SelectItem value="slicer_project">Slicer Project</SelectItem>
+                      <SelectItem value="gcode">G-code</SelectItem>
+                      <SelectItem value="plate_layout">Plate Layout</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Select Files
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Link local file tab content */}
+          <TabsContent value="link">
+            <div className="border rounded-lg p-4 space-y-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium">Local File Path</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Enter the full path to a file on your local filesystem (e.g., OrcaSlicer project)
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <Input
+                    placeholder="/path/to/your/file.3mf"
+                    value={localPath}
+                    onChange={(e) => handlePathChange(e.target.value)}
+                    className={cn(
+                      'pr-10',
+                      pathValidation?.exists && pathValidation?.is_file && 'border-green-500',
+                      pathValidation && !pathValidation.exists && 'border-red-500'
+                    )}
+                  />
+                  {isValidatingPath && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  {!isValidatingPath && pathValidation?.exists && pathValidation?.is_file && (
+                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                  )}
+                  {!isValidatingPath && pathValidation && !pathValidation.exists && (
+                    <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                  )}
+                </div>
+              </div>
+
+              {pathValidation && (
+                <div
+                  className={cn(
+                    'text-sm p-2 rounded',
+                    pathValidation.exists && pathValidation.is_file
+                      ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
+                      : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+                  )}
+                >
+                  {pathValidation.exists && pathValidation.is_file ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>
+                        Found: {pathValidation.filename}
+                        {pathValidation.file_size && ` (${formatFileSize(pathValidation.file_size)})`}
+                      </span>
+                    </div>
+                  ) : pathValidation.exists && !pathValidation.is_file ? (
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>Path exists but is not a file (might be a directory)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>File not found at this path</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedFileType}
+                  onValueChange={(v) => setSelectedFileType(v as ModelFileType)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="source_stl">STL File</SelectItem>
+                    <SelectItem value="source_3mf">3MF File</SelectItem>
+                    <SelectItem value="slicer_project">Slicer Project</SelectItem>
+                    <SelectItem value="gcode">G-code</SelectItem>
+                    <SelectItem value="plate_layout">Plate Layout</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  onClick={handleLinkLocalFile}
+                  disabled={isLinking || !pathValidation?.exists || !pathValidation?.is_file}
+                >
+                  {isLinking ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Link2 className="h-4 w-4 mr-2" />
+                  )}
+                  Link File
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Error message */}
         {uploadError && (
@@ -333,21 +514,42 @@ export function ModelFilesEditor({ modelId }: ModelFilesEditorProps) {
                         Primary
                       </Badge>
                     )}
+                    {file.file_location === 'local_reference' && (
+                      <Badge
+                        variant={file.local_path_exists ? 'secondary' : 'destructive'}
+                        className="shrink-0"
+                      >
+                        <Link2 className="h-3 w-3 mr-1" />
+                        {file.local_path_exists ? 'Local' : 'Missing'}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                     <span>{FILE_TYPE_LABELS[file.file_type as ModelFileType]}</span>
-                    <span>•</span>
-                    <span>{formatFileSize(file.file_size)}</span>
+                    {file.file_size && (
+                      <>
+                        <span>|</span>
+                        <span>{formatFileSize(file.file_size)}</span>
+                      </>
+                    )}
                     {file.part_name && (
                       <>
-                        <span>•</span>
+                        <span>|</span>
                         <span>Part: {file.part_name}</span>
                       </>
                     )}
                     {file.version && (
                       <>
-                        <span>•</span>
+                        <span>|</span>
                         <span>{file.version}</span>
+                      </>
+                    )}
+                    {file.file_location === 'local_reference' && file.local_path && (
+                      <>
+                        <span>|</span>
+                        <span className="truncate max-w-[200px]" title={file.local_path}>
+                          {file.local_path}
+                        </span>
                       </>
                     )}
                   </div>

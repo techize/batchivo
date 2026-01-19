@@ -73,12 +73,20 @@ from app.models.return_request import (
 # Audit logging
 from app.models.audit_log import AuditAction, AuditLog
 
-# Webhooks
+# Webhooks (outbound)
 from app.models.webhook import (
     DeliveryStatus,
     WebhookDelivery,
     WebhookEventType,
     WebhookSubscription,
+)
+
+# Webhook Events (inbound)
+from app.models.webhook_event import (
+    WebhookDeadLetter,
+    WebhookEvent,
+    WebhookEventSource,
+    WebhookEventStatus,
 )
 
 # Multi-tenancy
@@ -168,11 +176,16 @@ __all__ = [
     # Audit logging
     "AuditAction",
     "AuditLog",
-    # Webhooks
+    # Webhooks (outbound)
     "DeliveryStatus",
     "WebhookDelivery",
     "WebhookEventType",
     "WebhookSubscription",
+    # Webhook Events (inbound)
+    "WebhookDeadLetter",
+    "WebhookEvent",
+    "WebhookEventSource",
+    "WebhookEventStatus",
     # Multi-tenancy
     "Tenant",
     "TenantModule",

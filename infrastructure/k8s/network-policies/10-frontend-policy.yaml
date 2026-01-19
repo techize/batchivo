@@ -1,0 +1,41 @@
+# Frontend Network Policy
+# Frontend serves static content and proxies to backend
+#
+# Ingress:
+#   - Traefik ingress controller (from traefik namespace)
+#
+# Egress:
+#   - None required (frontend is static content served by nginx/caddy)
+#   - DNS is handled by the allow-dns-egress policy
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-policy
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow ingress from Traefik
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+        - namespaceSelector:
+            matchLabels:
+              name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Also allow from kube-system for health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080

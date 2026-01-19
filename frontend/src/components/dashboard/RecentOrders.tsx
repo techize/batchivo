@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getOrders, type Order } from '@/lib/api/orders';
+import { getOrders, type Order } from '@/lib/api/orders'
+import { useCurrency } from '@/hooks/useCurrency';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
@@ -32,13 +33,6 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   refunded: <RefreshCw className="h-3 w-3" />,
 };
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-  }).format(amount);
-}
-
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -54,7 +48,12 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-function OrderCard({ order }: { order: Order }) {
+interface OrderCardProps {
+  order: Order;
+  formatCurrency: (value: string | number) => string;
+}
+
+function OrderCard({ order, formatCurrency }: OrderCardProps) {
   return (
     <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
       <div className="flex-1 min-w-0">
@@ -103,6 +102,7 @@ function LoadingSkeleton() {
 }
 
 export function RecentOrders() {
+  const { formatCurrency } = useCurrency();
   const { data, isLoading, error } = useQuery({
     queryKey: ['orders', { limit: 5 }],
     queryFn: () => getOrders({ limit: 5 }),
@@ -147,7 +147,7 @@ export function RecentOrders() {
         ) : (
           <div className="space-y-2">
             {data.data.map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <OrderCard key={order.id} order={order} formatCurrency={formatCurrency} />
             ))}
           </div>
         )}

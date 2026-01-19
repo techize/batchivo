@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 
 import { getOrder, shipOrder, deliverOrder, updateOrder } from '@/lib/api/orders'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -68,16 +69,10 @@ function formatDate(dateString: string): string {
   })
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-  }).format(amount)
-}
-
 export function OrderDetail() {
   const { orderId } = useParams({ from: '/orders/$orderId' })
   const queryClient = useQueryClient()
+  const { formatCurrency } = useCurrency()
 
   const [shipDialogOpen, setShipDialogOpen] = useState(false)
   const [trackingNumber, setTrackingNumber] = useState('')

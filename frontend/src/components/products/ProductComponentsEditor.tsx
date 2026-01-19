@@ -18,9 +18,9 @@ import {
   removeProductComponent,
   updateProductComponent,
   listProducts,
-  formatCurrency,
   type ProductComponent,
 } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -83,6 +83,7 @@ interface ProductComponentsEditorProps {
 export function ProductComponentsEditor({ productId, components }: ProductComponentsEditorProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const queryClient = useQueryClient()
+  const { formatCurrency } = useCurrency()
 
   // Fetch available products for selection (excluding current product)
   const { data: availableProducts } = useQuery({

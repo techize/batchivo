@@ -17,9 +17,9 @@ import {
   addProductModel,
   removeProductModel,
   updateProductModel,
-  formatCurrency,
   type ProductModel,
 } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { listModels } from '@/lib/api/models'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -84,6 +84,7 @@ export function ProductModelsEditor({ productId, models }: ProductModelsEditorPr
   const [dialogOpen, setDialogOpen] = useState(false)
   const [, setEditingModel] = useState<ProductModel | null>(null)
   const queryClient = useQueryClient()
+  const { formatCurrency } = useCurrency()
 
   // Fetch available models for selection
   const { data: availableModels } = useQuery({

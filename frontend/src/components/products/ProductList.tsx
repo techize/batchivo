@@ -10,7 +10,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Loader2, Plus, Search, Package, ArrowUpDown, Wand2 } from 'lucide-react'
 
-import { listProducts, formatCurrency } from '@/lib/api/products'
+import { listProducts } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { ProductWizard } from '@/components/products/ProductWizard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +42,7 @@ export function ProductList() {
   const [page, setPage] = useState(0)
   const [limit] = useState(50)
   const [wizardOpen, setWizardOpen] = useState(false)
+  const { formatCurrency } = useCurrency()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['products', { search, isActive, skip: page * limit, limit }],

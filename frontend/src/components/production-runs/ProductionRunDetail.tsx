@@ -16,7 +16,7 @@ import {
   formatDuration,
   getStatusColor,
 } from '@/lib/api/production-runs'
-import { formatCurrency } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { CancelRunDialog } from './CancelRunDialog'
 import { CompleteRunDialog } from './CompleteRunDialog'
 import { EditRunDialog } from './EditRunDialog'
@@ -42,6 +42,7 @@ export function ProductionRunDetail({ runId }: ProductionRunDetailProps) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const { formatCurrency } = useCurrency()
 
   const { data: run, isLoading, error } = useQuery({
     queryKey: ['production-run', runId],

@@ -25,6 +25,12 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🚀 Starting {settings.app_name} ({settings.environment})")
 
+    # Initialize Sentry error monitoring (before other services)
+    from app.observability.sentry import init_sentry
+
+    if init_sentry():
+        print("✓ Sentry error monitoring enabled")
+
     # Initialize database
     await init_db()
     print("✓ Database initialized")

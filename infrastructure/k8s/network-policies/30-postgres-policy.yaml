@@ -1,0 +1,31 @@
+# PostgreSQL Network Policy
+# PostgreSQL is the primary datastore
+#
+# Ingress:
+#   - Backend pods only (for database queries)
+#
+# Egress:
+#   - None required (PostgreSQL is a data sink)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-policy
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from backend
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress: []  # No egress needed

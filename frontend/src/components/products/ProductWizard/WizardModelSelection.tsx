@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, Minus, X, Loader2, Layers } from 'lucide-react'
 
 import { listModels, type Model } from '@/lib/api/models'
-import { formatCurrency } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +27,7 @@ interface WizardModelSelectionProps {
 
 export function WizardModelSelection({ selectedModels, onModelsChange }: WizardModelSelectionProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const { formatCurrency } = useCurrency()
 
   // Fetch models
   const { data: modelsData, isLoading } = useQuery({

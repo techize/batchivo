@@ -20,7 +20,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { listProductionRuns, formatStatus, formatDuration } from '@/lib/api/production-runs'
-import { formatCurrency } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -89,6 +89,7 @@ function getStatusIcon(status: ProductionRunStatus) {
 export function ProductionHistoryTable({ productId, modelIds }: ProductionHistoryTableProps) {
   const [dateRange, setDateRange] = useState<DateRangeOption>('30d')
   const [statusFilter, setStatusFilter] = useState<ProductionRunStatus | 'all'>('all')
+  const { formatCurrency } = useCurrency()
 
   // Fetch all production runs (we filter client-side by model)
   const { data, isLoading, error } = useQuery({

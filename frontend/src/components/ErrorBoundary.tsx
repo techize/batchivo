@@ -2,11 +2,13 @@
  * Error Boundary Component
  *
  * Catches React errors and records them as OpenTelemetry spans.
- * Also handles unhandled promise rejections.
+ * Also captures errors to Sentry for error monitoring.
+ * Handles unhandled promise rejections.
  */
 
 import { Component, type ReactNode } from 'react'
 import { startSpan, recordError } from '@/lib/telemetry'
+import { captureException } from '@/lib/sentry'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
@@ -46,6 +48,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     })
     recordError(span, error)
     span.end()
+
+    // Capture error in Sentry with component stack
+    captureException(error, {
+      componentStack: errorInfo.componentStack,
+      errorBoundary: true,
+    })
 
     // Update state with error info
     this.setState({ errorInfo })
@@ -140,6 +148,11 @@ export function initGlobalErrorHandlers(): void {
     recordError(span, error)
     span.end()
 
+    // Also capture in Sentry
+    captureException(error, {
+      type: 'unhandled_promise_rejection',
+    })
+
     if (import.meta.env.DEV) {
       console.error('Unhandled promise rejection:', event.reason)
     }
@@ -157,6 +170,13 @@ export function initGlobalErrorHandlers(): void {
 
     if (event.error) {
       recordError(span, event.error)
+      // Also capture in Sentry
+      captureException(event.error, {
+        type: 'uncaught_error',
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+      })
     }
     span.end()
 

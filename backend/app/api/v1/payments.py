@@ -290,6 +290,17 @@ class WebhookResponse(BaseModel):
     """Response for webhook endpoint."""
 
     status: str = "received"
+    event_id: str | None = None
+    message: str | None = None
+
+
+class WebhookProcessingResult(BaseModel):
+    """Detailed webhook processing result."""
+
+    status: str
+    event_id: str | None = None
+    message: str | None = None
+    will_retry: bool = False
 
 
 @router.post("/webhooks/square", response_model=WebhookResponse)
@@ -298,17 +309,26 @@ async def square_webhook(
     db: AsyncSession = Depends(get_db),
 ) -> WebhookResponse:
     """
-    Handle Square webhook events.
+    Handle Square webhook events with robust processing.
 
-    Square sends webhooks for payment events like payment.completed,
-    payment.updated, refund.created, etc.
+    Features:
+    - Signature validation (HMAC-SHA256)
+    - Idempotency tracking (prevents duplicate processing)
+    - Database transactions for state changes
+    - Retry logic with exponential backoff
+    - Dead-letter queue for permanently failed events
+    - Comprehensive logging for debugging
 
-    Validates signature and processes events asynchronously.
-    Returns 200 immediately to acknowledge receipt.
+    Square sends webhooks for payment events like:
+    - payment.created, payment.updated, payment.failed
+    - refund.created, refund.updated
+
+    Returns 200 immediately to acknowledge receipt (Square requires this).
     """
-    import hashlib
-    import hmac
+    import json
     import logging
+
+    from app.services.square_webhook_service import SquareWebhookService
 
     logger = logging.getLogger(__name__)
 
@@ -317,77 +337,82 @@ async def square_webhook(
     signature = request.headers.get("x-square-hmacsha256-signature", "")
     notification_url = str(request.url)
 
-    # Validate signature if webhook key is configured
-    if settings.square_webhook_signature_key:
-        # Square uses HMAC-SHA256 with the notification URL + body
-        # https://developer.squareup.com/docs/webhooks/validate-notifications
-        string_to_sign = notification_url + body.decode("utf-8")
-        expected_signature = hmac.new(
-            settings.square_webhook_signature_key.encode("utf-8"),
-            string_to_sign.encode("utf-8"),
-            hashlib.sha256,
-        ).digest()
+    # Initialize webhook service
+    webhook_service = SquareWebhookService(db)
 
-        import base64
+    # Validate signature
+    signature_valid = await webhook_service.verify_signature(
+        body=body,
+        signature=signature,
+        webhook_key=settings.square_webhook_signature_key,
+        notification_url=notification_url,
+    )
 
-        expected_signature_b64 = base64.b64encode(expected_signature).decode("utf-8")
-
-        if not hmac.compare_digest(signature, expected_signature_b64):
-            logger.warning("Invalid Square webhook signature")
-            raise HTTPException(status_code=401, detail="Invalid signature")
+    if settings.square_webhook_signature_key and not signature_valid:
+        logger.warning("Invalid Square webhook signature - rejecting request")
+        raise HTTPException(status_code=401, detail="Invalid signature")
 
     # Parse webhook event
     try:
-        import json
-
         event = json.loads(body)
     except json.JSONDecodeError:
         logger.error("Invalid JSON in webhook body")
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
     event_type = event.get("type", "")
-    event_data = event.get("data", {}).get("object", {})
+    event_id = event.get("event_id", "")
+    logger.info(f"Received Square webhook: type={event_type} event_id={event_id}")
 
-    logger.info(f"Received Square webhook: type={event_type}")
-
-    # Process different event types
+    # Process webhook with idempotency and retry support
     try:
-        if event_type == "payment.created":
-            await _handle_payment_created(event_data, db, logger)
-        elif event_type == "payment.updated":
-            await _handle_payment_updated(event_data, db, logger)
-        elif event_type == "refund.created":
-            await _handle_refund_created(event_data, db, logger)
-        elif event_type == "refund.updated":
-            await _handle_refund_updated(event_data, db, logger)
-        else:
-            logger.info(f"Unhandled webhook event type: {event_type}")
-    except Exception as e:
-        # Log but don't fail - we've received the webhook
-        logger.error(f"Error processing webhook: {e}")
+        result = await webhook_service.process_webhook(
+            event_data=event,
+            signature_valid=signature_valid,
+        )
 
-    # Always return 200 to acknowledge receipt
-    return WebhookResponse(status="received")
+        return WebhookResponse(
+            status=result.get("status", "received"),
+            event_id=result.get("event_id"),
+            message=result.get("message"),
+        )
+
+    except Exception as e:
+        # Log error but return 200 - we've received the webhook
+        # The webhook event is recorded and can be retried
+        logger.error(f"Error in webhook processing: {e}")
+        return WebhookResponse(
+            status="received",
+            message="Event recorded, will be processed asynchronously",
+        )
+
+
+# Legacy handler functions kept for test compatibility
+# These are now handled by SquareWebhookService but tests import them directly
 
 
 async def _handle_payment_created(payment: dict, db: AsyncSession, logger) -> None:
-    """Handle payment.created webhook event."""
+    """Handle payment.created webhook event.
+
+    DEPRECATED: Use SquareWebhookService.process_webhook() instead.
+    Kept for backward compatibility with existing tests.
+    """
     payment_id = payment.get("payment", {}).get("id")
     status = payment.get("payment", {}).get("status")
     logger.info(f"Payment created: payment_id={payment_id} status={status}")
-    # Payment is typically already recorded during checkout
-    # This is mainly for logging/auditing
 
 
 async def _handle_payment_updated(payment: dict, db: AsyncSession, logger) -> None:
-    """Handle payment.updated webhook event."""
+    """Handle payment.updated webhook event.
+
+    DEPRECATED: Use SquareWebhookService.process_webhook() instead.
+    Kept for backward compatibility with existing tests.
+    """
     payment_data = payment.get("payment", {})
     payment_id = payment_data.get("id")
     new_status = payment_data.get("status")
 
     logger.info(f"Payment updated: payment_id={payment_id} status={new_status}")
 
-    # Find and update order payment status
     result = await db.execute(select(OrderModel).where(OrderModel.payment_id == payment_id))
     order = result.scalar_one_or_none()
 
@@ -401,7 +426,11 @@ async def _handle_payment_updated(payment: dict, db: AsyncSession, logger) -> No
 
 
 async def _handle_refund_created(refund: dict, db: AsyncSession, logger) -> None:
-    """Handle refund.created webhook event."""
+    """Handle refund.created webhook event.
+
+    DEPRECATED: Use SquareWebhookService.process_webhook() instead.
+    Kept for backward compatibility with existing tests.
+    """
     refund_data = refund.get("refund", {})
     refund_id = refund_data.get("id")
     payment_id = refund_data.get("payment_id")
@@ -413,7 +442,6 @@ async def _handle_refund_created(refund: dict, db: AsyncSession, logger) -> None
         f"status={status} amount={amount}"
     )
 
-    # Find and update order status to refunded
     result = await db.execute(select(OrderModel).where(OrderModel.payment_id == payment_id))
     order = result.scalar_one_or_none()
 
@@ -430,7 +458,11 @@ async def _handle_refund_created(refund: dict, db: AsyncSession, logger) -> None
 
 
 async def _handle_refund_updated(refund: dict, db: AsyncSession, logger) -> None:
-    """Handle refund.updated webhook event."""
+    """Handle refund.updated webhook event.
+
+    DEPRECATED: Use SquareWebhookService.process_webhook() instead.
+    Kept for backward compatibility with existing tests.
+    """
     refund_data = refund.get("refund", {})
     refund_id = refund_data.get("id")
     payment_id = refund_data.get("payment_id")
@@ -439,7 +471,6 @@ async def _handle_refund_updated(refund: dict, db: AsyncSession, logger) -> None
     logger.info(f"Refund updated: refund_id={refund_id} status={status}")
 
     if status == "COMPLETED":
-        # Find and update order status
         result = await db.execute(select(OrderModel).where(OrderModel.payment_id == payment_id))
         order = result.scalar_one_or_none()
 

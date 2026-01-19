@@ -40,6 +40,7 @@ dependencies = [
     "paho-mqtt>=2.1.0",
     "dnspython>=2.7.0",
     "etsyv3>=0.0.7",
+    "sentry-sdk[fastapi]>=2.0.0",
 ]
 
 [project.optional-dependencies]

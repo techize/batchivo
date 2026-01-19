@@ -9,6 +9,7 @@ declare global {
       VITE_OTEL_ENDPOINT?: string;
       VITE_SERVICE_NAME?: string;
       VITE_SERVICE_VERSION?: string;
+      VITE_SENTRY_DSN?: string;
     };
   }
 }
@@ -29,6 +30,7 @@ export const config = {
   otelEndpoint: getConfig('VITE_OTEL_ENDPOINT') || '/v1/traces',
   serviceName: getConfig('VITE_SERVICE_NAME') || 'batchivo-frontend',
   serviceVersion: getConfig('VITE_SERVICE_VERSION') || '1.0.0',
+  sentryDsn: getConfig('VITE_SENTRY_DSN'),
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
   mode: import.meta.env.MODE,

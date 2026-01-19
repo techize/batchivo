@@ -1,0 +1,16 @@
+# Default Deny Network Policy for Batchivo Namespace
+# This policy denies all ingress and egress by default
+# All allowed traffic must be explicitly defined in other policies
+#
+# Apply order: This should be applied FIRST to establish the baseline
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: batchivo
+spec:
+  podSelector: {}  # Applies to all pods in namespace
+  policyTypes:
+    - Ingress
+    - Egress

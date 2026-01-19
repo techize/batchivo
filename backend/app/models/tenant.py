@@ -90,6 +90,21 @@ class Tenant(Base, UUIDMixin, TimestampMixin):
         comment="Description of the tenant/business",
     )
 
+    # Currency settings
+    currency_code: Mapped[str] = mapped_column(
+        String(3),
+        nullable=False,
+        default="GBP",
+        comment="ISO 4217 currency code (e.g., GBP, USD, EUR)",
+    )
+
+    currency_symbol: Mapped[str] = mapped_column(
+        String(5),
+        nullable=False,
+        default="£",
+        comment="Currency symbol for display (e.g., £, $, €)",
+    )
+
     # Relationships
     user_tenants: Mapped[list["UserTenant"]] = relationship(
         "UserTenant",

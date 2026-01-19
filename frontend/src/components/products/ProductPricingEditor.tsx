@@ -16,9 +16,9 @@ import {
   addProductPricing,
   updateProductPricing,
   removeProductPricing,
-  formatCurrency,
   type ProductPricing,
 } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { listSalesChannels } from '@/lib/api/sales-channels'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,6 +87,7 @@ export function ProductPricingEditor({ productId, pricing, makeCost }: ProductPr
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingPricing, setEditingPricing] = useState<ProductPricing | null>(null)
   const queryClient = useQueryClient()
+  const { formatCurrency } = useCurrency()
 
   // Fetch available sales channels
   const { data: salesChannelsData } = useQuery({

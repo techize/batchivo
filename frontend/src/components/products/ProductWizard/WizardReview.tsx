@@ -7,7 +7,7 @@
 
 import { Pencil, Layers, Package, Tags, Box } from 'lucide-react'
 
-import { formatCurrency } from '@/lib/api/products'
+import { useCurrency } from '@/hooks/useCurrency'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +21,8 @@ interface WizardReviewProps {
 }
 
 export function WizardReview({ wizardData, onEditStep }: WizardReviewProps) {
+  const { formatCurrency } = useCurrency()
+
   // Calculate costs
   const modelsCost = wizardData.selectedModels.reduce((total, model) => {
     return total + parseFloat(model.total_cost || '0') * model.quantity

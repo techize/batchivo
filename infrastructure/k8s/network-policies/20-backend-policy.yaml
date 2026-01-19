@@ -1,0 +1,87 @@
+# Backend Network Policy
+# Backend is the API service that handles business logic
+#
+# Ingress:
+#   - Traefik ingress controller (for API requests)
+#
+# Egress:
+#   - PostgreSQL (in-namespace)
+#   - Redis (in-namespace)
+#   - MinIO (in-namespace)
+#   - Square API (external HTTPS)
+#   - Brevo/email (external HTTPS)
+#   - Authentik (external HTTPS)
+#   - Container registry for image pulls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-policy
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from Traefik
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+        - namespaceSelector:
+            matchLabels:
+              name: traefik
+      ports:
+        - protocol: TCP
+          port: 8000
+    # Allow from kube-system for health checks (kubelet)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # Allow egress to PostgreSQL within namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow egress to Redis within namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow egress to MinIO within namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app: minio
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Allow HTTPS egress for external APIs (Square, Brevo, Authentik, etc.)
+    # Note: Kubernetes NetworkPolicy cannot filter by hostname, only by IP/CIDR
+    # For hostname-based filtering, use a service mesh like Istio or Cilium CNI
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              # Exclude private IP ranges to prevent lateral movement
+              # Comment out ranges if your external services use private IPs
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443  # HTTPS for Square API, Brevo, Authentik

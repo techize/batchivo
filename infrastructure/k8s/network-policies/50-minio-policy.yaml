@@ -1,0 +1,41 @@
+# MinIO Network Policy
+# MinIO provides S3-compatible object storage for images
+#
+# Ingress:
+#   - Backend pods (for image upload/retrieval)
+#   - MinIO client jobs (for bucket management)
+#
+# Egress:
+#   - None required (MinIO is a data sink)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio-policy
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      app: minio
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from backend for API access
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 9000  # S3 API
+    # Allow ingress from all pods in namespace for mc client jobs
+    # (minio-create-bucket job needs access)
+    - from:
+        - podSelector: {}  # All pods in namespace
+      ports:
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 9001  # Console (for admin access via port-forward)
+  egress: []  # No egress needed

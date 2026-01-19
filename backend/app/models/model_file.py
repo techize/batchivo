@@ -26,6 +26,13 @@ class ModelFileType(str, Enum):
     PLATE_LAYOUT = "plate_layout"  # Plate arrangement file
 
 
+class FileLocation(str, Enum):
+    """Where the file is stored."""
+
+    UPLOADED = "uploaded"  # File was uploaded and stored in storage backend
+    LOCAL_REFERENCE = "local_reference"  # Path reference to local filesystem
+
+
 class ModelFile(Base, UUIDMixin, TimestampMixin):
     """
     ModelFile tracks 3D model files associated with a Model.
@@ -60,23 +67,36 @@ class ModelFile(Base, UUIDMixin, TimestampMixin):
         comment="File type: source_stl, source_3mf, slicer_project, gcode, plate_layout",
     )
 
-    # File storage
-    file_url: Mapped[str] = mapped_column(
-        String(500),
+    # File storage location
+    file_location: Mapped[str] = mapped_column(
+        String(20),
         nullable=False,
-        comment="URL or path to the stored file",
+        default="uploaded",
+        comment="Where file is stored: 'uploaded' (in storage) or 'local_reference' (filesystem path)",
+    )
+
+    file_url: Mapped[Optional[str]] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="URL or path to the stored file (for uploaded files)",
+    )
+
+    local_path: Mapped[Optional[str]] = mapped_column(
+        String(1000),
+        nullable=True,
+        comment="Local filesystem path (for local_reference files)",
     )
 
     original_filename: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Original filename as uploaded",
+        comment="Original filename as uploaded or referenced",
     )
 
-    file_size: Mapped[int] = mapped_column(
+    file_size: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        nullable=False,
-        comment="File size in bytes",
+        nullable=True,
+        comment="File size in bytes (may be null for local references)",
     )
 
     content_type: Mapped[Optional[str]] = mapped_column(
