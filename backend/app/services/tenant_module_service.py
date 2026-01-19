@@ -210,6 +210,9 @@ class TenantModuleService:
         for module in existing:
             await self.db.delete(module)
 
+        # Flush deletes before inserting to avoid UNIQUE constraint violations
+        await self.db.flush()
+
         # Get default modules for this tenant type
         default_modules = DEFAULT_MODULES_BY_TYPE.get(
             tenant.tenant_type,
