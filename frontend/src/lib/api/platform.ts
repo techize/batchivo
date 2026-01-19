@@ -108,6 +108,46 @@ export interface PaginatedAuditLogsResponse {
   limit: number
 }
 
+/**
+ * Status of a module for a tenant
+ */
+export interface TenantModuleStatus {
+  module_name: string
+  enabled: boolean
+  is_default: boolean
+  configured: boolean
+  enabled_by_user_id: string | null
+  updated_at: string | null
+}
+
+/**
+ * Response containing all module statuses for a tenant
+ */
+export interface TenantModulesResponse {
+  tenant_id: string
+  tenant_type: string
+  modules: TenantModuleStatus[]
+}
+
+/**
+ * Response for module enable/disable action
+ */
+export interface TenantModuleActionResponse {
+  module_name: string
+  enabled: boolean
+  message: string
+}
+
+/**
+ * Response for resetting modules to defaults
+ */
+export interface TenantModulesResetResponse {
+  tenant_id: string
+  tenant_type: string
+  modules_reset: number
+  message: string
+}
+
 // ==================== API Functions ====================
 
 const PLATFORM_API_PREFIX = '/api/v1/platform'
@@ -184,4 +224,38 @@ export async function getAuditLogs(params?: {
   const url = `${PLATFORM_API_PREFIX}/audit${query ? `?${query}` : ''}`
 
   return apiClient.get<PaginatedAuditLogsResponse>(url)
+}
+
+// ==================== Tenant Module Management ====================
+
+/**
+ * Get all module statuses for a tenant
+ */
+export async function getTenantModules(tenantId: string): Promise<TenantModulesResponse> {
+  return apiClient.get<TenantModulesResponse>(
+    `${PLATFORM_API_PREFIX}/tenants/${tenantId}/modules`
+  )
+}
+
+/**
+ * Update a module's enabled status for a tenant
+ */
+export async function updateTenantModule(
+  tenantId: string,
+  moduleName: string,
+  enabled: boolean
+): Promise<TenantModuleActionResponse> {
+  return apiClient.put<TenantModuleActionResponse>(
+    `${PLATFORM_API_PREFIX}/tenants/${tenantId}/modules/${moduleName}`,
+    { enabled }
+  )
+}
+
+/**
+ * Reset all modules to defaults for a tenant
+ */
+export async function resetTenantModules(tenantId: string): Promise<TenantModulesResetResponse> {
+  return apiClient.post<TenantModulesResetResponse>(
+    `${PLATFORM_API_PREFIX}/tenants/${tenantId}/modules/reset-defaults`
+  )
 }

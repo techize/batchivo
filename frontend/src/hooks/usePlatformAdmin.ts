@@ -13,11 +13,18 @@ import {
   deactivateTenant,
   reactivateTenant,
   getAuditLogs,
+  getTenantModules,
+  updateTenantModule,
+  resetTenantModules,
   type Tenant,
   type TenantDetail,
   type ImpersonationResponse,
   type TenantActionResponse,
   type AuditLog,
+  type TenantModulesResponse,
+  type TenantModuleStatus,
+  type TenantModuleActionResponse,
+  type TenantModulesResetResponse,
 } from '@/lib/api/platform'
 
 // ==================== Platform Admin Check ====================
@@ -137,6 +144,74 @@ export function useAuditLogs(params?: {
   })
 }
 
+// ==================== Tenant Modules ====================
+
+/**
+ * Hook to fetch tenant module statuses
+ */
+export function useTenantModules(tenantId: string | undefined) {
+  const { isPlatformAdmin } = usePlatformAdmin()
+
+  return useQuery({
+    queryKey: ['platform', 'tenants', tenantId, 'modules'],
+    queryFn: () => getTenantModules(tenantId!),
+    enabled: isPlatformAdmin && !!tenantId,
+    staleTime: 30000,
+  })
+}
+
+/**
+ * Hook to update a tenant module's enabled status
+ */
+export function useUpdateTenantModule() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      moduleName,
+      enabled,
+    }: {
+      tenantId: string
+      moduleName: string
+      enabled: boolean
+    }) => updateTenantModule(tenantId, moduleName, enabled),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['platform', 'tenants', variables.tenantId, 'modules'],
+      })
+      queryClient.invalidateQueries({ queryKey: ['platform', 'audit'] })
+    },
+  })
+}
+
+/**
+ * Hook to reset tenant modules to defaults
+ */
+export function useResetTenantModules() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (tenantId: string) => resetTenantModules(tenantId),
+    onSuccess: (_, tenantId) => {
+      queryClient.invalidateQueries({
+        queryKey: ['platform', 'tenants', tenantId, 'modules'],
+      })
+      queryClient.invalidateQueries({ queryKey: ['platform', 'audit'] })
+    },
+  })
+}
+
 // ==================== Types Export ====================
 
-export type { Tenant, TenantDetail, ImpersonationResponse, TenantActionResponse, AuditLog }
+export type {
+  Tenant,
+  TenantDetail,
+  ImpersonationResponse,
+  TenantActionResponse,
+  AuditLog,
+  TenantModulesResponse,
+  TenantModuleStatus,
+  TenantModuleActionResponse,
+  TenantModulesResetResponse,
+}

@@ -155,6 +155,13 @@ export function TenantDetailPage() {
               {isImpersonating ? 'Impersonating...' : 'Impersonate'}
             </Button>
 
+            <Button variant="outline" asChild>
+              <Link to={`/platform/tenants/${tenant.id}/modules`}>
+                <Package className="mr-2 h-4 w-4" />
+                Manage Modules
+              </Link>
+            </Button>
+
             {tenant.is_active ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>

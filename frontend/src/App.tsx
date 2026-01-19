@@ -63,6 +63,7 @@ import { Projects } from '@/pages/knitting/Projects'
 import { PlatformDashboard } from '@/pages/platform/PlatformDashboard'
 import { TenantsPage } from '@/pages/platform/TenantsPage'
 import { TenantDetailPage } from '@/pages/platform/TenantDetailPage'
+import { TenantModulesPage } from '@/pages/platform/TenantModulesPage'
 import { AuditLogsPage } from '@/pages/platform/AuditLogsPage'
 
 // Guards
@@ -634,6 +635,17 @@ const platformTenantDetailRoute = new Route({
   ),
 })
 
+// Tenant Modules
+const platformTenantModulesRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/platform/tenants/$tenantId/modules',
+  component: () => (
+    <PlatformAdminGuard>
+      <TenantModulesPage />
+    </PlatformAdminGuard>
+  ),
+})
+
 // Audit Logs
 const platformAuditRoute = new Route({
   getParentRoute: () => rootRoute,
@@ -697,6 +709,7 @@ const routeTree = rootRoute.addChildren([
   // Platform admin routes
   platformDashboardRoute,    // Platform admin dashboard
   platformTenantsRoute,      // Tenants list (static route first)
+  platformTenantModulesRoute, // Tenant modules (specific route before generic)
   platformTenantDetailRoute, // Tenant detail (dynamic route last)
   platformAuditRoute,        // Audit logs
 ])
