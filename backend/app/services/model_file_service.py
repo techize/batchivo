@@ -2,10 +2,11 @@
 
 import logging
 import uuid
+import zipfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 import boto3
@@ -18,6 +19,7 @@ from app.models.model import Model
 from app.models.model_file import ModelFile, ModelFileType
 from app.models.tenant import Tenant
 from app.models.user import User
+from app.services.image_storage import ImageStorageError, get_image_storage
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,70 @@ class ModelFileStorageError(Exception):
     """Error during model file storage operation."""
 
     pass
+
+
+def extract_3mf_thumbnail(file_content: bytes) -> Optional[Tuple[bytes, str]]:
+    """
+    Extract embedded thumbnail from a 3MF file.
+
+    3MF files are ZIP archives that may contain a thumbnail image at:
+    - Metadata/thumbnail.png (standard location)
+    - Metadata/thumbnail.jpg
+    - 3D/Metadata/thumbnail.png (some slicers)
+
+    Args:
+        file_content: Raw bytes of the 3MF file
+
+    Returns:
+        Tuple of (thumbnail_bytes, content_type) if found, None otherwise
+    """
+    # Standard 3MF thumbnail locations (in order of preference)
+    thumbnail_paths = [
+        "Metadata/thumbnail.png",
+        "Metadata/thumbnail.jpg",
+        "Metadata/thumbnail.jpeg",
+        "3D/Metadata/thumbnail.png",
+        "3D/Metadata/thumbnail.jpg",
+        # BambuStudio/OrcaSlicer often use these
+        "Metadata/plate_1.png",
+        "Metadata/top.png",
+    ]
+
+    try:
+        with zipfile.ZipFile(BytesIO(file_content), "r") as zf:
+            # Get list of files in the archive (case-insensitive search)
+            namelist = zf.namelist()
+            namelist_lower = {n.lower(): n for n in namelist}
+
+            for thumb_path in thumbnail_paths:
+                # Try exact match first
+                if thumb_path in namelist:
+                    thumbnail_data = zf.read(thumb_path)
+                    content_type = (
+                        "image/png" if thumb_path.endswith(".png") else "image/jpeg"
+                    )
+                    logger.info(f"Extracted 3MF thumbnail from: {thumb_path}")
+                    return (thumbnail_data, content_type)
+
+                # Try case-insensitive match
+                if thumb_path.lower() in namelist_lower:
+                    actual_path = namelist_lower[thumb_path.lower()]
+                    thumbnail_data = zf.read(actual_path)
+                    content_type = (
+                        "image/png" if actual_path.lower().endswith(".png") else "image/jpeg"
+                    )
+                    logger.info(f"Extracted 3MF thumbnail from: {actual_path}")
+                    return (thumbnail_data, content_type)
+
+            logger.debug(f"No thumbnail found in 3MF. Files: {namelist[:10]}...")
+            return None
+
+    except zipfile.BadZipFile:
+        logger.warning("File is not a valid ZIP/3MF archive")
+        return None
+    except Exception as e:
+        logger.warning(f"Failed to extract 3MF thumbnail: {e}")
+        return None
 
 
 class ModelFileService:
@@ -215,6 +281,10 @@ class ModelFileService:
         else:
             file_url = await self._save_s3(file_content, model_dir, filename, content_type)
 
+        # Extract and save thumbnail from 3MF files if model has no image
+        if extension == ".3mf" and not model.image_url:
+            await self._extract_and_save_3mf_thumbnail(model, file_content)
+
         # If setting as primary, unset other primary files of same type
         if is_primary:
             await self._unset_primary_files(model_id, file_type)
@@ -343,6 +413,53 @@ class ModelFileService:
         )
         for file in result.scalars().all():
             file.is_primary = False
+
+    async def _extract_and_save_3mf_thumbnail(
+        self,
+        model: Model,
+        file_content: bytes,
+    ) -> bool:
+        """
+        Extract thumbnail from 3MF file and save as model preview image.
+
+        Args:
+            model: The Model instance to update
+            file_content: Raw bytes of the 3MF file
+
+        Returns:
+            True if thumbnail was extracted and saved, False otherwise
+        """
+        # Extract thumbnail from 3MF
+        thumbnail_result = extract_3mf_thumbnail(file_content)
+        if not thumbnail_result:
+            logger.debug(f"No thumbnail found in 3MF for model {model.id}")
+            return False
+
+        thumbnail_data, content_type = thumbnail_result
+
+        try:
+            # Use ImageStorage to save the thumbnail
+            image_storage = get_image_storage()
+            result = await image_storage.save_image(
+                file_content=thumbnail_data,
+                content_type=content_type,
+                product_id=str(model.id),  # Use model ID for the image path
+                original_filename=f"3mf_thumbnail.{'png' if 'png' in content_type else 'jpg'}",
+            )
+
+            # Update model with the new image URL
+            model.image_url = result["image_url"]
+            logger.info(
+                f"Saved 3MF thumbnail for model {model.id}: {result['image_url']}"
+            )
+            return True
+
+        except ImageStorageError as e:
+            logger.warning(f"Failed to save 3MF thumbnail for model {model.id}: {e}")
+            return False
+        except Exception as e:
+            logger.exception(f"Unexpected error saving 3MF thumbnail: {e}")
+            return False
 
     async def get_file(self, file_id: UUID) -> Optional[ModelFile]:
         """
