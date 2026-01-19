@@ -29,3 +29,6 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 .env.e2e
+
+*storybook.log
+storybook-static
