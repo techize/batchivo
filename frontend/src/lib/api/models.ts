@@ -88,6 +88,10 @@ export interface Model {
   updated_at: string
   // Computed cost (from list endpoint)
   total_cost?: string
+  // Production cost tracking (Phase 2)
+  actual_production_cost?: string
+  production_cost_count: number
+  production_cost_updated_at?: string
 }
 
 export interface ModelDetail extends Model {

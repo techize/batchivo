@@ -20,6 +20,8 @@ import {
   Calculator,
   ShoppingCart,
   TrendingUp,
+  TrendingDown,
+  Minus,
   Clock,
   Box,
   ImageIcon,
@@ -331,6 +333,86 @@ export function ProductDetail({ productId }: ProductDetailProps) {
             subValue="Profit margin"
           />
         </div>
+      )}
+
+      {/* Production Cost Variance Analysis (Phase 3) */}
+      {costBreakdown?.models_with_actual_cost > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Production Cost Variance
+            </CardTitle>
+            <CardDescription>
+              Comparison of BOM-based theoretical cost vs actual production costs.
+              {costBreakdown.models_with_actual_cost < costBreakdown.models_total && (
+                <span className="text-amber-600 ml-1">
+                  ({costBreakdown.models_with_actual_cost} of {costBreakdown.models_total} models have production data)
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const theoreticalCost = totalMakeCost
+              const actualCost = costBreakdown.total_actual_cost
+                ? parseFloat(costBreakdown.total_actual_cost)
+                : null
+              const variance = costBreakdown.cost_variance_percentage
+                ? parseFloat(costBreakdown.cost_variance_percentage)
+                : null
+              const modelsActualCost = costBreakdown.models_actual_cost
+                ? parseFloat(costBreakdown.models_actual_cost)
+                : null
+              const hasFullData = costBreakdown.models_with_actual_cost === costBreakdown.models_total
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="rounded-lg border bg-card p-4">
+                      <div className="text-sm text-muted-foreground">Theoretical Cost</div>
+                      <div className="text-2xl font-bold mt-1">{formatCurrency(theoreticalCost)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">BOM-based estimate</div>
+                    </div>
+                    <div className="rounded-lg border bg-card p-4">
+                      <div className="text-sm text-muted-foreground">Models Actual Cost</div>
+                      <div className="text-2xl font-bold mt-1">
+                        {modelsActualCost !== null ? formatCurrency(modelsActualCost) : 'N/A'}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        From {costBreakdown.models_with_actual_cost} model{costBreakdown.models_with_actual_cost !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    {hasFullData && actualCost !== null && (
+                      <div className="rounded-lg border bg-card p-4">
+                        <div className="text-sm text-muted-foreground">Total Actual Cost</div>
+                        <div className="text-2xl font-bold mt-1">{formatCurrency(actualCost)}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Including packaging & assembly</div>
+                      </div>
+                    )}
+                    {hasFullData && variance !== null && (
+                      <div className={`rounded-lg border p-4 ${variance > 0 ? 'bg-destructive/10 border-destructive/20' : variance < 0 ? 'bg-green-500/10 border-green-500/20' : 'bg-card'}`}>
+                        <div className="text-sm text-muted-foreground">Variance</div>
+                        <div className={`text-2xl font-bold mt-1 flex items-center gap-1 ${variance > 0 ? 'text-destructive' : variance < 0 ? 'text-green-600' : ''}`}>
+                          {variance > 0 ? <TrendingUp className="h-5 w-5" /> : variance < 0 ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                          {Math.abs(variance).toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {variance > 0 ? 'Over budget' : variance < 0 ? 'Under budget' : 'On budget'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {!hasFullData && (
+                    <div className="text-sm text-muted-foreground bg-muted/50 rounded p-3">
+                      Complete variance analysis will be available when all {costBreakdown.models_total} models have production cost data.
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+          </CardContent>
+        </Card>
       )}
 
       {/* Product Details Card */}

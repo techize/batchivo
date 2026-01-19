@@ -7,7 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Edit, Loader2, Trash2, Package } from 'lucide-react'
+import { ArrowLeft, Edit, Loader2, Trash2, Package, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 import { getModel, deleteModel } from '@/lib/api/models'
 import { Button } from '@/components/ui/button'
@@ -205,6 +205,62 @@ export function ModelDetail({ modelId }: ModelDetailProps) {
           subValue={`${totalCost > 0 ? ((recommendedPrice - totalCost) / totalCost * 100).toFixed(0) : 0}% profit`}
         />
       </div>
+
+      {/* Production Cost Analysis (Phase 2) */}
+      {model.production_cost_count > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Production Cost Analysis
+            </CardTitle>
+            <CardDescription>
+              Comparison of theoretical (BOM-based) cost vs actual production costs from {model.production_cost_count} completed unit{model.production_cost_count !== 1 ? 's' : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const actualCost = parseFloat(model.actual_production_cost || '0')
+              const variance = totalCost > 0 ? ((actualCost - totalCost) / totalCost) * 100 : 0
+              const isOverBudget = variance > 0
+              const isUnderBudget = variance < 0
+              const varianceAbs = Math.abs(variance)
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded-lg border bg-card p-4">
+                      <div className="text-sm text-muted-foreground">Theoretical Cost</div>
+                      <div className="text-2xl font-bold mt-1">{formatCurrency(totalCost)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">BOM-based estimate</div>
+                    </div>
+                    <div className="rounded-lg border bg-card p-4">
+                      <div className="text-sm text-muted-foreground">Actual Cost</div>
+                      <div className="text-2xl font-bold mt-1">{formatCurrency(actualCost)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Rolling average</div>
+                    </div>
+                    <div className={`rounded-lg border p-4 ${isOverBudget ? 'bg-destructive/10 border-destructive/20' : isUnderBudget ? 'bg-green-500/10 border-green-500/20' : 'bg-card'}`}>
+                      <div className="text-sm text-muted-foreground">Variance</div>
+                      <div className={`text-2xl font-bold mt-1 flex items-center gap-1 ${isOverBudget ? 'text-destructive' : isUnderBudget ? 'text-green-600' : ''}`}>
+                        {isOverBudget ? <TrendingUp className="h-5 w-5" /> : isUnderBudget ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                        {varianceAbs.toFixed(1)}%
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {isOverBudget ? 'Over budget' : isUnderBudget ? 'Under budget' : 'On budget'}
+                      </div>
+                    </div>
+                  </div>
+                  {model.production_cost_updated_at && (
+                    <div className="text-xs text-muted-foreground">
+                      Last updated: {new Date(model.production_cost_updated_at).toLocaleDateString()} at {new Date(model.production_cost_updated_at).toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Model Details Card */}
       <Card>

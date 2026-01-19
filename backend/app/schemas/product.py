@@ -118,6 +118,20 @@ class ProductCostBreakdown(BaseModel):
     packaging_cost: Decimal = Field(..., description="Packaging cost")
     assembly_cost: Decimal = Field(..., description="Assembly labor cost")
     total_make_cost: Decimal = Field(..., description="Total make cost")
+    # Phase 3: Actual cost tracking from production runs
+    models_actual_cost: Optional[Decimal] = Field(
+        None, description="Total actual production cost of models (from rolling averages)"
+    )
+    total_actual_cost: Optional[Decimal] = Field(
+        None, description="Total actual make cost (if all models have production data)"
+    )
+    cost_variance_percentage: Optional[Decimal] = Field(
+        None, description="Variance between theoretical and actual costs (%)"
+    )
+    models_with_actual_cost: int = Field(
+        0, description="Number of models with actual production cost data"
+    )
+    models_total: int = Field(0, description="Total number of distinct models in product")
 
     model_config = ConfigDict(from_attributes=True)
 

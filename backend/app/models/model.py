@@ -153,6 +153,27 @@ class Model(Base, UUIDMixin, TimestampMixin):
         comment="Number of printed units in inventory",
     )
 
+    # Production Cost Tracking (Phase 2: Rolling average from actual runs)
+    actual_production_cost: Mapped[Optional[float]] = mapped_column(
+        Numeric(10, 4),
+        nullable=True,
+        comment="Rolling average actual production cost per unit from completed runs",
+    )
+
+    production_cost_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+        comment="Number of completed production runs included in rolling average",
+    )
+
+    production_cost_updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Last time actual_production_cost was updated",
+    )
+
     # Relationships
     materials: Mapped[list["ModelMaterial"]] = relationship(
         "ModelMaterial",

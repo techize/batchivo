@@ -146,6 +146,16 @@ class ModelResponse(ModelBase):
     updated_at: datetime
     # Computed cost (included when materials/components are loaded)
     total_cost: Optional[Decimal] = Field(None, description="Total build cost (computed)")
+    # Production cost tracking (Phase 2)
+    actual_production_cost: Optional[Decimal] = Field(
+        None, description="Rolling average actual production cost per unit from completed runs"
+    )
+    production_cost_count: int = Field(
+        0, description="Number of completed production runs included in rolling average"
+    )
+    production_cost_updated_at: Optional[datetime] = Field(
+        None, description="Last time actual_production_cost was updated"
+    )
 
     model_config = ConfigDict(from_attributes=True)
 

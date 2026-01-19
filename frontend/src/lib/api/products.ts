@@ -18,6 +18,12 @@ export interface ProductCostBreakdown {
   packaging_cost: string
   assembly_cost: string
   total_make_cost: string
+  // Phase 3: Actual cost tracking from production runs
+  models_actual_cost?: string
+  total_actual_cost?: string
+  cost_variance_percentage?: string
+  models_with_actual_cost: number
+  models_total: number
 }
 
 /**

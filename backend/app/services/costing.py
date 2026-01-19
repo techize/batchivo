@@ -170,13 +170,36 @@ class CostingService:
         _visited.add(product.id)
 
         # 1. Calculate total model cost (sum of all models × quantity × model unit cost)
+        # Phase 3: Also track actual production costs from models
         models_cost = Decimal("0")
+        models_actual_cost = Decimal("0")
+        models_with_actual_cost = 0
+        models_total = 0
+        seen_model_ids: set = set()
+
         if hasattr(product, "product_models"):
             for pm in product.product_models:
                 if hasattr(pm, "model") and pm.model:
-                    # Calculate model's unit cost
+                    # Calculate model's unit cost (BOM-based theoretical)
                     model_cost = CostingService.calculate_model_cost(pm.model)
                     models_cost += Decimal(str(pm.quantity)) * model_cost.total_cost
+
+                    # Track unique models for actual cost calculation
+                    if pm.model.id not in seen_model_ids:
+                        seen_model_ids.add(pm.model.id)
+                        models_total += 1
+
+                        # Phase 3: Add actual production cost if available
+                        if pm.model.actual_production_cost is not None:
+                            models_actual_cost += Decimal(str(pm.quantity)) * Decimal(
+                                str(pm.model.actual_production_cost)
+                            )
+                            models_with_actual_cost += 1
+                    elif pm.model.actual_production_cost is not None:
+                        # Same model appears multiple times - just add the cost
+                        models_actual_cost += Decimal(str(pm.quantity)) * Decimal(
+                            str(pm.model.actual_production_cost)
+                        )
 
         # 2. Calculate total child product cost (for bundles)
         # This is recursive - child products may contain other products
@@ -218,12 +241,40 @@ class CostingService:
         # 5. Total make cost (now includes child products cost)
         total_make_cost = models_cost + child_products_cost + packaging_cost + assembly_cost
 
+        # 6. Phase 3: Calculate actual total cost and variance if we have actual data
+        total_actual_cost = None
+        cost_variance_percentage = None
+
+        if models_with_actual_cost > 0 and models_total > 0:
+            # Only calculate total actual cost if ALL models have actual data
+            if models_with_actual_cost == models_total:
+                total_actual_cost = (
+                    models_actual_cost + child_products_cost + packaging_cost + assembly_cost
+                )
+                # Calculate variance: (actual - theoretical) / theoretical * 100
+                if total_make_cost > 0:
+                    cost_variance_percentage = (
+                        (total_actual_cost - total_make_cost) / total_make_cost * Decimal("100")
+                    )
+
         return ProductCostBreakdown(
             models_cost=models_cost.quantize(Decimal("0.01")),
             child_products_cost=child_products_cost.quantize(Decimal("0.01")),
             packaging_cost=packaging_cost.quantize(Decimal("0.01")),
             assembly_cost=assembly_cost.quantize(Decimal("0.01")),
             total_make_cost=total_make_cost.quantize(Decimal("0.01")),
+            # Phase 3 fields
+            models_actual_cost=models_actual_cost.quantize(Decimal("0.01"))
+            if models_with_actual_cost > 0
+            else None,
+            total_actual_cost=total_actual_cost.quantize(Decimal("0.01"))
+            if total_actual_cost is not None
+            else None,
+            cost_variance_percentage=cost_variance_percentage.quantize(Decimal("0.01"))
+            if cost_variance_percentage is not None
+            else None,
+            models_with_actual_cost=models_with_actual_cost,
+            models_total=models_total,
         )
 
     @staticmethod

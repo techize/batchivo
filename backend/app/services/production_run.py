@@ -1330,15 +1330,29 @@ class ProductionRunService:
             production_run.cost_per_gram_actual = cost_per_gram
             production_run.successful_weight_grams = successful_weight
 
-            # Calculate per-item/plate costs
+            # Calculate per-item/plate costs and update model rolling averages
             if production_run.is_multi_plate and production_run.plates:
                 for plate in production_run.plates:
                     if plate.model_weight_grams:
                         plate.actual_cost_per_unit = plate.model_weight_grams * cost_per_gram
+                        # Phase 2: Update model rolling average
+                        if plate.model_id and plate.successful_prints > 0:
+                            await self._update_model_rolling_average(
+                                model_id=plate.model_id,
+                                actual_cost_per_unit=plate.actual_cost_per_unit,
+                                successful_quantity=plate.successful_prints,
+                            )
             elif production_run.items:
                 for item in production_run.items:
                     if item.model_weight_grams:
                         item.actual_cost_per_unit = item.model_weight_grams * cost_per_gram
+                        # Phase 2: Update model rolling average
+                        if item.model_id and item.successful_quantity > 0:
+                            await self._update_model_rolling_average(
+                                model_id=item.model_id,
+                                actual_cost_per_unit=item.actual_cost_per_unit,
+                                successful_quantity=item.successful_quantity,
+                            )
 
             logger.info(
                 f"Calculated cost analysis for run {production_run.run_number}: "
@@ -1366,6 +1380,59 @@ class ProductionRunService:
         )
         total_weight = result.scalar()
         return Decimal(str(total_weight)) if total_weight else Decimal("0")
+
+    async def _update_model_rolling_average(
+        self,
+        model_id: UUID,
+        actual_cost_per_unit: Decimal,
+        successful_quantity: int,
+    ) -> None:
+        """
+        Update the model's rolling average production cost.
+
+        Uses weighted rolling average formula:
+        new_avg = (old_avg × old_count + new_cost × new_quantity) / (old_count + new_quantity)
+
+        Args:
+            model_id: UUID of the model to update
+            actual_cost_per_unit: Actual cost per unit from this production run
+            successful_quantity: Number of successful units in this run
+        """
+        from app.models.model import Model
+
+        # Get current model state
+        result = await self.db.execute(select(Model).where(Model.id == model_id))
+        model = result.scalar_one_or_none()
+
+        if not model:
+            logger.warning(f"Model {model_id} not found for rolling average update")
+            return
+
+        if successful_quantity <= 0:
+            logger.debug(f"Skipping rolling average update for model {model_id}: no successful units")
+            return
+
+        # Calculate new rolling average
+        old_avg = Decimal(str(model.actual_production_cost)) if model.actual_production_cost else Decimal("0")
+        old_count = model.production_cost_count or 0
+
+        if old_count == 0:
+            # First production run - use the new cost directly
+            new_avg = actual_cost_per_unit
+        else:
+            # Weighted rolling average
+            total_weight = old_count + successful_quantity
+            new_avg = (old_avg * Decimal(str(old_count)) + actual_cost_per_unit * Decimal(str(successful_quantity))) / Decimal(str(total_weight))
+
+        # Update model
+        model.actual_production_cost = new_avg.quantize(Decimal("0.0001"))
+        model.production_cost_count = old_count + successful_quantity
+        model.production_cost_updated_at = datetime.now(timezone.utc)
+
+        logger.info(
+            f"Updated model {model.sku} rolling average: "
+            f"cost={new_avg:.4f}, count={model.production_cost_count}"
+        )
 
     async def _load_relationships(self, production_run: ProductionRun) -> None:
         """
