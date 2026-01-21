@@ -167,6 +167,7 @@ from app.api.v1 import (
     model_files,
     models,
     modules,
+    newsletter,
     onboarding,
     orders,
     pages,
@@ -308,6 +309,11 @@ app.include_router(
     webhooks.router,
     prefix=f"{settings.api_v1_prefix}/webhooks",
     tags=["webhooks"],
+)
+app.include_router(
+    newsletter.router,
+    prefix=f"{settings.api_v1_prefix}/newsletter",
+    tags=["newsletter"],
 )
 
 # Platform admin routes (cross-tenant operations)

@@ -9,8 +9,9 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Brevo API endpoint for transactional emails
-BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+# Brevo API endpoints
+BREVO_EMAIL_API_URL = "https://api.brevo.com/v3/smtp/email"
+BREVO_CONTACTS_API_URL = "https://api.brevo.com/v3/contacts"
 
 
 class EmailService:
@@ -61,7 +62,7 @@ class EmailService:
                 payload["replyTo"] = {"email": reply_to}
 
             with httpx.Client(timeout=30.0) as client:
-                response = client.post(BREVO_API_URL, json=payload, headers=headers)
+                response = client.post(BREVO_EMAIL_API_URL, json=payload, headers=headers)
                 response.raise_for_status()
             return True
         except Exception as e:
@@ -91,12 +92,80 @@ class EmailService:
                 payload["replyTo"] = {"email": reply_to}
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(BREVO_API_URL, json=payload, headers=headers)
+                response = await client.post(BREVO_EMAIL_API_URL, json=payload, headers=headers)
                 response.raise_for_status()
             return True
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {e}")
             return False
+
+    async def subscribe_newsletter(
+        self,
+        email: str,
+        list_id: int | None = None,
+        attributes: dict | None = None,
+    ) -> tuple[bool, str]:
+        """
+        Subscribe an email address to the newsletter via Brevo.
+
+        Args:
+            email: Email address to subscribe
+            list_id: Optional Brevo list ID to add contact to
+            attributes: Optional contact attributes (e.g., FIRSTNAME, LASTNAME)
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.is_configured:
+            logger.warning("Email service not configured - cannot subscribe to newsletter")
+            return False, "Email service not configured"
+
+        try:
+            headers = {
+                "api-key": self.api_key,
+                "Content-Type": "application/json",
+            }
+
+            payload: dict = {
+                "email": email,
+                "updateEnabled": True,  # Update if contact exists
+            }
+
+            if list_id:
+                payload["listIds"] = [list_id]
+
+            if attributes:
+                payload["attributes"] = attributes
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    BREVO_CONTACTS_API_URL, json=payload, headers=headers
+                )
+
+                if response.status_code == 201:
+                    logger.info(f"Newsletter subscription created for {email}")
+                    return True, "Successfully subscribed to newsletter"
+                elif response.status_code == 204:
+                    logger.info(f"Newsletter subscription updated for {email}")
+                    return True, "Subscription updated"
+                elif response.status_code == 400:
+                    error_data = response.json()
+                    error_msg = error_data.get("message", "Invalid request")
+                    if "Contact already exist" in error_msg:
+                        logger.info(f"Contact already exists: {email}")
+                        return True, "Already subscribed"
+                    logger.warning(f"Newsletter subscription failed for {email}: {error_msg}")
+                    return False, error_msg
+                else:
+                    response.raise_for_status()
+                    return True, "Subscribed"
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Newsletter subscription HTTP error for {email}: {e}")
+            return False, "Subscription service temporarily unavailable"
+        except Exception as e:
+            logger.error(f"Newsletter subscription failed for {email}: {e}")
+            return False, "An error occurred during subscription"
 
     def send_order_confirmation(
         self,
