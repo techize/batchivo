@@ -4,7 +4,7 @@ metadata:
   name: runner-config
   namespace: github-runner
 data:
-  REPO_URL: "https://github.com/techize/batchivo.com"
+  REPO_URL: "https://github.com/techize/batchivo"
   RUNNER_NAME: "k3s-runner"
   RUNNER_WORKDIR: "/runner/_work"
   LABELS: "self-hosted,k3s,docker"
@@ -53,11 +53,6 @@ spec:
       - name: runner
         image: myoung34/github-runner:latest
         imagePullPolicy: Always
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
         envFrom:
           - configMapRef:
               name: runner-config
@@ -81,12 +76,12 @@ spec:
             memory: "2Gi"
             cpu: "2000m"
 
-      # Docker-in-Docker (DinD) sidecar - rootless for improved security
-      # Note: Some builds may require privileged mode; switch to docker:24-dind if needed
+      # Docker-in-Docker (DinD) sidecar
+      # Using regular dind as rootless has permission issues in k3s
       - name: dind
-        image: docker:24-dind-rootless
+        image: docker:24-dind
         securityContext:
-          privileged: true  # Still needed for rootless DinD, but runs as non-root user
+          privileged: true
         env:
           - name: DOCKER_TLS_CERTDIR
             value: "/certs"
