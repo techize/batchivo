@@ -90,7 +90,7 @@ jobs:
         run: uv run pytest --cov=app --cov-report=xml -v --timeout=300
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: backend/coverage.xml
           flags: backend
@@ -150,7 +150,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: frontend/coverage/lcov.info
           flags: frontend
