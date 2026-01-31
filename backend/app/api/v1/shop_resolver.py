@@ -156,7 +156,7 @@ def extract_subdomain(hostname: str) -> str | None:
 
 async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Tenant | None:
     """
-    Find tenant by custom domain.
+    Find tenant by custom domain or additional domains.
 
     Args:
         db: Database session
@@ -167,8 +167,7 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
     """
     hostname = hostname.split(":")[0].lower()
 
-    # Query tenants where settings.shop.custom_domain matches
-    # Use dialect-aware JSON extraction (works with both PostgreSQL and SQLite)
+    # First try exact match on custom_domain
     dialect = db.bind.dialect.name if db.bind else "postgresql"
 
     if dialect == "sqlite":
@@ -187,7 +186,24 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
                 Tenant.is_active.is_(True),
             )
         )
-    return result.scalar_one_or_none()
+    
+    tenant = result.scalar_one_or_none()
+    if tenant:
+        return tenant
+
+    # If not found, check additional_domains array (PostgreSQL only for now)
+    if dialect == "postgresql":
+        # Check if hostname is in the additional_domains JSONB array
+        # Using the @> operator to check if array contains the hostname
+        result = await db.execute(
+            select(Tenant).where(
+                Tenant.settings["shop"]["additional_domains"].astext.contains(f'"{hostname}"'),
+                Tenant.is_active.is_(True),
+            )
+        )
+        return result.scalar_one_or_none()
+    
+    return None
 
 
 async def resolve_tenant_by_slug(db: AsyncSession, slug: str) -> Tenant | None:
