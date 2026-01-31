@@ -1,6 +1,6 @@
 """Add currency_code and currency_symbol fields to tenants table.
 
-Revision ID: a4b5c6d7e8f9
+Revision ID: c384baaa92e4
 Revises: z3a4b5c6d7e8
 Create Date: 2026-01-19 16:00:00.000000
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers
-revision = "a4b5c6d7e8f9"
+revision = "c384baaa92e4"
 down_revision = "z3a4b5c6d7e8"
 branch_labels = None
 depends_on = None

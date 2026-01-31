@@ -1,6 +1,6 @@
 """Add webhook events and dead letter tables.
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: 8e9eb6466afa
 Revises: z3a4b5c6d7e8
 Create Date: 2026-01-19 16:00:00.000000
 
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 # revision identifiers
-revision = "a1b2c3d4e5f6"
+revision = "8e9eb6466afa"
 down_revision = "z3a4b5c6d7e8"
 branch_labels = None
 depends_on = None
