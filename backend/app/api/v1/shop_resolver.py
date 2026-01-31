@@ -166,42 +166,52 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
         Tenant if found, None otherwise
     """
     hostname = hostname.split(":")[0].lower()
+    
+    # Normalize: try both with and without www
+    hostnames_to_try = [hostname]
+    if hostname.startswith("www."):
+        hostnames_to_try.append(hostname[4:])  # Without www
+    else:
+        hostnames_to_try.append(f"www.{hostname}")  # With www
 
-    # First try exact match on custom_domain
+    # Try exact match on custom_domain for both hostname variants
     dialect = db.bind.dialect.name if db.bind else "postgresql"
 
-    if dialect == "sqlite":
-        # SQLite uses json_extract with path syntax
-        result = await db.execute(
-            select(Tenant).where(
-                func.json_extract(Tenant.settings, "$.shop.custom_domain") == hostname,
-                Tenant.is_active.is_(True),
+    for check_hostname in hostnames_to_try:
+        if dialect == "sqlite":
+            # SQLite uses json_extract with path syntax
+            result = await db.execute(
+                select(Tenant).where(
+                    func.json_extract(Tenant.settings, "$.shop.custom_domain") == check_hostname,
+                    Tenant.is_active.is_(True),
+                )
             )
-        )
-    else:
-        # PostgreSQL uses jsonb_extract_path_text
-        result = await db.execute(
-            select(Tenant).where(
-                func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain") == hostname,
-                Tenant.is_active.is_(True),
+        else:
+            # PostgreSQL uses jsonb_extract_path_text
+            result = await db.execute(
+                select(Tenant).where(
+                    func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain") == check_hostname,
+                    Tenant.is_active.is_(True),
+                )
             )
-        )
-    
-    tenant = result.scalar_one_or_none()
-    if tenant:
-        return tenant
+        
+        tenant = result.scalar_one_or_none()
+        if tenant:
+            return tenant
 
     # If not found, check additional_domains array (PostgreSQL only for now)
     if dialect == "postgresql":
-        # Check if hostname is in the additional_domains JSONB array
-        # Using the @> operator to check if array contains the hostname
-        result = await db.execute(
-            select(Tenant).where(
-                Tenant.settings["shop"]["additional_domains"].astext.contains(f'"{hostname}"'),
-                Tenant.is_active.is_(True),
+        # Check if any hostname variant is in the additional_domains JSONB array
+        for check_hostname in hostnames_to_try:
+            result = await db.execute(
+                select(Tenant).where(
+                    Tenant.settings["shop"]["additional_domains"].astext.contains(f'"{check_hostname}"'),
+                    Tenant.is_active.is_(True),
+                )
             )
-        )
-        return result.scalar_one_or_none()
+            tenant = result.scalar_one_or_none()
+            if tenant:
+                return tenant
     
     return None
 
