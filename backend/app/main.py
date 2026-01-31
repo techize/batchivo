@@ -75,6 +75,31 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Early OPTIONS handler - bypass dependencies for CORS preflight
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+class CORSPreflightMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            # Handle preflight early
+            origin = request.headers.get("origin", "")
+            # Check if origin is allowed
+            if origin in settings.cors_origins or "*" in settings.cors_origins:
+                return Response(
+                    status_code=200,
+                    headers={
+                        "Access-Control-Allow-Origin": origin,
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                        "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Tenant-ID, X-Shop-Hostname",
+                        "Access-Control-Allow-Credentials": "true" if settings.cors_allow_credentials else "false",
+                        "Access-Control-Max-Age": "3600",
+                    },
+                )
+        return await call_next(request)
+
+app.add_middleware(CORSPreflightMiddleware)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
