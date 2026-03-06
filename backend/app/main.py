@@ -200,6 +200,7 @@ from app.api.v1 import (
     platform,
     print_queue,
     printer_bambu,
+    printer_ws,
     printers,
     products,
     production_runs,
@@ -242,6 +243,8 @@ app.include_router(
     prefix=f"{settings.api_v1_prefix}/printers",
     tags=["printers-bambu"],
 )
+# WebSocket endpoint — mounted at /ws/printers (no /api/v1 prefix)
+app.include_router(printer_ws.router, tags=["printers-ws"])
 app.include_router(
     print_queue.router,
     prefix=settings.api_v1_prefix,
