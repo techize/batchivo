@@ -22,7 +22,8 @@ class ConnectionType(str, Enum):
     BAMBU_LAN = "bambu_lan"  # Direct LAN MQTT connection
     BAMBU_CLOUD = "bambu_cloud"  # Cloud MQTT connection
     OCTOPRINT = "octoprint"  # OctoPrint REST API
-    KLIPPER = "klipper"  # Klipper/Moonraker API
+    KLIPPER = "klipper"  # Klipper/Moonraker API (legacy alias)
+    MOONRAKER = "moonraker"  # Moonraker REST API (Klipper frontend)
     MANUAL = "manual"  # Manual tracking (no auto-sync)
 
 

@@ -11,12 +11,36 @@ from app.database import get_db
 from app.schemas.printer import (
     PrinterCreate,
     PrinterListResponse,
+    PrinterModelResponse,
     PrinterResponse,
     PrinterUpdate,
 )
 from app.services.printer_service import PrinterService
 
 router = APIRouter()
+
+
+@router.get("/models", response_model=list[PrinterModelResponse])
+async def list_printer_models() -> list[PrinterModelResponse]:
+    """
+    List all known printer models from the registry.
+
+    Returns model metadata including connection type, AMS support, and toolhead
+    changer info.  No authentication required — these are static registry entries.
+    """
+    from app.services.printer_registry import list_printer_models as _list_models
+
+    return [
+        PrinterModelResponse(
+            model_key=m.model_key,
+            display_name=m.display_name,
+            manufacturer=m.manufacturer,
+            connection_type=m.connection_type,
+            has_toolhead_changer=m.has_toolhead_changer,
+            has_ams=m.has_ams,
+        )
+        for m in _list_models()
+    ]
 
 
 @router.post("", response_model=PrinterResponse, status_code=status.HTTP_201_CREATED)

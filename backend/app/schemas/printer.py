@@ -114,3 +114,14 @@ class PrinterListResponse(BaseModel):
     limit: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PrinterModelResponse(BaseModel):
+    """Schema for a known printer model from the registry."""
+
+    model_key: str
+    display_name: str
+    manufacturer: str
+    connection_type: str
+    has_toolhead_changer: bool
+    has_ams: bool

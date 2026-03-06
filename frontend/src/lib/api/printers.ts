@@ -8,6 +8,7 @@ import { api } from '../api';
 import type {
   Printer,
   PrinterListResponse,
+  PrinterModelInfo,
   PrinterCreate,
   PrinterUpdate,
   PrinterFilters,
@@ -75,4 +76,12 @@ export async function deletePrinter(id: string): Promise<void> {
 export async function getActivePrinters(): Promise<Printer[]> {
   const response = await listPrinters({ is_active: true, limit: 1000 });
   return response.printers;
+}
+
+/**
+ * List known printer models from the registry
+ */
+export async function listPrinterModels(): Promise<PrinterModelInfo[]> {
+  const response = await api.get<PrinterModelInfo[]>(`${BASE_PATH}/models`);
+  return response.data;
 }

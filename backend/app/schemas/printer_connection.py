@@ -15,6 +15,7 @@ class ConnectionType(str, Enum):
     BAMBU_CLOUD = "bambu_cloud"
     OCTOPRINT = "octoprint"
     KLIPPER = "klipper"
+    MOONRAKER = "moonraker"
     MANUAL = "manual"
 
 

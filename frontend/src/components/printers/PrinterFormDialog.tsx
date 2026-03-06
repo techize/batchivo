@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createPrinter, getPrinter, updatePrinter } from '@/lib/api/printers'
+import { createPrinter, getPrinter, updatePrinter, listPrinterModels } from '@/lib/api/printers'
 import type { PrinterCreate, PrinterUpdate } from '@/types/printer'
 import {
   Dialog,
@@ -17,6 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -55,6 +64,23 @@ export function PrinterFormDialog({ open, onOpenChange, printerId }: PrinterForm
     queryFn: () => (printerId ? getPrinter(printerId) : null),
     enabled: !!printerId && open,
   })
+
+  // Fetch known printer models for the selector
+  const { data: knownModels = [] } = useQuery({
+    queryKey: ['printer-models'],
+    queryFn: listPrinterModels,
+    staleTime: Infinity,
+  })
+
+  // Group models by manufacturer for the select dropdown
+  const modelsByManufacturer = knownModels.reduce<Record<string, typeof knownModels>>(
+    (acc, m) => {
+      if (!acc[m.manufacturer]) acc[m.manufacturer] = []
+      acc[m.manufacturer].push(m)
+      return acc
+    },
+    {}
+  )
 
   // Form state
   const [formData, setFormData] = useState<PrinterCreate>(emptyFormData)
@@ -182,12 +208,35 @@ export function PrinterFormDialog({ open, onOpenChange, printerId }: PrinterForm
 
                 <div className="space-y-2">
                   <Label htmlFor="model">Model</Label>
-                  <Input
-                    id="model"
-                    placeholder="e.g., X1 Carbon, MK4"
+                  <Select
                     value={formData.model || ''}
-                    onChange={(e) => handleInputChange('model', e.target.value || null)}
-                  />
+                    onValueChange={(val) => {
+                      handleInputChange('model', val || null)
+                      // Auto-fill manufacturer when a known model is selected
+                      const known = knownModels.find((m) => m.model_key === val)
+                      if (known) handleInputChange('manufacturer', known.manufacturer)
+                    }}
+                  >
+                    <SelectTrigger id="model">
+                      <SelectValue placeholder="Select a model…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(modelsByManufacturer).map(([mfr, models]) => (
+                        <SelectGroup key={mfr}>
+                          <SelectLabel>{mfr}</SelectLabel>
+                          {models.map((m) => (
+                            <SelectItem key={m.model_key} value={m.model_key}>
+                              {m.display_name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Other</SelectLabel>
+                        <SelectItem value="custom">Custom / Other</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

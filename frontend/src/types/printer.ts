@@ -71,3 +71,54 @@ export interface PrinterSummary {
   manufacturer?: string | null;
   model?: string | null;
 }
+
+/**
+ * Known printer model from the registry
+ */
+export interface PrinterModelInfo {
+  model_key: string;
+  display_name: string;
+  manufacturer: string;
+  connection_type: string;
+  has_toolhead_changer: boolean;
+  has_ams: boolean;
+}
+
+/**
+ * Printer status values from adapters / WebSocket
+ */
+export type PrinterStatus = 'printing' | 'paused' | 'error' | 'idle' | 'offline';
+
+/**
+ * AMS slot state (single slot in a multi-colour system)
+ */
+export interface AMSSlot {
+  slot_index: number;
+  filament_type?: string | null;
+  colour_hex?: string | null;
+  is_loaded: boolean;
+}
+
+/**
+ * Live printer state broadcast over WebSocket
+ */
+export interface PrinterLiveState {
+  id: string;
+  name: string;
+  model?: string | null;
+  status: PrinterStatus;
+  job_name?: string | null;
+  progress_percent?: number | null;
+  eta_seconds?: number | null;
+  last_seen_at?: string | null;
+  ams_slots: AMSSlot[];
+  active_toolhead?: string | null;
+}
+
+/**
+ * WebSocket message from /ws/printers
+ */
+export interface PrinterStateMessage {
+  type: 'printer_state';
+  data: PrinterLiveState[];
+}
