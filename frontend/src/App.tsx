@@ -42,6 +42,7 @@ import { SalesChannelEditPage } from '@/pages/SalesChannelEditPage'
 import { Categories } from '@/pages/Categories'
 import { Designers } from '@/pages/Designers'
 import { Printers } from '@/pages/Printers'
+import { PrinterDashboardPage } from '@/pages/PrinterDashboardPage'
 import { Orders } from '@/pages/Orders'
 import { OrderDetailPage } from '@/pages/OrderDetailPage'
 import { SpoolLabelPage } from '@/pages/SpoolLabelPage'
@@ -472,6 +473,19 @@ const designersRoute = new Route({
   ),
 })
 
+// Printer Dashboard (live fleet monitoring)
+const printerDashboardRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/dashboard/printers',
+  component: () => (
+    <ProtectedRoute>
+      <ModuleGuard>
+        <PrinterDashboardPage />
+      </ModuleGuard>
+    </ProtectedRoute>
+  ),
+})
+
 // Printers routes
 const printersRoute = new Route({
   getParentRoute: () => rootRoute,
@@ -695,6 +709,7 @@ const routeTree = rootRoute.addChildren([
   salesChannelDetailRoute,   // Dynamic route last
   categoriesRoute,           // Categories list
   designersRoute,            // Designers list
+  printerDashboardRoute,     // Printer fleet monitoring dashboard
   printersRoute,             // Printers list
   spoolLabelRoute,           // Spool label for printing
   spoolScanRoute,            // QR code scanner (static route first)

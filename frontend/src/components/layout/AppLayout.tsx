@@ -34,6 +34,7 @@ import {
   FolderKanban,
   Loader2,
   Shield,
+  Activity,
   type LucideIcon,
 } from 'lucide-react'
 import { Link, useRouter } from '@tanstack/react-router'
@@ -67,6 +68,7 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   'folder-kanban': FolderKanban, // Project icon
   'settings': Settings,
   'help-circle': HelpCircle,
+  'activity': Activity,
 }
 
 // Get icon component by name, with fallback
@@ -106,6 +108,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { path: '/categories', label: 'Categories', icon: 'folder-open' },
     { path: '/production-runs', label: 'Runs', icon: 'play' },
     { path: '/inventory', label: 'Inventory', icon: 'box', exact: true },
+    { path: '/dashboard/printers', label: 'Fleet', icon: 'activity' },
     { path: '/printers', label: 'Printers', icon: 'printer' },
     { path: '/consumables', label: 'Consumables', icon: 'wrench' },
     { path: '/sales-channels', label: 'Channels', icon: 'store' },
