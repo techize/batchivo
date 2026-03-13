@@ -22,7 +22,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime with nginx
-FROM nginx:1.29.5-alpine
+FROM nginx:1.29.6-alpine
 
 # Update system packages and install envsubst (from gettext)
 RUN apk upgrade --no-cache && \
