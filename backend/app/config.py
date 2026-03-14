@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     square_environment: Literal["sandbox", "production"] = "sandbox"
     square_webhook_signature_key: str = ""
 
+    # Shopify integration (optional - for Shopify → Batchivo order sync)
+    shopify_webhook_secret: str = ""  # Shopify API secret for HMAC validation
+    shopify_store_domain: str = ""    # e.g. mystmereforge.myshopify.com
+    shopify_access_token: str = ""    # Shopify Admin API token (for fulfilment sync)
+
     # Email (Brevo) - configure via environment variables
     brevo_api_key: str = ""
     email_from_address: str = "noreply@example.com"

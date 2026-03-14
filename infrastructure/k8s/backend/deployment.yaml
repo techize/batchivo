@@ -115,6 +115,9 @@ spec:
         - secretRef:
             name: rls-credentials
             optional: true  # Allow deployment without RLS secret initially
+        - secretRef:
+            name: shopify-credentials
+            optional: true  # Allow deployment without Shopify integration
         env:
         # Construct DATABASE_URL from postgres-secret (password not in repo)
         - name: DB_USER

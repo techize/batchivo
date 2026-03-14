@@ -515,7 +515,87 @@ async def ship_order(
     except Exception as e:
         logger.error(f"Error sending shipped email for order {order.order_number}: {e}")
 
+    # Sync fulfilment back to Shopify if this order originated from Shopify
+    if order.payment_provider and "shopify" in order.payment_provider.lower() and order.payment_id:
+        try:
+            await _sync_shopify_fulfillment(
+                shopify_order_id=order.payment_id,
+                tracking_number=order.tracking_number,
+                tracking_url=order.tracking_url,
+                shipping_method=order.shipping_method,
+            )
+            logger.info(f"Synced fulfilment to Shopify for order {order.order_number}")
+        except Exception as e:
+            logger.error(
+                f"Failed to sync fulfilment to Shopify for order {order.order_number}: {e}"
+            )
+
     return {"message": f"Order {order.order_number} marked as shipped"}
+
+
+async def _sync_shopify_fulfillment(
+    shopify_order_id: str,
+    tracking_number: Optional[str],
+    tracking_url: Optional[str],
+    shipping_method: Optional[str],
+) -> None:
+    """Call Shopify Admin API to create a fulfilment for a Shopify order.
+
+    Only runs when SHOPIFY_STORE_DOMAIN and SHOPIFY_ACCESS_TOKEN are configured.
+    Failures are logged but do not fail the ship request.
+    """
+    import httpx
+
+    from app.config import get_settings
+
+    cfg = get_settings()
+    if not cfg.shopify_store_domain or not cfg.shopify_access_token:
+        return
+
+    base = f"https://{cfg.shopify_store_domain}/admin/api/2024-01"
+    headers = {
+        "X-Shopify-Access-Token": cfg.shopify_access_token,
+        "Content-Type": "application/json",
+    }
+
+    fulfillment_payload: dict = {
+        "fulfillment": {
+            "notify_customer": True,
+            "line_items_by_fulfillment_order": [],
+        }
+    }
+
+    if tracking_number:
+        fulfillment_payload["fulfillment"]["tracking_info"] = {
+            "number": tracking_number,
+            "url": tracking_url or "",
+            "company": shipping_method or "Carrier",
+        }
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        # Fetch open fulfillment orders from Shopify
+        fo_resp = await client.get(
+            f"{base}/orders/{shopify_order_id}/fulfillment_orders.json",
+            headers=headers,
+        )
+        fo_resp.raise_for_status()
+        fulfillment_orders = fo_resp.json().get("fulfillment_orders", [])
+
+        for fo in fulfillment_orders:
+            if fo.get("status") in ("open", "in_progress"):
+                fulfillment_payload["fulfillment"]["line_items_by_fulfillment_order"].append(
+                    {"fulfillment_order_id": fo["id"]}
+                )
+
+        if not fulfillment_payload["fulfillment"]["line_items_by_fulfillment_order"]:
+            return
+
+        resp = await client.post(
+            f"{base}/fulfillments.json",
+            headers=headers,
+            json=fulfillment_payload,
+        )
+        resp.raise_for_status()
 
 
 @router.post("/{order_id}/deliver")

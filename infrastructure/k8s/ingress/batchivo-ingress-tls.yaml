@@ -14,8 +14,19 @@ spec:
   - hosts:
     - batchivo.com
     - api.batchivo.com
+    - api.batchivo.techize.co.uk
     secretName: batchivo-tls
   rules:
+  - host: api.batchivo.techize.co.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8000
   - host: batchivo.com
     http:
       paths:

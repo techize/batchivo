@@ -208,6 +208,7 @@ from app.api.v1 import (
     reviews,
     sales_channels,
     settings as settings_api,
+    shopify_webhooks,
     shipping,
     shop,
     shop_resolver,
@@ -281,6 +282,11 @@ app.include_router(
     analytics.router, prefix=f"{settings.api_v1_prefix}/analytics", tags=["analytics"]
 )
 app.include_router(payments.router, prefix=f"{settings.api_v1_prefix}/payments", tags=["payments"])
+app.include_router(
+    shopify_webhooks.router,
+    prefix=f"{settings.api_v1_prefix}/shopify",
+    tags=["shopify"],
+)
 app.include_router(shop.router, prefix=f"{settings.api_v1_prefix}/shop", tags=["shop"])
 app.include_router(
     shop_resolver.router,
