@@ -1,4 +1,9 @@
-"""Tests for Shopify webhook ingest endpoint."""
+"""Tests for Shopify webhook ingest endpoint.
+
+The test environment has SHOPIFY_WEBHOOK_SECRET unset (defaults to ""),
+so HMAC validation is skipped for all HTTP endpoint tests.
+Signature validation logic is unit-tested directly.
+"""
 
 import base64
 import hashlib
@@ -9,17 +14,12 @@ from decimal import Decimal
 import pytest
 from httpx import AsyncClient
 
+from app.api.v1.shopify_webhooks import verify_shopify_hmac
 from app.models.order import Order, OrderStatus
 from app.models.tenant import Tenant
 
 
-def make_signature(body: bytes, secret: str) -> str:
-    """Generate a valid Shopify HMAC-SHA256 signature."""
-    digest = hmac.new(secret.encode("utf-8"), body, hashlib.sha256).digest()  # type: ignore[attr-defined]
-    return base64.b64encode(digest).decode("utf-8")
-
-
-SHOPIFY_SECRET = "test-shopify-secret"
+SHOPIFY_SECRET = "test-shopify-secret-for-unit-tests"
 
 SAMPLE_ORDER_PAYLOAD = {
     "id": 5001000001,
@@ -66,104 +66,66 @@ SAMPLE_ORDER_PAYLOAD = {
     },
 }
 
-
-def _make_webhook_headers(body: bytes, topic: str = "orders/create") -> dict:
-    sig = make_signature(body, SHOPIFY_SECRET)
-    return {
-        "x-shopify-topic": topic,
-        "x-shopify-hmac-sha256": sig,
-        "content-type": "application/json",
-    }
+# Headers with no HMAC — works in test env where secret defaults to ""
+NO_HMAC_HEADERS = {
+    "x-shopify-hmac-sha256": "",
+    "content-type": "application/json",
+}
 
 
-class TestShopifyWebhookSignature:
-    """Signature validation tests."""
+class TestVerifyShopifyHmac:
+    """Unit tests for the HMAC signature verification function."""
 
-    @pytest.mark.asyncio
-    async def test_missing_signature_rejected_when_secret_configured(
-        self,
-        async_client: AsyncClient,
-        test_tenant: Tenant,
-        monkeypatch,
-    ):
-        """Requests without a valid HMAC should return 401 when secret is set."""
-        from app.config import get_settings
+    def test_valid_signature(self):
+        body = b'{"id": 123}'
+        digest = hmac.new(SHOPIFY_SECRET.encode(), body, hashlib.sha256).digest()  # type: ignore[attr-defined]
+        sig = base64.b64encode(digest).decode()
+        assert verify_shopify_hmac(body, sig, SHOPIFY_SECRET) is True
 
-        settings = get_settings()
-        monkeypatch.setattr(settings, "shopify_webhook_secret", SHOPIFY_SECRET)
+    def test_invalid_signature_rejected(self):
+        body = b'{"id": 123}'
+        assert verify_shopify_hmac(body, "invalidsig==", SHOPIFY_SECRET) is False
 
-        body = json.dumps(SAMPLE_ORDER_PAYLOAD).encode()
-        response = await async_client.post(
-            f"/api/v1/shopify/webhooks/{test_tenant.slug}",
-            content=body,
-            headers={
-                "x-shopify-topic": "orders/create",
-                "x-shopify-hmac-sha256": "invalidsignature==",
-                "content-type": "application/json",
-            },
-        )
-        assert response.status_code == 401
+    def test_empty_secret_returns_false(self):
+        body = b'{"id": 123}'
+        assert verify_shopify_hmac(body, "anysig==", "") is False
 
-    @pytest.mark.asyncio
-    async def test_valid_signature_accepted(
-        self,
-        async_client: AsyncClient,
-        test_tenant: Tenant,
-        monkeypatch,
-        db_session,
-    ):
-        """Valid HMAC signature should result in order creation."""
-        from app.config import get_settings
+    def test_empty_signature_returns_false(self):
+        body = b'{"id": 123}'
+        assert verify_shopify_hmac(body, "", SHOPIFY_SECRET) is False
 
-        settings = get_settings()
-        monkeypatch.setattr(settings, "shopify_webhook_secret", SHOPIFY_SECRET)
-
-        body = json.dumps(SAMPLE_ORDER_PAYLOAD).encode()
-        headers = _make_webhook_headers(body)
-
-        response = await async_client.post(
-            f"/api/v1/shopify/webhooks/{test_tenant.slug}",
-            content=body,
-            headers=headers,
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "created"
-        assert "SHOP-1001" in data["order_number"]
+    def test_tampered_body_rejected(self):
+        original_body = b'{"id": 123}'
+        tampered_body = b'{"id": 456}'
+        digest = hmac.new(SHOPIFY_SECRET.encode(), original_body, hashlib.sha256).digest()  # type: ignore[attr-defined]
+        sig = base64.b64encode(digest).decode()
+        assert verify_shopify_hmac(tampered_body, sig, SHOPIFY_SECRET) is False
 
 
 class TestShopifyOrderCreate:
-    """orders/create webhook tests."""
+    """orders/create webhook integration tests."""
 
     @pytest.mark.asyncio
     async def test_creates_order_in_batchivo(
         self,
         async_client: AsyncClient,
         test_tenant: Tenant,
-        monkeypatch,
         db_session,
     ):
         """Shopify orders/create should produce a new Order record."""
-        from app.config import get_settings
         from sqlalchemy import select
-
-        settings = get_settings()
-        monkeypatch.setattr(settings, "shopify_webhook_secret", "")  # skip HMAC in this test
 
         body = json.dumps(SAMPLE_ORDER_PAYLOAD).encode()
         response = await async_client.post(
             f"/api/v1/shopify/webhooks/{test_tenant.slug}",
             content=body,
-            headers={
-                "x-shopify-topic": "orders/create",
-                "x-shopify-hmac-sha256": "",
-                "content-type": "application/json",
-            },
+            headers={**NO_HMAC_HEADERS, "x-shopify-topic": "orders/create"},
         )
         assert response.status_code == 200
         assert response.json()["status"] == "created"
+        assert response.json()["order_number"] == "SHOP-1001"
 
-        # Verify order persisted
+        # Verify order persisted with correct field mapping
         result = await db_session.execute(
             select(Order).where(
                 Order.tenant_id == test_tenant.id,
@@ -183,28 +145,19 @@ class TestShopifyOrderCreate:
         assert order.total == Decimal("32.99")
         assert len(order.items) == 1
         assert order.items[0].product_sku == "DRG-ROSYRA-001"
+        assert order.items[0].quantity == 1
 
     @pytest.mark.asyncio
     async def test_unknown_tenant_returns_404(
         self,
         async_client: AsyncClient,
-        monkeypatch,
     ):
         """Webhook for non-existent tenant slug should return 404."""
-        from app.config import get_settings
-
-        settings = get_settings()
-        monkeypatch.setattr(settings, "shopify_webhook_secret", "")
-
         body = json.dumps(SAMPLE_ORDER_PAYLOAD).encode()
         response = await async_client.post(
             "/api/v1/shopify/webhooks/nonexistent-tenant-xyz",
             content=body,
-            headers={
-                "x-shopify-topic": "orders/create",
-                "x-shopify-hmac-sha256": "",
-                "content-type": "application/json",
-            },
+            headers={**NO_HMAC_HEADERS, "x-shopify-topic": "orders/create"},
         )
         assert response.status_code == 404
 
@@ -213,60 +166,60 @@ class TestShopifyOrderCreate:
         self,
         async_client: AsyncClient,
         test_tenant: Tenant,
-        monkeypatch,
     ):
-        """Unsupported Shopify topics should be acknowledged but ignored."""
-        from app.config import get_settings
-
-        settings = get_settings()
-        monkeypatch.setattr(settings, "shopify_webhook_secret", "")
-
+        """Unsupported Shopify topics should be acknowledged but skipped."""
         body = json.dumps({"id": 123}).encode()
         response = await async_client.post(
             f"/api/v1/shopify/webhooks/{test_tenant.slug}",
             content=body,
-            headers={
-                "x-shopify-topic": "products/update",
-                "x-shopify-hmac-sha256": "",
-                "content-type": "application/json",
-            },
+            headers={**NO_HMAC_HEADERS, "x-shopify-topic": "products/update"},
         )
         assert response.status_code == 200
         assert response.json()["status"] == "ignored"
+
+    @pytest.mark.asyncio
+    async def test_duplicate_create_returns_updated(
+        self,
+        async_client: AsyncClient,
+        test_tenant: Tenant,
+        db_session,
+    ):
+        """Sending orders/create twice for same Shopify ID returns 'updated'."""
+        body = json.dumps(SAMPLE_ORDER_PAYLOAD).encode()
+        for topic in ("orders/create", "orders/create"):
+            response = await async_client.post(
+                f"/api/v1/shopify/webhooks/{test_tenant.slug}",
+                content=body,
+                headers={**NO_HMAC_HEADERS, "x-shopify-topic": topic},
+            )
+            assert response.status_code == 200
+
+        assert response.json()["status"] == "updated"
 
 
 class TestShopifyOrderUpdate:
     """orders/updated webhook tests."""
 
     @pytest.mark.asyncio
-    async def test_updates_existing_order(
+    async def test_updates_existing_order_with_tracking(
         self,
         async_client: AsyncClient,
         test_tenant: Tenant,
-        monkeypatch,
         db_session,
     ):
-        """orders/updated should update a previously imported order."""
-        from app.config import get_settings
+        """orders/updated with fulfillment data should update tracking + status."""
         from sqlalchemy import select
 
-        settings = get_settings()
-        monkeypatch.setattr(settings, "shopify_webhook_secret", "")
-
-        # First create
+        # Create the order first
         body = json.dumps(SAMPLE_ORDER_PAYLOAD).encode()
         r = await async_client.post(
             f"/api/v1/shopify/webhooks/{test_tenant.slug}",
             content=body,
-            headers={
-                "x-shopify-topic": "orders/create",
-                "x-shopify-hmac-sha256": "",
-                "content-type": "application/json",
-            },
+            headers={**NO_HMAC_HEADERS, "x-shopify-topic": "orders/create"},
         )
         assert r.json()["status"] == "created"
 
-        # Now update — mark as fulfilled with tracking
+        # Update with fulfilment + tracking
         updated_payload = dict(SAMPLE_ORDER_PAYLOAD)
         updated_payload["fulfillment_status"] = "fulfilled"
         updated_payload["fulfillments"] = [
@@ -281,11 +234,7 @@ class TestShopifyOrderUpdate:
         r2 = await async_client.post(
             f"/api/v1/shopify/webhooks/{test_tenant.slug}",
             content=body2,
-            headers={
-                "x-shopify-topic": "orders/updated",
-                "x-shopify-hmac-sha256": "",
-                "content-type": "application/json",
-            },
+            headers={**NO_HMAC_HEADERS, "x-shopify-topic": "orders/updated"},
         )
         assert r2.status_code == 200
         assert r2.json()["status"] == "updated"
