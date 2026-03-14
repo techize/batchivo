@@ -2946,6 +2946,22 @@ urllib3 = ">=1.25.10,<3.0"
 tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "tomli ; python_version < \"3.11\"", "tomli-w", "types-PyYAML", "types-requests"]
 
 [[package]]
+name = "respx"
+version = "0.22.0"
+description = "A utility for mocking out the Python HTTPX and HTTP Core libraries."
+optional = true
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "extra == \"dev\""
+files = [
+    {file = "respx-0.22.0-py2.py3-none-any.whl", hash = "sha256:631128d4c9aba15e56903fb5f66fb1eff412ce28dd387ca3a81339e52dbd3ad0"},
+    {file = "respx-0.22.0.tar.gz", hash = "sha256:3c8924caa2a50bd71aefc07aa812f2466ff489f1848c96e954a5362d17095d91"},
+]
+
+[package.dependencies]
+httpx = ">=0.25.0"
+
+[[package]]
 name = "ruff"
 version = "0.8.6"
 description = "An extremely fast Python linter and code formatter, written in Rust."
@@ -3785,9 +3801,9 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_it
 type = ["pytest-mypy"]
 
 [extras]
-dev = ["black", "fakeredis", "httpx", "moto", "mypy", "pytest", "pytest-asyncio", "pytest-cov", "pytest-timeout", "pytest-xdist", "ruff"]
+dev = ["black", "fakeredis", "httpx", "moto", "mypy", "pytest", "pytest-asyncio", "pytest-cov", "pytest-timeout", "pytest-xdist", "respx", "ruff"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "04048c5c6b6c86b06b8aba65cf390b122a3f69a3914c2f6dc6736b7eaaaecf50"
+content-hash = "99b02cd18685e15a639de4f98d798f3dff2af693c4036bdb18233f1c4f9d091d"
