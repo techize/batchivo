@@ -710,6 +710,125 @@ class TestProductCatalog:
         response = await shop_client.get(f"/api/v1/shop/products/{uuid4()}")
         assert response.status_code == 404
 
+    async def test_get_product_returns_empty_variants_when_none(
+        self, shop_client: AsyncClient, shop_product: Product
+    ):
+        """Product with no variants returns empty variants list."""
+        response = await shop_client.get(f"/api/v1/shop/products/{shop_product.id}")
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert "variants" in data
+        assert data["variants"] == []
+
+    async def test_get_product_returns_variants(
+        self,
+        shop_client: AsyncClient,
+        shop_product: Product,
+        db_session: AsyncSession,
+    ):
+        """Product detail includes active size variants with computed price."""
+        from app.models.product_variant import ProductVariant
+
+        # Capture IDs before expiring session
+        product_id = shop_product.id
+        tenant_id = shop_product.tenant_id
+
+        # Add two variants
+        small = ProductVariant(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            product_id=product_id,
+            size="Small",
+            display_order=0,
+            sku="TEST-PROD-001-SMALL",
+            price_adjustment_pence=0,
+            units_in_stock=3,
+            fulfilment_type="stock",
+            is_active=True,
+        )
+        large = ProductVariant(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            product_id=product_id,
+            size="Large",
+            display_order=1,
+            sku="TEST-PROD-001-LARGE",
+            price_adjustment_pence=500,  # +£5
+            units_in_stock=0,
+            fulfilment_type="print_to_order",
+            lead_time_days=7,
+            is_active=True,
+        )
+        db_session.add_all([small, large])
+        await db_session.commit()
+        db_session.expire_all()  # clear identity map so selectinload re-fetches variants
+
+        response = await shop_client.get(f"/api/v1/shop/products/{product_id}")
+        assert response.status_code == 200
+        data = response.json()["data"]
+
+        variants = data["variants"]
+        assert len(variants) == 2
+
+        small_v = next(v for v in variants if v["size"] == "Small")
+        assert small_v["sku"] == "TEST-PROD-001-SMALL"
+        assert small_v["fulfilment_type"] == "stock"
+        assert small_v["units_in_stock"] == 3
+        assert small_v["price_pence"] == 1999  # £19.99 base + £0 adjustment
+        assert small_v["lead_time_days"] is None
+
+        large_v = next(v for v in variants if v["size"] == "Large")
+        assert large_v["sku"] == "TEST-PROD-001-LARGE"
+        assert large_v["fulfilment_type"] == "print_to_order"
+        assert large_v["price_pence"] == 2499  # £19.99 + £5.00
+        assert large_v["lead_time_days"] == 7
+
+    async def test_get_product_excludes_inactive_variants(
+        self,
+        shop_client: AsyncClient,
+        shop_product: Product,
+        db_session: AsyncSession,
+    ):
+        """Inactive variants are not included in the shop response."""
+        from app.models.product_variant import ProductVariant
+
+        product_id = shop_product.id
+        tenant_id = shop_product.tenant_id
+
+        active_v = ProductVariant(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            product_id=product_id,
+            size="M",
+            display_order=0,
+            sku="TEST-PROD-001-M",
+            price_adjustment_pence=0,
+            units_in_stock=5,
+            fulfilment_type="stock",
+            is_active=True,
+        )
+        inactive_v = ProductVariant(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            product_id=product_id,
+            size="XL",
+            display_order=1,
+            sku="TEST-PROD-001-XL",
+            price_adjustment_pence=1000,
+            units_in_stock=0,
+            fulfilment_type="stock",
+            is_active=False,
+        )
+        db_session.add_all([active_v, inactive_v])
+        await db_session.commit()
+        db_session.expire_all()
+
+        response = await shop_client.get(f"/api/v1/shop/products/{product_id}")
+        assert response.status_code == 200
+        variants = response.json()["data"]["variants"]
+        assert len(variants) == 1
+        assert variants[0]["size"] == "M"
+
 
 # ============================================
 # Search Tests

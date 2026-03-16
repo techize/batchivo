@@ -67,6 +67,21 @@ class ShopProductDesigner(BaseModel):
     slug: str
 
 
+class ShopProductVariant(BaseModel):
+    """Size variant for shop display."""
+
+    id: str
+    size: str
+    display_order: int
+    sku: str
+    price_pence: int  # Absolute price for this variant in pence
+    price_adjustment_pence: int  # Delta from base price (for reference)
+    fulfilment_type: str  # "stock" | "print_to_order"
+    units_in_stock: int
+    lead_time_days: Optional[int] = None
+    is_active: bool
+
+
 class ShopProduct(BaseModel):
     """Product response for shop display."""
 
@@ -74,7 +89,7 @@ class ShopProduct(BaseModel):
     sku: str
     name: str
     description: Optional[str] = None
-    price: Decimal  # Price in pence
+    price: Decimal  # Base price in pence
     currency: str = "GBP"
     images: list[ShopProductImage] = []
     categories: list[ShopProductCategory] = []
@@ -84,6 +99,7 @@ class ShopProduct(BaseModel):
     free_shipping: bool = False  # Qualifies for free shipping
     is_dragon: bool = False
     backstory: Optional[str] = None  # For dragons
+    variants: list[ShopProductVariant] = []  # Size variants (empty = no sizing)
 
     model_config = {"from_attributes": True}
 
@@ -450,6 +466,7 @@ async def get_product(
             selectinload(Product.images),
             selectinload(Product.categories),
             selectinload(Product.designer),
+            selectinload(Product.variants),
         )
         .where(Product.id == product_uuid)
         .where(Product.shop_visible.is_(True))
@@ -464,6 +481,7 @@ async def get_product(
     if product.pricing:
         price = product.pricing[0].list_price or Decimal("0")
 
+    base_price_pence = int(price * 100)
     is_dragon = getattr(product, "is_dragon", False)
 
     # Convert images - use API endpoint for reliable delivery
@@ -502,13 +520,31 @@ async def get_product(
     # Use feature_title if available (for dragons), otherwise use name
     display_name = getattr(product, "feature_title", None) or product.name
 
+    # Build variant list (active variants only, sorted by display_order)
+    shop_variants = [
+        ShopProductVariant(
+            id=str(v.id),
+            size=v.size,
+            display_order=v.display_order,
+            sku=v.sku,
+            price_pence=base_price_pence + v.price_adjustment_pence,
+            price_adjustment_pence=v.price_adjustment_pence,
+            fulfilment_type=v.fulfilment_type,
+            units_in_stock=v.units_in_stock,
+            lead_time_days=v.lead_time_days,
+            is_active=v.is_active,
+        )
+        for v in sorted(getattr(product, "variants", []), key=lambda v: v.display_order)
+        if v.is_active
+    ]
+
     return {
         "data": ShopProduct(
             id=str(product.id),
             sku=product.sku or "",
             name=display_name,
             description=display_description,
-            price=price * 100,
+            price=base_price_pence,
             images=product_images,
             categories=product_categories_list,
             designer=designer_info,
@@ -517,6 +553,7 @@ async def get_product(
             free_shipping=getattr(product, "free_shipping", False),
             is_dragon=is_dragon,
             backstory=getattr(product, "backstory", None),
+            variants=shop_variants,
         )
     }
 
