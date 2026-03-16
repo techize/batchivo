@@ -27,6 +27,7 @@ from app.models.product_component import ProductComponent
 from app.models.product_image import ProductImage
 from app.models.product_model import ProductModel
 from app.models.product_pricing import ProductPricing
+from app.models.product_variant import FulfilmentType, ProductSizeSystem, ProductVariant
 
 # Sales channels
 from app.models.sales_channel import SalesChannel
@@ -126,6 +127,9 @@ __all__ = [
     "ProductImage",
     "ProductModel",
     "ProductPricing",
+    "ProductVariant",
+    "FulfilmentType",
+    "ProductSizeSystem",
     # Sales
     "SalesChannel",
     # External listings

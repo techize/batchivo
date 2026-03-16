@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.product_variant import FulfilmentType
+
 
 # Product Model (join table) schemas
 class ProductModelBase(BaseModel):
@@ -286,6 +288,10 @@ class ProductDetailResponse(ProductResponse):
     external_listings: list[ExternalListingBrief] = Field(
         default_factory=list, description="External marketplace listings (Etsy, eBay, etc.)"
     )
+    # Size variants
+    variants: list["ProductVariantResponse"] = Field(
+        default_factory=list, description="Size variants with per-size pricing and stock info"
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -297,5 +303,65 @@ class ProductListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ── Product Variant schemas ────────────────────────────────────────────────────
+
+
+class ProductVariantBase(BaseModel):
+    """Fields shared by create and update."""
+
+    size: str = Field(..., min_length=1, max_length=50, description="Size label (e.g. Small, M, XL)")
+    display_order: int = Field(0, ge=0, description="Sort order (lower = first)")
+    sku: Optional[str] = Field(None, max_length=120, description="Variant SKU (auto-generated if omitted)")
+    price_adjustment_pence: int = Field(0, description="Price adjustment from base price in pence")
+    units_in_stock: int = Field(0, ge=0, description="Units held in stock")
+    fulfilment_type: FulfilmentType = Field(FulfilmentType.STOCK, description="stock or print_to_order")
+    lead_time_days: Optional[int] = Field(None, ge=1, description="Days to dispatch (print-to-order only)")
+    material_cost_pence: Optional[int] = Field(None, ge=0, description="Filament cost for this size in pence")
+    print_time_hours: Optional[Decimal] = Field(None, ge=0, description="Estimated print time in hours")
+    is_active: bool = Field(True, description="Whether this variant is available for sale")
+
+
+class ProductVariantCreate(ProductVariantBase):
+    """Schema for creating a product variant."""
+
+    pass
+
+
+class ProductVariantUpdate(BaseModel):
+    """Schema for updating a product variant (all fields optional)."""
+
+    size: Optional[str] = Field(None, min_length=1, max_length=50)
+    display_order: Optional[int] = Field(None, ge=0)
+    sku: Optional[str] = Field(None, max_length=120)
+    price_adjustment_pence: Optional[int] = None
+    units_in_stock: Optional[int] = Field(None, ge=0)
+    fulfilment_type: Optional[FulfilmentType] = None
+    lead_time_days: Optional[int] = Field(None, ge=1)
+    material_cost_pence: Optional[int] = Field(None, ge=0)
+    print_time_hours: Optional[Decimal] = Field(None, ge=0)
+    is_active: Optional[bool] = None
+
+
+class ProductVariantResponse(BaseModel):
+    """Schema for returning a product variant."""
+
+    id: UUID
+    product_id: UUID
+    size: str
+    display_order: int
+    sku: str
+    price_adjustment_pence: int
+    units_in_stock: int
+    fulfilment_type: FulfilmentType
+    lead_time_days: Optional[int]
+    material_cost_pence: Optional[int]
+    print_time_hours: Optional[Decimal]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,10 +1,11 @@
 """Product variant model for sized products."""
 
 import uuid
+from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, JSON, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -23,6 +24,13 @@ class ProductSizeSystem(str, Enum):
     ADULT_GENERAL = "adult_general"  # XS through 3XL
     ADULT_NUMERIC = "adult_numeric"  # Numeric sizes (US 2-16, UK 6-18)
     CUSTOM = "custom"  # Custom size options
+
+
+class FulfilmentType(str, Enum):
+    """How a variant is fulfilled."""
+
+    STOCK = "stock"  # Units held in stock
+    PRINT_TO_ORDER = "print_to_order"  # Printed on demand
 
 
 # Size presets for each system
@@ -138,7 +146,37 @@ class ProductVariant(Base, UUIDMixin, TimestampMixin):
         comment="Units in stock for this variant",
     )
 
-    # Material requirements for knitting (JSONB)
+    # Fulfilment type: in-stock or print-to-order
+    fulfilment_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=FulfilmentType.STOCK,
+        server_default="stock",
+        comment="Fulfilment method: stock or print_to_order",
+    )
+
+    # Lead time for print-to-order variants (null if stock)
+    lead_time_days: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Days from order to dispatch for print-to-order (null if stock)",
+    )
+
+    # Material cost for this size (filament cost in pence)
+    material_cost_pence: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Cost of filament for this size variant in pence",
+    )
+
+    # Print time estimate for this size
+    print_time_hours: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(6, 2),
+        nullable=True,
+        comment="Estimated print time for this size in hours",
+    )
+
+    # Material requirements for knitting (JSONB) — retained for non-3D-printing use
     # Format: {"yarn_yardage": 500, "notes": "Use DK weight", "needle_size_mm": 4.0}
     yarn_requirements: Mapped[Optional[dict]] = mapped_column(
         JSON,
@@ -169,7 +207,7 @@ class ProductVariant(Base, UUIDMixin, TimestampMixin):
     __table_args__ = (
         UniqueConstraint("product_id", "size", name="uq_variant_product_size"),
         UniqueConstraint("product_id", "sku", name="uq_variant_product_sku"),
-        {"comment": "Size variants for products (especially for knitting items)"},
+        {"comment": "Size variants for products with per-size pricing and stock/print-to-order flags"},
     )
 
     def __repr__(self) -> str:

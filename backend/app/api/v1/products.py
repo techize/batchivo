@@ -18,6 +18,7 @@ from app.models.product_component import ProductComponent
 from app.models.product_image import ProductImage
 from app.models.product_model import ProductModel
 from app.models.product_pricing import ProductPricing
+from app.models.product_variant import ProductVariant
 from app.models.sales_channel import SalesChannel
 from app.schemas.product import (
     ProductComponentCreate,
@@ -33,6 +34,9 @@ from app.schemas.product import (
     ProductPricingUpdate,
     ProductResponse,
     ProductUpdate,
+    ProductVariantCreate,
+    ProductVariantResponse,
+    ProductVariantUpdate,
 )
 from app.schemas.product_image import (
     ProductImageResponse,
@@ -1575,3 +1579,162 @@ async def sync_product_to_etsy(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
+
+
+# ==================== Product Variant Management ====================
+
+
+async def _get_product_for_tenant(
+    product_id: UUID, tenant_id: UUID, db: AsyncSession
+) -> Product:
+    """Fetch a product scoped to tenant or raise 404."""
+    result = await db.execute(
+        select(Product).where(Product.id == product_id, Product.tenant_id == tenant_id)
+    )
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    return product
+
+
+@router.get(
+    "/{product_id}/variants",
+    response_model=list[ProductVariantResponse],
+)
+async def list_product_variants(
+    product_id: UUID,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
+) -> list[ProductVariantResponse]:
+    """List all size variants for a product."""
+    await _get_product_for_tenant(product_id, tenant.id, db)
+
+    result = await db.execute(
+        select(ProductVariant)
+        .where(
+            ProductVariant.product_id == product_id,
+            ProductVariant.tenant_id == tenant.id,
+        )
+        .order_by(ProductVariant.display_order)
+    )
+    variants = result.scalars().all()
+    return [ProductVariantResponse.model_validate(v) for v in variants]
+
+
+@router.post(
+    "/{product_id}/variants",
+    response_model=ProductVariantResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_product_variant(
+    product_id: UUID,
+    data: ProductVariantCreate,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
+) -> ProductVariantResponse:
+    """Add a size variant to a product."""
+    product = await _get_product_for_tenant(product_id, tenant.id, db)
+
+    # Check for duplicate size
+    existing = await db.execute(
+        select(ProductVariant).where(
+            ProductVariant.product_id == product_id,
+            ProductVariant.size == data.size,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Variant with size '{data.size}' already exists for this product",
+        )
+
+    # Auto-generate SKU if not provided
+    sku = data.sku
+    if not sku:
+        size_slug = data.size.upper().replace(" ", "-").replace("/", "-")
+        sku = f"{product.sku}-{size_slug}"
+
+    variant = ProductVariant(
+        tenant_id=tenant.id,
+        product_id=product_id,
+        size=data.size,
+        display_order=data.display_order,
+        sku=sku,
+        price_adjustment_pence=data.price_adjustment_pence,
+        units_in_stock=data.units_in_stock,
+        fulfilment_type=data.fulfilment_type,
+        lead_time_days=data.lead_time_days,
+        material_cost_pence=data.material_cost_pence,
+        print_time_hours=data.print_time_hours,
+        is_active=data.is_active,
+    )
+
+    db.add(variant)
+    await db.commit()
+    await db.refresh(variant)
+    return ProductVariantResponse.model_validate(variant)
+
+
+@router.put(
+    "/{product_id}/variants/{variant_id}",
+    response_model=ProductVariantResponse,
+)
+async def update_product_variant(
+    product_id: UUID,
+    variant_id: UUID,
+    data: ProductVariantUpdate,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
+) -> ProductVariantResponse:
+    """Update a size variant."""
+    await _get_product_for_tenant(product_id, tenant.id, db)
+
+    result = await db.execute(
+        select(ProductVariant).where(
+            ProductVariant.id == variant_id,
+            ProductVariant.product_id == product_id,
+            ProductVariant.tenant_id == tenant.id,
+        )
+    )
+    variant = result.scalar_one_or_none()
+    if not variant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(variant, field, value)
+
+    await db.commit()
+    await db.refresh(variant)
+    return ProductVariantResponse.model_validate(variant)
+
+
+@router.delete(
+    "/{product_id}/variants/{variant_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_product_variant(
+    product_id: UUID,
+    variant_id: UUID,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Delete a size variant."""
+    await _get_product_for_tenant(product_id, tenant.id, db)
+
+    result = await db.execute(
+        select(ProductVariant).where(
+            ProductVariant.id == variant_id,
+            ProductVariant.product_id == product_id,
+            ProductVariant.tenant_id == tenant.id,
+        )
+    )
+    variant = result.scalar_one_or_none()
+    if not variant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    await db.delete(variant)
+    await db.commit()

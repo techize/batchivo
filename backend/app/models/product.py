@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from app.models.product_image import ProductImage
     from app.models.product_model import ProductModel
     from app.models.product_pricing import ProductPricing
+    from app.models.product_variant import ProductVariant
     from app.models.production_run import ProductionRun
     from app.models.review import Review
 
@@ -344,6 +345,15 @@ class Product(Base, UUIDMixin, TimestampMixin):
         "ExternalListing",
         back_populates="product",
         cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    # Size variants (per-size pricing, stock, and fulfilment type)
+    variants: Mapped[List["ProductVariant"]] = relationship(
+        "ProductVariant",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductVariant.display_order",
         lazy="selectin",
     )
 

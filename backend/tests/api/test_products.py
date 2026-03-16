@@ -14,6 +14,7 @@ from app.models.product_component import ProductComponent
 from app.models.product_image import ProductImage
 from app.models.product_model import ProductModel
 from app.models.product_pricing import ProductPricing
+from app.models.product_variant import FulfilmentType, ProductVariant
 from app.models.sales_channel import SalesChannel
 from app.models.tenant import Tenant
 from app.models.user import User
@@ -1047,3 +1048,220 @@ class TestProductEdgeCases:
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Dragon's Lair - Limited Edition (2024)"
+
+
+# ============================================
+# Product Variant Tests
+# ============================================
+
+
+@pytest_asyncio.fixture
+async def test_variant(
+    db_session: AsyncSession, test_product: Product
+) -> ProductVariant:
+    """Create a test product variant."""
+    variant = ProductVariant(
+        id=uuid4(),
+        tenant_id=test_product.tenant_id,
+        product_id=test_product.id,
+        size="Small",
+        display_order=0,
+        sku="PROD-TEST-001-SMALL",
+        price_adjustment_pence=0,
+        units_in_stock=5,
+        fulfilment_type=FulfilmentType.STOCK,
+        lead_time_days=None,
+        material_cost_pence=150,
+        print_time_hours=None,
+        is_active=True,
+    )
+    db_session.add(variant)
+    await db_session.commit()
+    await db_session.refresh(variant)
+    return variant
+
+
+class TestProductVariantEndpoints:
+    """Tests for /api/v1/products/{id}/variants CRUD."""
+
+    async def test_list_variants_empty(
+        self, client: AsyncClient, test_product: Product
+    ):
+        """GET variants returns empty list when none exist."""
+        response = await client.get(f"/api/v1/products/{test_product.id}/variants")
+        assert response.status_code == 200
+        assert response.json() == []
+
+    async def test_list_variants(
+        self, client: AsyncClient, test_product: Product, test_variant: ProductVariant
+    ):
+        """GET variants returns the created variant."""
+        response = await client.get(f"/api/v1/products/{test_product.id}/variants")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["size"] == "Small"
+        assert data[0]["fulfilment_type"] == "stock"
+        assert data[0]["units_in_stock"] == 5
+
+    async def test_list_variants_product_not_found(self, client: AsyncClient):
+        """GET variants for unknown product returns 404."""
+        response = await client.get(f"/api/v1/products/{uuid4()}/variants")
+        assert response.status_code == 404
+
+    async def test_create_variant_stock(
+        self, client: AsyncClient, test_product: Product
+    ):
+        """POST creates a stock variant with auto-generated SKU."""
+        payload = {
+            "size": "Medium",
+            "display_order": 1,
+            "price_adjustment_pence": 200,
+            "units_in_stock": 10,
+            "fulfilment_type": "stock",
+            "material_cost_pence": 300,
+        }
+        response = await client.post(
+            f"/api/v1/products/{test_product.id}/variants",
+            json=payload,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["size"] == "Medium"
+        assert data["sku"] == f"{test_product.sku}-MEDIUM"
+        assert data["fulfilment_type"] == "stock"
+        assert data["price_adjustment_pence"] == 200
+        assert data["units_in_stock"] == 10
+        assert data["lead_time_days"] is None
+
+    async def test_create_variant_print_to_order(
+        self, client: AsyncClient, test_product: Product
+    ):
+        """POST creates a print-to-order variant."""
+        payload = {
+            "size": "XL",
+            "display_order": 3,
+            "price_adjustment_pence": 800,
+            "units_in_stock": 0,
+            "fulfilment_type": "print_to_order",
+            "lead_time_days": 7,
+            "material_cost_pence": 600,
+            "print_time_hours": "4.5",
+        }
+        response = await client.post(
+            f"/api/v1/products/{test_product.id}/variants",
+            json=payload,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["fulfilment_type"] == "print_to_order"
+        assert data["lead_time_days"] == 7
+        assert data["sku"] == f"{test_product.sku}-XL"
+
+    async def test_create_variant_custom_sku(
+        self, client: AsyncClient, test_product: Product
+    ):
+        """POST respects explicitly provided SKU."""
+        payload = {
+            "size": "Large",
+            "sku": "CUSTOM-SKU-LARGE",
+            "fulfilment_type": "stock",
+        }
+        response = await client.post(
+            f"/api/v1/products/{test_product.id}/variants",
+            json=payload,
+        )
+        assert response.status_code == 201
+        assert response.json()["sku"] == "CUSTOM-SKU-LARGE"
+
+    async def test_create_variant_duplicate_size(
+        self, client: AsyncClient, test_product: Product, test_variant: ProductVariant
+    ):
+        """POST returns 400 when size already exists."""
+        payload = {"size": "Small", "fulfilment_type": "stock"}
+        response = await client.post(
+            f"/api/v1/products/{test_product.id}/variants",
+            json=payload,
+        )
+        assert response.status_code == 400
+
+    async def test_create_variant_product_not_found(self, client: AsyncClient):
+        """POST returns 404 for unknown product."""
+        payload = {"size": "Small", "fulfilment_type": "stock"}
+        response = await client.post(
+            f"/api/v1/products/{uuid4()}/variants",
+            json=payload,
+        )
+        assert response.status_code == 404
+
+    async def test_update_variant(
+        self,
+        client: AsyncClient,
+        test_product: Product,
+        test_variant: ProductVariant,
+    ):
+        """PUT updates allowed fields."""
+        payload = {
+            "units_in_stock": 20,
+            "fulfilment_type": "print_to_order",
+            "lead_time_days": 5,
+        }
+        response = await client.put(
+            f"/api/v1/products/{test_product.id}/variants/{test_variant.id}",
+            json=payload,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["units_in_stock"] == 20
+        assert data["fulfilment_type"] == "print_to_order"
+        assert data["lead_time_days"] == 5
+
+    async def test_update_variant_not_found(
+        self, client: AsyncClient, test_product: Product
+    ):
+        """PUT returns 404 for unknown variant."""
+        response = await client.put(
+            f"/api/v1/products/{test_product.id}/variants/{uuid4()}",
+            json={"units_in_stock": 5},
+        )
+        assert response.status_code == 404
+
+    async def test_delete_variant(
+        self,
+        client: AsyncClient,
+        test_product: Product,
+        test_variant: ProductVariant,
+    ):
+        """DELETE removes the variant."""
+        response = await client.delete(
+            f"/api/v1/products/{test_product.id}/variants/{test_variant.id}"
+        )
+        assert response.status_code == 204
+
+        # Confirm gone
+        list_response = await client.get(
+            f"/api/v1/products/{test_product.id}/variants"
+        )
+        assert list_response.json() == []
+
+    async def test_delete_variant_not_found(
+        self, client: AsyncClient, test_product: Product
+    ):
+        """DELETE returns 404 for unknown variant."""
+        response = await client.delete(
+            f"/api/v1/products/{test_product.id}/variants/{uuid4()}"
+        )
+        assert response.status_code == 404
+
+    async def test_create_variant_requires_auth(
+        self, test_product: Product
+    ):
+        """POST requires authentication (401 without token)."""
+        from httpx import AsyncClient as RawClient
+        async with RawClient(base_url="http://test") as anon_client:
+            response = await anon_client.post(
+                f"/api/v1/products/{test_product.id}/variants",
+                json={"size": "S", "fulfilment_type": "stock"},
+            )
+        # Without credentials the fixture client handles auth; raw client gets 401/422
+        assert response.status_code in (401, 422)
