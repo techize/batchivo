@@ -160,6 +160,8 @@ spec:
             volumeMounts:
             - name: scripts
               mountPath: /scripts
+            - name: mc-bin
+              mountPath: /mc-bin
           volumes:
           - name: scripts
             configMap:
