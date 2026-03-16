@@ -1,0 +1,48 @@
+# PostgreSQL Backup Network Policy
+# Allows the postgres-backup CronJob pods to:
+#   - Connect to postgres for pg_dump
+#   - Connect to MinIO to upload backups
+#   - Resolve DNS
+#   - Download MinIO client binary from dl.min.io (HTTPS)
+#   - Fetch Alpine packages (apk) for wget install
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backup-egress
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres-backup
+  policyTypes:
+    - Egress
+  egress:
+    # PostgreSQL access for pg_dump
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # MinIO access for backup upload
+    - to:
+        - podSelector:
+            matchLabels:
+              app: minio
+      ports:
+        - protocol: TCP
+          port: 9000
+    # DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS for downloading mc binary (dl.min.io) and apk packages
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
