@@ -91,6 +91,27 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
           restartPolicy: OnFailure
+          initContainers:
+          - name: mc-installer
+            image: minio/mc:latest
+            command: ["sh", "-c", "cp /usr/bin/mc /mc-bin/mc && chmod 755 /mc-bin/mc"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false  # Override pod-level; mc image is root-owned
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+            volumeMounts:
+            - name: mc-bin
+              mountPath: /mc-bin
+            resources:
+              requests:
+                memory: "32Mi"
+                cpu: "50m"
+              limits:
+                memory: "64Mi"
+                cpu: "100m"
           containers:
           - name: backup
             image: postgres:16-alpine
@@ -102,13 +123,8 @@ spec:
             command: ["/bin/sh", "-c"]
             args:
               - |
-                # Install MinIO client
-                apk add --no-cache wget
-                wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /tmp/mc
-                chmod +x /tmp/mc
-                export PATH=$PATH:/tmp
-
-                # Run backup script
+                export PATH=$PATH:/mc-bin
+                export HOME=/tmp  # mc writes config to $HOME/.mc
                 sh /scripts/backup.sh
             env:
             - name: DB_USER
@@ -148,6 +164,8 @@ spec:
             configMap:
               name: backup-scripts
               defaultMode: 0755
+          - name: mc-bin
+            emptyDir: {}
 ---
 # Manual backup Job (run with: kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n batchivo)
 # This is just a reference - the CronJob handles automatic backups
