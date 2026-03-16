@@ -1542,6 +1542,7 @@ async def sync_product_to_etsy(
             selectinload(Product.images),
             selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
             selectinload(Product.external_listings),
+            selectinload(Product.variants),
         )
     )
     result = await db.execute(query)

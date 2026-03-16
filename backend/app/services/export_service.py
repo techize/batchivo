@@ -91,7 +91,7 @@ class ExportService:
         writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
 
-        # Fetch all products with related data
+        # Fetch all products with related data including variants
         result = await self.db.execute(
             select(Product)
             .where(Product.tenant_id == self.tenant.id)
@@ -99,6 +99,7 @@ class ExportService:
                 selectinload(Product.pricing),
                 selectinload(Product.images),
                 selectinload(Product.categories),
+                selectinload(Product.variants),
             )
             .order_by(Product.created_at.desc())
         )
@@ -108,11 +109,10 @@ class ExportService:
             # Generate handle from SKU or name
             handle = self._generate_handle(product.sku or product.name)
 
-            # Get price from first pricing entry
-            price = Decimal("0")
-            compare_at_price = ""
+            # Get base price from first pricing entry
+            base_price = Decimal("0")
             if product.pricing:
-                price = product.pricing[0].list_price or Decimal("0")
+                base_price = product.pricing[0].list_price or Decimal("0")
 
             # Get primary image
             image_src = ""
@@ -144,47 +144,106 @@ class ExportService:
 
             # Calculate weight in grams (default to 100g if not set)
             weight_grams = 100
-            if hasattr(product, "weight") and product.weight:
-                weight_grams = int(product.weight * 1000)  # kg to grams
+            if hasattr(product, "weight_grams") and product.weight_grams:
+                weight_grams = product.weight_grams
 
-            row = {
+            # Common product-level fields
+            product_fields = {
                 "Handle": handle,
                 "Title": product.name,
-                "Body (HTML)": product.description or "",
+                "Body (HTML)": product.shop_description or product.description or "",
                 "Vendor": "Mystmereforge",
                 "Product Category": "",
                 "Type": product_type,
                 "Tags": tags,
                 "Published": "TRUE" if product.is_active and product.shop_visible else "FALSE",
-                "Option1 Name": "Title",
-                "Option1 Value": "Default Title",
-                "Option2 Name": "",
-                "Option2 Value": "",
-                "Option3 Name": "",
-                "Option3 Value": "",
-                "Variant SKU": product.sku or "",
-                "Variant Grams": str(weight_grams),
-                "Variant Inventory Tracker": "shopify",
-                "Variant Inventory Qty": str(product.units_in_stock or 0),
-                "Variant Inventory Policy": "deny",
-                "Variant Fulfillment Service": "manual",
-                "Variant Price": str(price),
-                "Variant Compare At Price": compare_at_price,
-                "Variant Requires Shipping": "TRUE",
-                "Variant Taxable": "TRUE",
-                "Variant Barcode": "",
-                "Image Src": image_src,
-                "Image Position": "1" if image_src else "",
-                "Image Alt Text": image_alt,
                 "Gift Card": "FALSE",
                 "SEO Title": product.name,
                 "SEO Description": (product.description or "")[:160],
-                "Variant Image": "",
                 "Variant Weight Unit": "g",
-                "Cost per item": "",
                 "Status": "active" if product.is_active else "draft",
             }
-            writer.writerow(row)
+
+            # Get active variants sorted by display order
+            active_variants = sorted(
+                [v for v in (product.variants or []) if v.is_active],
+                key=lambda v: v.display_order,
+            )
+
+            if active_variants:
+                # Product has size variants — emit one row per variant
+                for i, variant in enumerate(active_variants):
+                    variant_price = base_price + Decimal(variant.price_adjustment_pence) / 100
+                    # Shopify inventory policy: deny if stock, continue if PTO
+                    inventory_policy = (
+                        "deny" if variant.fulfilment_type == "stock" else "continue"
+                    )
+                    row = {
+                        **product_fields,
+                        "Option1 Name": "Size",
+                        "Option1 Value": variant.size,
+                        "Option2 Name": "",
+                        "Option2 Value": "",
+                        "Option3 Name": "",
+                        "Option3 Value": "",
+                        "Variant SKU": variant.sku or "",
+                        "Variant Grams": str(weight_grams),
+                        "Variant Inventory Tracker": "shopify",
+                        "Variant Inventory Qty": str(variant.units_in_stock or 0),
+                        "Variant Inventory Policy": inventory_policy,
+                        "Variant Fulfillment Service": "manual",
+                        "Variant Price": str(variant_price),
+                        "Variant Compare At Price": "",
+                        "Variant Requires Shipping": "TRUE",
+                        "Variant Taxable": "TRUE",
+                        "Variant Barcode": "",
+                        "Variant Image": "",
+                        "Cost per item": (
+                            str(Decimal(variant.material_cost_pence) / 100)
+                            if variant.material_cost_pence
+                            else ""
+                        ),
+                    }
+                    # Only include product-level fields (title, images) on first row
+                    if i == 0:
+                        row["Image Src"] = image_src
+                        row["Image Position"] = "1" if image_src else ""
+                        row["Image Alt Text"] = image_alt
+                    else:
+                        row["Title"] = ""
+                        row["Body (HTML)"] = ""
+                        row["Image Src"] = ""
+                        row["Image Position"] = ""
+                        row["Image Alt Text"] = ""
+                    writer.writerow(row)
+            else:
+                # No variants — single default variant row
+                row = {
+                    **product_fields,
+                    "Option1 Name": "Title",
+                    "Option1 Value": "Default Title",
+                    "Option2 Name": "",
+                    "Option2 Value": "",
+                    "Option3 Name": "",
+                    "Option3 Value": "",
+                    "Variant SKU": product.sku or "",
+                    "Variant Grams": str(weight_grams),
+                    "Variant Inventory Tracker": "shopify",
+                    "Variant Inventory Qty": str(product.units_in_stock or 0),
+                    "Variant Inventory Policy": "deny",
+                    "Variant Fulfillment Service": "manual",
+                    "Variant Price": str(base_price),
+                    "Variant Compare At Price": "",
+                    "Variant Requires Shipping": "TRUE",
+                    "Variant Taxable": "TRUE",
+                    "Variant Barcode": "",
+                    "Image Src": image_src,
+                    "Image Position": "1" if image_src else "",
+                    "Image Alt Text": image_alt,
+                    "Variant Image": "",
+                    "Cost per item": "",
+                }
+                writer.writerow(row)
 
             # Write additional images as separate rows
             if product.images and len(product.images) > 1:

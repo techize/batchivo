@@ -9,6 +9,7 @@ from httpx import AsyncClient
 
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.product import Product
+from app.models.product_variant import FulfilmentType, ProductVariant
 
 
 class TestExportProducts:
@@ -100,6 +101,81 @@ class TestExportProducts:
 
         for col in required_columns:
             assert col in reader.fieldnames, f"Missing required column: {col}"
+
+    @pytest.mark.asyncio
+    async def test_export_products_with_variants(
+        self,
+        async_client: AsyncClient,
+        auth_headers: dict,
+        test_tenant,
+        db_session,
+    ):
+        """Products with size variants export one row per variant with Option1 Name = Size."""
+        product = Product(
+            tenant_id=test_tenant.id,
+            name="Skeleton Triceratops",
+            sku="SKEL-TRICE",
+            description="Articulated skeleton triceratops",
+            is_active=True,
+            shop_visible=True,
+            units_in_stock=0,
+        )
+        db_session.add(product)
+        await db_session.flush()
+
+        small = ProductVariant(
+            tenant_id=test_tenant.id,
+            product_id=product.id,
+            size="Small",
+            display_order=0,
+            sku="SKEL-TRICE-SMALL",
+            price_adjustment_pence=0,
+            units_in_stock=3,
+            fulfilment_type=FulfilmentType.STOCK,
+        )
+        large = ProductVariant(
+            tenant_id=test_tenant.id,
+            product_id=product.id,
+            size="Large",
+            display_order=1,
+            sku="SKEL-TRICE-LARGE",
+            price_adjustment_pence=500,  # +£5
+            units_in_stock=0,
+            fulfilment_type=FulfilmentType.PRINT_TO_ORDER,
+            lead_time_days=5,
+        )
+        db_session.add(small)
+        db_session.add(large)
+        await db_session.commit()
+
+        response = await async_client.get(
+            "/api/v1/exports/products",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        reader = csv.DictReader(io.StringIO(response.text))
+        rows = list(reader)
+
+        # Find rows for our product (by handle)
+        trice_rows = [r for r in rows if r["Handle"] == "skel-trice"]
+        assert len(trice_rows) == 2, f"Expected 2 variant rows, got {len(trice_rows)}"
+
+        small_row = next(r for r in trice_rows if r["Variant SKU"] == "SKEL-TRICE-SMALL")
+        large_row = next(r for r in trice_rows if r["Variant SKU"] == "SKEL-TRICE-LARGE")
+
+        assert small_row["Option1 Name"] == "Size"
+        assert small_row["Option1 Value"] == "Small"
+        assert small_row["Variant Inventory Policy"] == "deny"  # stock
+        assert small_row["Variant Inventory Qty"] == "3"
+
+        assert large_row["Option1 Name"] == "Size"
+        assert large_row["Option1 Value"] == "Large"
+        assert large_row["Variant Inventory Policy"] == "continue"  # print-to-order
+
+        # Title/Body only on first row
+        assert small_row["Title"] == "Skeleton Triceratops"
+        assert large_row["Title"] == ""
 
 
 class TestExportInventory:

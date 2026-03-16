@@ -203,21 +203,41 @@ class EtsySyncService:
 
             # Update inventory with price, quantity, and SKU
             # Etsy requires inventory to be updated separately
-            price_in_cents = int(listing_data["price"] * 100)  # Convert to cents
-            etsy_product = EtsyProduct(
-                sku=listing_data["sku"] or "",
-                property_values=[],
-                offerings=[
-                    {
-                        "price": price_in_cents,
-                        "quantity": listing_data["quantity"] or 1,
-                        "is_enabled": True,
-                    }
-                ],
-            )
+            if listing_data["variants"]:
+                # Multi-size product: create one EtsyProduct per size variant
+                etsy_products = [
+                    EtsyProduct(
+                        sku=v["sku"],
+                        property_values=v["property_values"],
+                        offerings=[
+                            {
+                                "price": int(v["price"] * 100),
+                                "quantity": v["quantity"] or 1,
+                                "is_enabled": True,
+                            }
+                        ],
+                    )
+                    for v in listing_data["variants"]
+                ]
+            else:
+                # Single variant: use product-level price/quantity
+                price_in_cents = int(listing_data["price"] * 100)  # Convert to cents
+                etsy_products = [
+                    EtsyProduct(
+                        sku=listing_data["sku"] or "",
+                        property_values=[],
+                        offerings=[
+                            {
+                                "price": price_in_cents,
+                                "quantity": listing_data["quantity"] or 1,
+                                "is_enabled": True,
+                            }
+                        ],
+                    )
+                ]
 
             inventory_request = UpdateListingInventoryRequest(
-                products=[etsy_product],
+                products=etsy_products,
             )
 
             try:
@@ -300,22 +320,41 @@ class EtsySyncService:
             api.update_listing(shop_id, listing_id, update_request)
 
             # Update inventory (price, quantity, SKU)
-            if listing_data["price"]:
-                price_in_cents = int(listing_data["price"] * 100)
-                etsy_product = EtsyProduct(
-                    sku=listing_data["sku"] or "",
-                    property_values=[],
-                    offerings=[
-                        {
-                            "price": price_in_cents,
-                            "quantity": listing_data["quantity"] or 1,
-                            "is_enabled": True,
-                        }
-                    ],
-                )
+            if listing_data["price"] or listing_data["variants"]:
+                if listing_data["variants"]:
+                    # Multi-size product: one EtsyProduct per size variant
+                    etsy_products = [
+                        EtsyProduct(
+                            sku=v["sku"],
+                            property_values=v["property_values"],
+                            offerings=[
+                                {
+                                    "price": int(v["price"] * 100),
+                                    "quantity": v["quantity"] or 1,
+                                    "is_enabled": True,
+                                }
+                            ],
+                        )
+                        for v in listing_data["variants"]
+                    ]
+                else:
+                    price_in_cents = int(listing_data["price"] * 100)
+                    etsy_products = [
+                        EtsyProduct(
+                            sku=listing_data["sku"] or "",
+                            property_values=[],
+                            offerings=[
+                                {
+                                    "price": price_in_cents,
+                                    "quantity": listing_data["quantity"] or 1,
+                                    "is_enabled": True,
+                                }
+                            ],
+                        )
+                    ]
 
                 inventory_request = UpdateListingInventoryRequest(
-                    products=[etsy_product],
+                    products=etsy_products,
                 )
 
                 try:
@@ -404,6 +443,32 @@ class EtsySyncService:
                 if active_pricing:
                     price = float(active_pricing[0].list_price)
 
+        # Build per-size variant data for Etsy inventory offerings
+        # Etsy property_id 100 = "Size" (standard Etsy taxonomy property)
+        ETSY_SIZE_PROPERTY_ID = 100
+        variants_data = []
+        active_variants = sorted(
+            [v for v in (product.variants or []) if v.is_active],
+            key=lambda v: v.display_order,
+        )
+        for variant in active_variants:
+            variant_price = float(price or 0) + (variant.price_adjustment_pence / 100)
+            variants_data.append(
+                {
+                    "sku": variant.sku or f"{product.sku}-{variant.size}",
+                    "size": variant.size,
+                    "price": variant_price,
+                    "quantity": variant.units_in_stock if variant.fulfilment_type == "stock" else 999,
+                    "property_values": [
+                        {
+                            "property_id": ETSY_SIZE_PROPERTY_ID,
+                            "property_name": "Size",
+                            "values": [variant.size],
+                        }
+                    ],
+                }
+            )
+
         return {
             "title": product.feature_title or product.name,
             "description": "\n".join(description_parts) if description_parts else product.name,
@@ -418,4 +483,6 @@ class EtsySyncService:
             "is_supply": False,
             "shipping_profile_id": None,  # To be configured per tenant
             "taxonomy_id": None,  # To be configured per product/category
+            # Size variants (populated when product has ProductVariant records)
+            "variants": variants_data,
         }
