@@ -6,7 +6,7 @@
 #   - MinIO client jobs (for bucket management)
 #
 # Egress:
-#   - None required (MinIO is a data sink)
+#   - Not restricted (MinIO must be able to respond to TCP connections)
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -19,7 +19,6 @@ spec:
       app: minio
   policyTypes:
     - Ingress
-    - Egress
   ingress:
     # Allow ingress from backend for API access
     - from:
@@ -38,4 +37,3 @@ spec:
           port: 9000
         - protocol: TCP
           port: 9001  # Console (for admin access via port-forward)
-  egress: []  # No egress needed
