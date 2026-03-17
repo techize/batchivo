@@ -95,11 +95,13 @@ class ShopProduct(BaseModel):
     categories: list[ShopProductCategory] = []
     designer: Optional[ShopProductDesigner] = None
     in_stock: bool = True
+    stock_count: Optional[int] = None  # Units in stock (null = print-to-order)
     print_to_order: bool = False  # Printed to order vs in-stock
     free_shipping: bool = False  # Qualifies for free shipping
     is_dragon: bool = False
     backstory: Optional[str] = None  # For dragons
     variants: list[ShopProductVariant] = []  # Size variants (empty = no sizing)
+    created_at: Optional[str] = None  # ISO8601 timestamp for "sort by newest"
 
     model_config = {"from_attributes": True}
 
@@ -423,6 +425,7 @@ async def get_products(
                 slug=product.designer.slug,
             )
 
+        is_print_to_order = getattr(product, "print_to_order", False)
         shop_product = ShopProduct(
             id=str(product.id),
             sku=product.sku or "",
@@ -432,10 +435,12 @@ async def get_products(
             images=product_images,
             categories=product_categories_list,
             designer=designer_info,
-            in_stock=product.units_in_stock > 0,
-            print_to_order=getattr(product, "print_to_order", False),
+            in_stock=is_print_to_order or product.units_in_stock > 0,
+            stock_count=None if is_print_to_order else product.units_in_stock,
+            print_to_order=is_print_to_order,
             free_shipping=getattr(product, "free_shipping", False),
             is_dragon=is_dragon,
+            created_at=product.created_at.isoformat() if product.created_at else None,
         )
         shop_products.append(shop_product)
 
@@ -538,6 +543,7 @@ async def get_product(
         if v.is_active
     ]
 
+    is_print_to_order = getattr(product, "print_to_order", False)
     return {
         "data": ShopProduct(
             id=str(product.id),
@@ -548,12 +554,14 @@ async def get_product(
             images=product_images,
             categories=product_categories_list,
             designer=designer_info,
-            in_stock=product.units_in_stock > 0,
-            print_to_order=getattr(product, "print_to_order", False),
+            in_stock=is_print_to_order or product.units_in_stock > 0,
+            stock_count=None if is_print_to_order else product.units_in_stock,
+            print_to_order=is_print_to_order,
             free_shipping=getattr(product, "free_shipping", False),
             is_dragon=is_dragon,
             backstory=getattr(product, "backstory", None),
             variants=shop_variants,
+            created_at=product.created_at.isoformat() if product.created_at else None,
         )
     }
 

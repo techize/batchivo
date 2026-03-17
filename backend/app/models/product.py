@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     Numeric,
     String,
     Text,
@@ -36,6 +37,34 @@ class TSVectorType(TypeDecorator):
         else:
             # Fallback to TEXT for SQLite and other databases
             return dialect.type_descriptor(Text())
+
+
+class StringArrayType(TypeDecorator):
+    """
+    A string array type that uses PostgreSQL ARRAY(String) in production
+    and falls back to JSON for SQLite in tests.
+    """
+
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect) -> TypeEngine:
+        if dialect.name == "postgresql":
+            from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
+
+            return dialect.type_descriptor(PG_ARRAY(String()))
+        else:
+            return dialect.type_descriptor(JSON())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return [] if dialect.name != "postgresql" else value
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []
+        return value
 
 
 from app.database import Base
@@ -255,6 +284,56 @@ class Product(Base, UUIDMixin, TimestampMixin):
         TSVectorType,
         nullable=True,
         comment="Full-text search vector (auto-populated by PostgreSQL trigger)",
+    )
+
+    # Multi-channel publishing fields
+    tags: Mapped[Optional[list]] = mapped_column(
+        StringArrayType,
+        nullable=True,
+        comment="Keyword tags for Shopify/Etsy discoverability",
+    )
+
+    product_type: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="Product type / taxonomy (e.g. '3D Print') for Shopify product_type field",
+    )
+
+    seo_slug: Mapped[Optional[str]] = mapped_column(
+        String(200),
+        nullable=True,
+        index=True,
+        comment="URL-friendly product handle for canonical URLs (auto-generated from name if null)",
+    )
+
+    seo_title: Mapped[Optional[str]] = mapped_column(
+        String(200),
+        nullable=True,
+        comment="SEO meta title (≤60 chars); falls back to name",
+    )
+
+    seo_description: Mapped[Optional[str]] = mapped_column(
+        String(300),
+        nullable=True,
+        comment="SEO meta description (≤155 chars); falls back to description truncated",
+    )
+
+    material: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="Primary material (e.g. 'PLA', 'PETG') for Etsy/Shopify attributes",
+    )
+
+    colour_options: Mapped[Optional[list]] = mapped_column(
+        StringArrayType,
+        nullable=True,
+        comment="Available filament colour options (e.g. ['Dragon Red', 'Bone White'])",
+    )
+
+    etsy_taxonomy_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Etsy taxonomy integer ID for product categorisation",
     )
 
     # Relationships

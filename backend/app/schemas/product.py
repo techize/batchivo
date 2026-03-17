@@ -175,6 +175,15 @@ class ProductBase(BaseModel):
     weight_grams: Optional[int] = Field(None, ge=0, description="Product weight in grams")
     size_cm: Optional[Decimal] = Field(None, ge=0, description="Product size/length in centimeters")
     print_time_hours: Optional[Decimal] = Field(None, ge=0, description="Print time in hours")
+    # Multi-channel publishing fields
+    tags: list[str] = Field(default_factory=list, description="Keyword tags for Shopify/Etsy discoverability")
+    product_type: Optional[str] = Field(None, max_length=100, description="Product type (e.g. '3D Print') for Shopify")
+    seo_slug: Optional[str] = Field(None, max_length=200, description="URL-friendly handle (auto-generated from name if null)")
+    seo_title: Optional[str] = Field(None, max_length=200, description="SEO meta title (≤60 chars)")
+    seo_description: Optional[str] = Field(None, max_length=300, description="SEO meta description (≤155 chars)")
+    material: Optional[str] = Field(None, max_length=100, description="Primary material (e.g. 'PLA')")
+    colour_options: list[str] = Field(default_factory=list, description="Available filament colour options")
+    etsy_taxonomy_id: Optional[int] = Field(None, description="Etsy taxonomy integer ID")
 
 
 class ProductCreate(ProductBase):
@@ -214,6 +223,15 @@ class ProductUpdate(BaseModel):
     weight_grams: Optional[int] = Field(None, ge=0)
     size_cm: Optional[Decimal] = Field(None, ge=0)
     print_time_hours: Optional[Decimal] = Field(None, ge=0)
+    # Multi-channel publishing fields
+    tags: Optional[list[str]] = None
+    product_type: Optional[str] = Field(None, max_length=100)
+    seo_slug: Optional[str] = Field(None, max_length=200)
+    seo_title: Optional[str] = Field(None, max_length=200)
+    seo_description: Optional[str] = Field(None, max_length=300)
+    material: Optional[str] = Field(None, max_length=100)
+    colour_options: Optional[list[str]] = None
+    etsy_taxonomy_id: Optional[int] = None
 
 
 class ProductResponse(ProductBase):
