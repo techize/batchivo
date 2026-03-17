@@ -13,7 +13,6 @@ Tests cover:
 import base64
 import hashlib
 import hmac
-import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -22,7 +21,6 @@ import pytest
 
 from app.models.order import Order, OrderStatus
 from app.models.webhook_event import (
-    WebhookDeadLetter,
     WebhookEvent,
     WebhookEventSource,
     WebhookEventStatus,
@@ -653,8 +651,6 @@ class TestDeadLetterQueue:
 
         # Verify dead letter record was created
         mock_db.add.assert_called()
-        call_args = mock_db.add.call_args_list
-        dlq_calls = [c for c in call_args if isinstance(c[0][0], WebhookDeadLetter)]
         # Note: In real code we'd check the WebhookDeadLetter type
         mock_db.commit.assert_awaited()
 

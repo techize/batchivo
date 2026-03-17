@@ -10,14 +10,10 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
 
-from app.main import app
-from app.models.external_listing import ExternalListing
 from app.models.product import Product
 from app.models.product_pricing import ProductPricing
 from app.models.sales_channel import SalesChannel
-from app.models.tenant import Tenant
 
 
 # ============================================================

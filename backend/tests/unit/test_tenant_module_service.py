@@ -1,8 +1,7 @@
 """Unit tests for TenantModuleService."""
 
 import pytest
-import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from app.models.tenant import Tenant, TenantType
@@ -275,7 +274,7 @@ class TestSetModuleEnabled:
         mock_db.execute.return_value = mock_result
 
         service = TenantModuleService(db=mock_db, user=mock_user)
-        result = await service.set_module_enabled(tenant_id, "spools", True)
+        await service.set_module_enabled(tenant_id, "spools", True)
 
         # Verify db.add was called (new module created)
         mock_db.add.assert_called_once()
@@ -301,7 +300,7 @@ class TestSetModuleEnabled:
         mock_db.execute.return_value = mock_result
 
         service = TenantModuleService(db=mock_db, user=mock_user)
-        result = await service.set_module_enabled(tenant_id, "spools", False)
+        await service.set_module_enabled(tenant_id, "spools", False)
 
         # Verify existing module was updated
         assert existing_module.enabled is False
@@ -377,7 +376,7 @@ class TestResetToDefaults:
         mock_db.execute.side_effect = [mock_tenant_result, mock_modules_result]
 
         service = TenantModuleService(db=mock_db, user=mock_user)
-        result = await service.reset_to_defaults(tenant_id)
+        await service.reset_to_defaults(tenant_id)
 
         # Verify all existing modules were deleted
         assert mock_db.delete.await_count == len(existing_modules)
@@ -427,7 +426,7 @@ class TestResetToDefaults:
 
         mock_db.add.side_effect = capture_add
 
-        result = await service.reset_to_defaults(tenant_id)
+        await service.reset_to_defaults(tenant_id)
 
         # Verify modules were created
         assert mock_db.add.call_count == len(ALL_MODULES)
@@ -468,7 +467,7 @@ class TestInitializeTenantModules:
         mock_db.execute.return_value = mock_result
 
         service = TenantModuleService(db=mock_db)
-        result = await service.initialize_tenant_modules(tenant_id)
+        await service.initialize_tenant_modules(tenant_id)
 
         assert result == existing_modules
         # reset_to_defaults should NOT have been called
@@ -500,7 +499,7 @@ class TestInitializeTenantModules:
         ]
 
         service = TenantModuleService(db=mock_db, user=mock_user)
-        result = await service.initialize_tenant_modules(tenant_id)
+        await service.initialize_tenant_modules(tenant_id)
 
         # Should have created modules for all ALL_MODULES
         assert mock_db.add.call_count == len(ALL_MODULES)
@@ -572,7 +571,6 @@ class TestGetModuleStatus:
     async def test_is_default_flag_accurate(self, mock_db, mock_tenant_3d_print):
         """Test that is_default flag correctly identifies default status."""
         tenant_id = mock_tenant_3d_print.id
-        defaults = DEFAULT_MODULES_BY_TYPE[TenantType.THREE_D_PRINT.value]
 
         # Tenant query
         mock_tenant_result = MagicMock()

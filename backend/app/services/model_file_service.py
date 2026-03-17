@@ -1,7 +1,6 @@
 """Model file service for managing 3D model files (STL, 3MF, gcode, etc.)."""
 
 import logging
-import os
 import uuid
 import zipfile
 from datetime import datetime

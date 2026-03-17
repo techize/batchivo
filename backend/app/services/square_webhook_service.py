@@ -14,11 +14,10 @@ import hmac
 import logging
 import traceback
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, update
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderStatus
@@ -350,7 +349,6 @@ class SquareWebhookService:
         currency = payment.get("amount_money", {}).get("currency", "GBP")
 
         # Extract error details from payment
-        errors = payment.get("processing_fee", {})  # Square sometimes puts errors here
         card_details = payment.get("card_details", {})
         error_code = card_details.get("errors", [{}])[0].get("code") if card_details.get(
             "errors"

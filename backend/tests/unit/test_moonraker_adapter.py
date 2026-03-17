@@ -5,7 +5,6 @@ import httpx
 import respx
 
 from app.services.moonraker_adapter import MoonrakerAdapter, MoonrakerConnectionConfig
-from app.services.printer_adapter import PrinterAdapterState
 
 
 BASE_URL = "http://192.168.1.100:7125"
