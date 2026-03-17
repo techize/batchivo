@@ -63,7 +63,7 @@ interface PrinterCardProps {
   printerId: string
 }
 
-export function PrinterCard({ printer, modelInfo, printerId }: PrinterCardProps) {
+export function PrinterCard({ printer, modelInfo }: PrinterCardProps) {
   const navigate = useNavigate()
   const [cancelOpen, setCancelOpen] = useState(false)
 

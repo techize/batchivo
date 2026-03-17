@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LayoutGrid, List, Printer as PrinterIcon, WifiOff, Plus } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
 import { listPrinters, listPrinterModels } from '@/lib/api/printers'
 import { usePrinterWebSocket } from '@/hooks/usePrinterWebSocket'
 import { PrinterFleetSummary } from './PrinterFleetSummary'
@@ -47,7 +46,7 @@ function useViewToggle() {
   })
   const toggle = (v: 'grid' | 'table') => {
     setView(v)
-    try { localStorage.setItem(VIEW_STORAGE_KEY, v) } catch {}
+    try { localStorage.setItem(VIEW_STORAGE_KEY, v) } catch { /* ignore storage errors */ }
   }
   return { view, toggle }
 }

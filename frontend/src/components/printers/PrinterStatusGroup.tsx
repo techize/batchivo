@@ -5,7 +5,7 @@
  * collapsed state to localStorage.
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PrinterCard } from './PrinterCard'
@@ -27,7 +27,7 @@ function useCollapsible(groupKey: string, defaultCollapsed = false) {
   const toggle = () => {
     setCollapsed((prev) => {
       const next = !prev
-      try { localStorage.setItem(storageKey, String(next)) } catch {}
+      try { localStorage.setItem(storageKey, String(next)) } catch { /* ignore storage errors */ }
       return next
     })
   }
