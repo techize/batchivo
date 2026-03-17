@@ -514,10 +514,21 @@ class TestTenantIsolation:
         """Test that files from other tenants are not accessible."""
         from app.models.model import Model
         from app.models.model_file import ModelFile
+        from app.models.tenant import Tenant
         from decimal import Decimal
 
+        # Create a separate tenant to own the other model (FK requires it)
+        other_tenant = Tenant(
+            id=uuid4(),
+            name="Other Tenant",
+            slug=f"other-tenant-{uuid4().hex[:8]}",
+            settings={},
+        )
+        db_session.add(other_tenant)
+        await db_session.flush()
+        other_tenant_id = other_tenant.id
+
         # Create a model for a different tenant
-        other_tenant_id = uuid4()
         other_model = Model(
             id=uuid4(),
             tenant_id=other_tenant_id,  # Different tenant!
