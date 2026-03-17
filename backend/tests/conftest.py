@@ -61,7 +61,7 @@ _IS_SQLITE = TEST_DATABASE_URL.startswith("sqlite")
 
 
 async def _drop_all_tables(conn, is_sqlite: bool):
-    """Drop all tables, handling PostgreSQL circular FKs with CASCADE."""
+    """Drop all tables and custom enum types, handling PostgreSQL circular FKs with CASCADE."""
     if is_sqlite:
         await conn.run_sync(Base.metadata.drop_all)
     else:
@@ -75,6 +75,20 @@ async def _drop_all_tables(conn, is_sqlite: bool):
         if tables:
             table_names = ", ".join(f'"{t[0]}"' for t in tables)
             await conn.execute(text(f"DROP TABLE IF EXISTS {table_names} CASCADE"))
+
+        # Drop custom PostgreSQL enum types — DROP TABLE does not remove them,
+        # so create_all on the next test would fail with "type already exists".
+        result = await conn.execute(
+            text(
+                "SELECT typname FROM pg_type"
+                " WHERE typtype = 'e'"
+                " AND typnamespace = ("
+                "   SELECT oid FROM pg_namespace WHERE nspname = 'public'"
+                " )"
+            )
+        )
+        for (enum_name,) in result.fetchall():
+            await conn.execute(text(f'DROP TYPE IF EXISTS "{enum_name}" CASCADE'))
 
 
 @pytest_asyncio.fixture(scope="function")
