@@ -80,12 +80,14 @@ async def _drop_all_tables(conn, is_sqlite: bool):
 @pytest_asyncio.fixture(scope="function")
 async def db_engine():
     """Create a test database engine (function-scoped for test isolation)."""
-    # SQLite needs check_same_thread=False, PostgreSQL doesn't use connect_args
-    connect_args = {"check_same_thread": False} if _IS_SQLITE else {}
+    # SQLite needs check_same_thread=False; PostgreSQL gets an explicit connect_timeout
+    connect_args = {"check_same_thread": False} if _IS_SQLITE else {"connect_timeout": 15}
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         connect_args=connect_args,
+        pool_timeout=30,
+        pool_pre_ping=True,
     )
 
     # Drop any existing tables first (important for PostgreSQL persistence)
