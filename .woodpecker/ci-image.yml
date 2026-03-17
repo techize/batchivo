@@ -1,0 +1,25 @@
+# Builds and pushes the CI test image (batchivo/ci-python:3.12).
+# Only runs when backend/Dockerfile.ci changes — keeps the image stable
+# between normal code pushes and avoids re-installing apt packages every run.
+
+when:
+  - event: push
+    branch: main
+    path:
+      - 'backend/Dockerfile.ci'
+
+steps:
+  build-ci-image:
+    image: plugins/kaniko
+    settings:
+      repo: registry.techize.co.uk/batchivo/ci-python
+      dockerfile: backend/Dockerfile.ci
+      context: backend
+      tags:
+        - "3.12"
+        - latest
+      registry: registry.techize.co.uk
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password

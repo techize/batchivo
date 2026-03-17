@@ -27,8 +27,10 @@ when:
 variables:
   - &proxy_cache registry.techize.co.uk/dockerhub-cache
   - &python_image registry.techize.co.uk/dockerhub-cache/python:3.12-slim
+  - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
   - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
   - &registry registry.techize.co.uk
+  - &trivy_image aquasec/trivy:0.55.0
 
 services:
   postgres:
@@ -45,7 +47,7 @@ steps:
   # Dependency Vulnerability Scanning (parallel)
   # ============================================
   scan-deps-backend:
-    image: aquasec/trivy:latest
+    image: *trivy_image
     commands:
       # Report vulnerabilities but do not block on pre-existing unfixed deps.
       # --ignore-unfixed: only flag CVEs that have a known fix available.
@@ -55,7 +57,7 @@ steps:
       - echo "Backend dependencies scan complete"
 
   scan-deps-frontend:
-    image: aquasec/trivy:latest
+    image: *trivy_image
     commands:
       - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln frontend/ || true
       - trivy fs --severity HIGH,CRITICAL --exit-code 0 --scanners vuln frontend/
@@ -65,7 +67,7 @@ steps:
   # Backend: Lint + Test (single step, 4 workers)
   # ============================================
   backend:
-    image: *python_image
+    image: *ci_python_image
     depends_on:
       - scan-deps-backend
     volumes:
@@ -81,7 +83,6 @@ steps:
       - echo "=== Installing dependencies ==="
       - poetry install --no-interaction --quiet --extras dev
       - echo "=== Creating worker databases for parallel tests ==="
-      - apt-get update -qq && apt-get install -y -qq postgresql-client > /dev/null
       - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i" 2>/dev/null || true; done
       - echo "=== Running linters ==="
       - poetry run ruff check .
@@ -153,7 +154,7 @@ steps:
   # Requires both builds AND tests to pass
   # ============================================
   scan-backend:
-    image: aquasec/trivy:latest
+    image: *trivy_image
     depends_on:
       - build-backend
       - backend
@@ -168,7 +169,7 @@ steps:
       - echo "Backend security scan passed"
 
   scan-frontend:
-    image: aquasec/trivy:latest
+    image: *trivy_image
     depends_on:
       - build-frontend
       - frontend
@@ -231,19 +232,17 @@ steps:
       - deploy-staging
     commands:
       - apk add --no-cache curl
-      - echo "Waiting 30s for staging deployment to roll out..."
-      - sleep 30
-      - echo "Checking staging health..."
+      - echo "Polling staging health (up to 60s, every 5s)..."
       - |
-        for i in $(seq 1 5); do
+        for i in $(seq 1 12); do
           if curl -sf https://staging.batchivo.com/health | grep -q '"status":"healthy"'; then
-            echo "Staging health check passed!"
+            echo "Staging health check passed on attempt $i!"
             exit 0
           fi
-          echo "Health check attempt $i failed, waiting 5s..."
+          echo "Attempt $i/12 - not ready yet, waiting 5s..."
           sleep 5
         done
-        echo "WARNING: Staging health check failed - DNS may not be configured yet"
+        echo "WARNING: Staging health check failed after 60s - DNS may not be configured yet"
         echo "Proceeding to production deployment anyway..."
         exit 0
 
