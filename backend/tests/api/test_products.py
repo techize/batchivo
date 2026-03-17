@@ -940,6 +940,77 @@ class TestProductImages:
         assert response.status_code == 404
 
 
+class TestImportImageFromUrl:
+    """Tests for POST /products/{id}/images/import-url."""
+
+    async def test_rejects_http_url(self, client: AsyncClient, test_product: Product):
+        """Only HTTPS URLs should be accepted."""
+        resp = await client.post(
+            f"/api/v1/products/{test_product.id}/images/import-url",
+            json={"url": "http://example.com/image.jpg"},
+        )
+        assert resp.status_code == 400
+        assert "HTTPS" in resp.json()["detail"]
+
+    async def test_rejects_private_ip_url(self, client: AsyncClient, test_product: Product):
+        """Private-IP URLs should be blocked (SSRF guard)."""
+        resp = await client.post(
+            f"/api/v1/products/{test_product.id}/images/import-url",
+            json={"url": "https://192.168.1.1/image.jpg"},
+        )
+        assert resp.status_code == 400
+
+    async def test_product_not_found(self, client: AsyncClient):
+        """Returns 404 for unknown product."""
+        resp = await client.post(
+            f"/api/v1/products/{uuid4()}/images/import-url",
+            json={"url": "https://example.com/image.jpg"},
+        )
+        assert resp.status_code == 404
+
+    async def test_import_success(self, client: AsyncClient, test_product: Product):
+        """Successful URL import stores image and returns ProductImageResponse."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        fake_image_bytes = b"\xff\xd8\xff\xe0" + b"\x00" * 100
+
+        mock_resp = MagicMock()
+        mock_resp.content = fake_image_bytes
+        mock_resp.headers = {"content-type": "image/jpeg"}
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_http = AsyncMock()
+        mock_http.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_http.__aexit__ = AsyncMock(return_value=None)
+        mock_http.get = AsyncMock(return_value=mock_resp)
+
+        storage_result = {
+            "image_url": "/api/v1/shop/images/test.jpg",
+            "thumbnail_url": "/api/v1/shop/images/thumb_test.jpg",
+            "file_size": len(fake_image_bytes),
+            "content_type": "image/jpeg",
+        }
+
+        with (
+            patch("app.api.v1.products.httpx.AsyncClient", return_value=mock_http),
+            patch("app.api.v1.products._is_private_ip", return_value=False),
+            patch(
+                "app.services.image_storage.ImageStorage.save_image",
+                new_callable=AsyncMock,
+                return_value=storage_result,
+            ),
+        ):
+            resp = await client.post(
+                f"/api/v1/products/{test_product.id}/images/import-url",
+                json={"url": "https://cdn.example.com/product.jpg", "alt_text": "Test", "is_primary": True},
+            )
+
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["alt_text"] == "Test"
+        assert data["is_primary"] is True
+
+
 class TestProductEdgeCases:
     """Tests for edge cases and validation."""
 

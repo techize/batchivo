@@ -49,3 +49,11 @@ class ProductImageListResponse(BaseModel):
 
     images: list[ProductImageResponse]
     total: int
+
+
+class ImportImageFromUrlRequest(BaseModel):
+    """Request schema for importing a product image from a remote URL."""
+
+    url: str = Field(..., description="Remote image URL to fetch (HTTPS only)")
+    alt_text: str = Field(default="", max_length=255, description="Alt text for accessibility")
+    is_primary: bool = Field(False, description="Set as primary image")

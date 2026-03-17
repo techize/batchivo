@@ -4,6 +4,10 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
+import ipaddress
+import socket
+
+import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +43,7 @@ from app.schemas.product import (
     ProductVariantUpdate,
 )
 from app.schemas.product_image import (
+    ImportImageFromUrlRequest,
     ProductImageResponse,
     ProductImageUpdate,
     ProductImageListResponse,
@@ -1313,6 +1318,106 @@ async def upload_product_image(
         content_type=storage_result["content_type"],
     )
 
+    db.add(image)
+    await db.commit()
+    await db.refresh(image)
+
+    return ProductImageResponse.model_validate(image)
+
+
+def _is_private_ip(hostname: str) -> bool:
+    """Return True if the hostname resolves to a private/loopback IP (SSRF guard)."""
+    try:
+        addr = ipaddress.ip_address(socket.gethostbyname(hostname))
+        return addr.is_private or addr.is_loopback or addr.is_link_local
+    except Exception:
+        return True
+
+
+@router.post(
+    "/{product_id}/images/import-url",
+    response_model=ProductImageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def import_product_image_from_url(
+    product_id: UUID,
+    body: ImportImageFromUrlRequest,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: AsyncSession = Depends(get_db),
+    image_storage: ImageStorage = Depends(get_image_storage),
+) -> ProductImageResponse:
+    """
+    Import a product image by fetching it from a remote URL.
+
+    Useful for intake pipelines (e.g. Telegram bot photo URLs).
+    Only HTTPS URLs are accepted. Private/loopback IPs are blocked.
+    """
+    from urllib.parse import urlparse
+
+    parsed = urlparse(body.url)
+    if parsed.scheme != "https":
+        raise HTTPException(status_code=400, detail="Only HTTPS URLs are accepted")
+    if not parsed.hostname or _is_private_ip(parsed.hostname):
+        raise HTTPException(status_code=400, detail="URL resolves to a private or disallowed host")
+
+    product = await db.get(Product, product_id)
+    if not product or product.tenant_id != tenant.id:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            resp = await client.get(body.url)
+            resp.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch image: {exc}") from exc
+
+    content = resp.content
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image exceeds 10 MB limit")
+
+    content_type = resp.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+    filename = parsed.path.rstrip("/").split("/")[-1] or "import.jpg"
+
+    try:
+        storage_result = await image_storage.save_image(
+            file_content=content,
+            content_type=content_type,
+            product_id=str(product_id),
+            original_filename=filename,
+        )
+    except ImageStorageError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    max_order = await db.scalar(
+        select(func.coalesce(func.max(ProductImage.display_order), -1)).where(
+            ProductImage.product_id == product_id
+        )
+    )
+    existing_count = await db.scalar(
+        select(func.count()).where(ProductImage.product_id == product_id)
+    )
+    is_primary = body.is_primary or existing_count == 0
+
+    if is_primary:
+        # Clear existing primary flag
+        await db.execute(
+            select(ProductImage)
+            .where(ProductImage.product_id == product_id, ProductImage.is_primary.is_(True))
+        )
+
+    image = ProductImage(
+        tenant_id=tenant.id,
+        product_id=product_id,
+        image_url=storage_result["image_url"],
+        thumbnail_url=storage_result["thumbnail_url"],
+        alt_text=body.alt_text,
+        display_order=(max_order or -1) + 1,
+        is_primary=is_primary,
+        original_filename=filename,
+        file_size=storage_result["file_size"],
+        content_type=storage_result["content_type"],
+    )
     db.add(image)
     await db.commit()
     await db.refresh(image)
