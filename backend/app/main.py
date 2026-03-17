@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     description="3D Print Business Management Platform",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.is_development else None,  # Disable in production
     redoc_url="/redoc" if settings.is_development else None,
@@ -129,7 +129,7 @@ async def root():
     """Root endpoint - API information."""
     return {
         "name": settings.app_name,
-        "version": "0.1.0",
+        "version": "0.2.0",
         "environment": settings.environment,
         "docs": "/docs" if settings.is_development else "disabled",
     }
