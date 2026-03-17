@@ -72,9 +72,8 @@ steps:
     image: *python_image
     depends_on:
       - scan-deps-backend
-    volumes:
-      - /cache/batchivo/pip:/root/.cache/pip
-      - /cache/batchivo/poetry:/root/.cache/pypoetry
+    # volumes disabled: Woodpecker agent next-bef0abaa4a has a DNS name bug for
+    # hostPath volumes (/ prefix → leading hyphen = invalid). Re-enable once patched.
     environment:
       DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
       SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
@@ -100,12 +99,11 @@ steps:
     image: *node_image
     depends_on:
       - scan-deps-frontend
-    volumes:
-      - /cache/batchivo/npm:/root/.npm
+    # volumes disabled: same Woodpecker agent DNS name bug as backend step above
     commands:
       - cd frontend
       - echo "=== Installing dependencies ==="
-      - npm ci --prefer-offline --silent
+      - npm ci --silent
       - echo "=== Running linters ==="
       - npm run lint
       - npm run typecheck
@@ -287,4 +285,4 @@ steps:
         done
         echo "Failed after 3 attempts"
         exit 1
-# Note: volumes enabled — repo trust updated 2026-03-17 (see MYS-52)
+# Note: volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
