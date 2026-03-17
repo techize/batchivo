@@ -74,7 +74,7 @@ steps:
       - cd backend
       - pip install --quiet poetry
       - echo "=== Installing dependencies ==="
-      - poetry install --no-interaction --quiet
+      - poetry install --no-interaction --quiet --extras dev
       - echo "=== Creating worker databases for parallel tests ==="
       - apt-get update -qq && apt-get install -y -qq postgresql-client > /dev/null
       - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i" 2>/dev/null || true; done
