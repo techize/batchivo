@@ -67,7 +67,9 @@ steps:
   # Backend: Lint + Test (single step, 4 workers)
   # ============================================
   backend:
-    image: *ci_python_image
+    # TODO: switch to *ci_python_image once registry.techize.co.uk/batchivo/ci-python:3.12
+    # has been built by ci-image.yml (bootstrap: image didn't exist before this push)
+    image: *python_image
     depends_on:
       - scan-deps-backend
     # volumes disabled: Woodpecker agent next-bef0abaa4a has a DNS name bug for
