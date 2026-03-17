@@ -23,43 +23,65 @@ depends_on = None
 def upgrade() -> None:
     op.add_column(
         "products",
-        sa.Column("tags", postgresql.ARRAY(sa.String()), server_default="{}", nullable=True,
-                  comment="Keyword tags for Shopify/Etsy discoverability"),
+        sa.Column(
+            "tags",
+            postgresql.ARRAY(sa.String()),
+            server_default="{}",
+            nullable=True,
+            comment="Keyword tags for Shopify/Etsy discoverability",
+        ),
     )
     op.add_column(
         "products",
-        sa.Column("product_type", sa.String(100), nullable=True,
-                  comment="Product type for Shopify product_type field (e.g. '3D Print')"),
+        sa.Column(
+            "product_type",
+            sa.String(100),
+            nullable=True,
+            comment="Product type for Shopify product_type field (e.g. '3D Print')",
+        ),
     )
     op.add_column(
         "products",
-        sa.Column("seo_slug", sa.String(200), nullable=True,
-                  comment="URL-friendly handle for canonical URLs"),
+        sa.Column(
+            "seo_slug",
+            sa.String(200),
+            nullable=True,
+            comment="URL-friendly handle for canonical URLs",
+        ),
     )
     op.add_column(
         "products",
-        sa.Column("seo_title", sa.String(200), nullable=True,
-                  comment="SEO meta title (≤60 chars)"),
+        sa.Column("seo_title", sa.String(200), nullable=True, comment="SEO meta title (≤60 chars)"),
     )
     op.add_column(
         "products",
-        sa.Column("seo_description", sa.String(300), nullable=True,
-                  comment="SEO meta description (≤155 chars)"),
+        sa.Column(
+            "seo_description",
+            sa.String(300),
+            nullable=True,
+            comment="SEO meta description (≤155 chars)",
+        ),
     )
     op.add_column(
         "products",
-        sa.Column("material", sa.String(100), nullable=True,
-                  comment="Primary material (e.g. 'PLA')"),
+        sa.Column(
+            "material", sa.String(100), nullable=True, comment="Primary material (e.g. 'PLA')"
+        ),
     )
     op.add_column(
         "products",
-        sa.Column("colour_options", postgresql.ARRAY(sa.String()), nullable=True,
-                  comment="Available filament colour options"),
+        sa.Column(
+            "colour_options",
+            postgresql.ARRAY(sa.String()),
+            nullable=True,
+            comment="Available filament colour options",
+        ),
     )
     op.add_column(
         "products",
-        sa.Column("etsy_taxonomy_id", sa.Integer(), nullable=True,
-                  comment="Etsy taxonomy integer ID"),
+        sa.Column(
+            "etsy_taxonomy_id", sa.Integer(), nullable=True, comment="Etsy taxonomy integer ID"
+        ),
     )
     op.create_index("ix_products_seo_slug", "products", ["seo_slug"])
 

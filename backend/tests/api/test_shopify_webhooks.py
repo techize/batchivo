@@ -32,9 +32,7 @@ SAMPLE_ORDER_PAYLOAD = {
     "currency": "GBP",
     "subtotal_price": "29.99",
     "total_price": "32.99",
-    "total_shipping_price_set": {
-        "shop_money": {"amount": "3.00", "currency_code": "GBP"}
-    },
+    "total_shipping_price_set": {"shop_money": {"amount": "3.00", "currency_code": "GBP"}},
     "payment_gateway": "shopify_payments",
     "note": "Please pack carefully",
     "discount_codes": [{"code": "WELCOME10", "amount": "3.00", "type": "fixed_amount"}],

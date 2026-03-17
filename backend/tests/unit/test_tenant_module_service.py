@@ -164,9 +164,7 @@ class TestGetEnabledModules:
         assert "printers" not in result  # Disabled
 
     @pytest.mark.asyncio
-    async def test_returns_defaults_when_no_config_exists(
-        self, mock_db, mock_tenant_3d_print
-    ):
+    async def test_returns_defaults_when_no_config_exists(self, mock_db, mock_tenant_3d_print):
         """Test that defaults are returned when tenant has no module config."""
         tenant_id = mock_tenant_3d_print.id
 
@@ -401,9 +399,7 @@ class TestResetToDefaults:
             await service.reset_to_defaults(tenant_id)
 
     @pytest.mark.asyncio
-    async def test_defaults_match_tenant_type(
-        self, mock_db, mock_user, mock_tenant_knitting
-    ):
+    async def test_defaults_match_tenant_type(self, mock_db, mock_user, mock_tenant_knitting):
         """Test that correct defaults are set based on tenant type."""
         tenant_id = mock_tenant_knitting.id
 
@@ -451,9 +447,7 @@ class TestInitializeTenantModules:
     """Tests for initialize_tenant_modules method."""
 
     @pytest.mark.asyncio
-    async def test_returns_existing_if_already_initialized(
-        self, mock_db, mock_tenant_3d_print
-    ):
+    async def test_returns_existing_if_already_initialized(self, mock_db, mock_tenant_3d_print):
         """Test that existing config is returned if already initialized."""
         tenant_id = mock_tenant_3d_print.id
 
@@ -514,9 +508,7 @@ class TestGetModuleStatus:
     """Tests for get_module_status method."""
 
     @pytest.mark.asyncio
-    async def test_returns_status_for_all_modules(
-        self, mock_db, mock_tenant_3d_print
-    ):
+    async def test_returns_status_for_all_modules(self, mock_db, mock_tenant_3d_print):
         """Test that status is returned for all modules."""
         tenant_id = mock_tenant_3d_print.id
 
@@ -580,7 +572,7 @@ class TestGetModuleStatus:
         # models is also default-enabled, we'll leave it enabled
         configured_modules = [
             create_mock_tenant_module(tenant_id, "spools", False),  # Changed from default
-            create_mock_tenant_module(tenant_id, "models", True),   # Same as default
+            create_mock_tenant_module(tenant_id, "models", True),  # Same as default
         ]
 
         mock_modules_result = MagicMock()
@@ -608,7 +600,15 @@ class TestDefaultModuleConfigurations:
 
     def test_all_modules_list_contains_expected_modules(self):
         """Test that ALL_MODULES contains expected modules."""
-        expected = ["spools", "models", "printers", "production", "products", "orders", "categories"]
+        expected = [
+            "spools",
+            "models",
+            "printers",
+            "production",
+            "products",
+            "orders",
+            "categories",
+        ]
         for module in expected:
             assert module in ALL_MODULES, f"Expected module '{module}' in ALL_MODULES"
 

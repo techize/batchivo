@@ -32,6 +32,7 @@ POLL_INTERVAL = 15  # seconds between polls for non-Bambu printers
 # Connection manager
 # ---------------------------------------------------------------------------
 
+
 class PrinterWSManager:
     """Tracks active WebSocket connections per tenant."""
 
@@ -42,7 +43,9 @@ class PrinterWSManager:
     async def connect(self, ws: WebSocket, tenant_id: UUID) -> None:
         await ws.accept()
         self._connections.setdefault(tenant_id, []).append(ws)
-        logger.debug("WS connected: tenant=%s total=%d", tenant_id, len(self._connections[tenant_id]))
+        logger.debug(
+            "WS connected: tenant=%s total=%d", tenant_id, len(self._connections[tenant_id])
+        )
 
     def disconnect(self, ws: WebSocket, tenant_id: UUID) -> None:
         conns = self._connections.get(tenant_id, [])
@@ -74,6 +77,7 @@ manager = PrinterWSManager()
 # State helpers
 # ---------------------------------------------------------------------------
 
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -103,8 +107,7 @@ async def _build_printer_live_states(tenant_id: UUID) -> list[dict]:
 
         # Prefetch connections
         conn_result = await db.execute(
-            select(PrinterConnection)
-            .where(PrinterConnection.tenant_id == tenant_id)
+            select(PrinterConnection).where(PrinterConnection.tenant_id == tenant_id)
         )
         connections_by_printer: dict[UUID, PrinterConnection] = {
             c.printer_id: c for c in conn_result.scalars().all()
@@ -157,13 +160,15 @@ async def _get_printer_state(
             adapter = MoonrakerAdapter(cfg)
             adapter_state = await adapter.get_status()
 
-            base.update({
-                "status": adapter_state.status,
-                "job_name": adapter_state.job_name,
-                "progress_percent": adapter_state.progress_percent,
-                "eta_seconds": adapter_state.eta_seconds,
-                "last_seen_at": _now_iso() if adapter_state.status != "offline" else None,
-            })
+            base.update(
+                {
+                    "status": adapter_state.status,
+                    "job_name": adapter_state.job_name,
+                    "progress_percent": adapter_state.progress_percent,
+                    "eta_seconds": adapter_state.eta_seconds,
+                    "last_seen_at": _now_iso() if adapter_state.status != "offline" else None,
+                }
+            )
 
             # For U1 (toolhead changer), query active toolhead
             if model_info and model_info.has_toolhead_changer and adapter_state.status != "offline":
@@ -190,6 +195,7 @@ def _get_bambu_state(conn: PrinterConnection) -> Optional[dict]:
         return None
     try:
         from app.services.bambu_mqtt import BambuMQTTService  # noqa: F401
+
         # The global singleton is available via the module; if it's not started
         # we just return None (offline).
         # This is a best-effort integration for Sprint 1.
@@ -215,6 +221,7 @@ def _states_changed(old: list[dict], new: list[dict]) -> bool:
 # ---------------------------------------------------------------------------
 # WebSocket endpoint
 # ---------------------------------------------------------------------------
+
 
 def _verify_ws_token(token: str) -> Optional[UUID]:
     """

@@ -176,13 +176,25 @@ class ProductBase(BaseModel):
     size_cm: Optional[Decimal] = Field(None, ge=0, description="Product size/length in centimeters")
     print_time_hours: Optional[Decimal] = Field(None, ge=0, description="Print time in hours")
     # Multi-channel publishing fields
-    tags: list[str] = Field(default_factory=list, description="Keyword tags for Shopify/Etsy discoverability")
-    product_type: Optional[str] = Field(None, max_length=100, description="Product type (e.g. '3D Print') for Shopify")
-    seo_slug: Optional[str] = Field(None, max_length=200, description="URL-friendly handle (auto-generated from name if null)")
+    tags: list[str] = Field(
+        default_factory=list, description="Keyword tags for Shopify/Etsy discoverability"
+    )
+    product_type: Optional[str] = Field(
+        None, max_length=100, description="Product type (e.g. '3D Print') for Shopify"
+    )
+    seo_slug: Optional[str] = Field(
+        None, max_length=200, description="URL-friendly handle (auto-generated from name if null)"
+    )
     seo_title: Optional[str] = Field(None, max_length=200, description="SEO meta title (≤60 chars)")
-    seo_description: Optional[str] = Field(None, max_length=300, description="SEO meta description (≤155 chars)")
-    material: Optional[str] = Field(None, max_length=100, description="Primary material (e.g. 'PLA')")
-    colour_options: list[str] = Field(default_factory=list, description="Available filament colour options")
+    seo_description: Optional[str] = Field(
+        None, max_length=300, description="SEO meta description (≤155 chars)"
+    )
+    material: Optional[str] = Field(
+        None, max_length=100, description="Primary material (e.g. 'PLA')"
+    )
+    colour_options: list[str] = Field(
+        default_factory=list, description="Available filament colour options"
+    )
     etsy_taxonomy_id: Optional[int] = Field(None, description="Etsy taxonomy integer ID")
 
 
@@ -331,15 +343,27 @@ class ProductListResponse(BaseModel):
 class ProductVariantBase(BaseModel):
     """Fields shared by create and update."""
 
-    size: str = Field(..., min_length=1, max_length=50, description="Size label (e.g. Small, M, XL)")
+    size: str = Field(
+        ..., min_length=1, max_length=50, description="Size label (e.g. Small, M, XL)"
+    )
     display_order: int = Field(0, ge=0, description="Sort order (lower = first)")
-    sku: Optional[str] = Field(None, max_length=120, description="Variant SKU (auto-generated if omitted)")
+    sku: Optional[str] = Field(
+        None, max_length=120, description="Variant SKU (auto-generated if omitted)"
+    )
     price_adjustment_pence: int = Field(0, description="Price adjustment from base price in pence")
     units_in_stock: int = Field(0, ge=0, description="Units held in stock")
-    fulfilment_type: FulfilmentType = Field(FulfilmentType.STOCK, description="stock or print_to_order")
-    lead_time_days: Optional[int] = Field(None, ge=1, description="Days to dispatch (print-to-order only)")
-    material_cost_pence: Optional[int] = Field(None, ge=0, description="Filament cost for this size in pence")
-    print_time_hours: Optional[Decimal] = Field(None, ge=0, description="Estimated print time in hours")
+    fulfilment_type: FulfilmentType = Field(
+        FulfilmentType.STOCK, description="stock or print_to_order"
+    )
+    lead_time_days: Optional[int] = Field(
+        None, ge=1, description="Days to dispatch (print-to-order only)"
+    )
+    material_cost_pence: Optional[int] = Field(
+        None, ge=0, description="Filament cost for this size in pence"
+    )
+    print_time_hours: Optional[Decimal] = Field(
+        None, ge=0, description="Estimated print time in hours"
+    )
     is_active: bool = Field(True, description="Whether this variant is available for sale")
 
 

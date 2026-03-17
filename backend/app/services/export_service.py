@@ -175,9 +175,7 @@ class ExportService:
                 for i, variant in enumerate(active_variants):
                     variant_price = base_price + Decimal(variant.price_adjustment_pence) / 100
                     # Shopify inventory policy: deny if stock, continue if PTO
-                    inventory_policy = (
-                        "deny" if variant.fulfilment_type == "stock" else "continue"
-                    )
+                    inventory_policy = "deny" if variant.fulfilment_type == "stock" else "continue"
                     row = {
                         **product_fields,
                         "Option1 Name": "Size",

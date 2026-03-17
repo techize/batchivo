@@ -166,7 +166,7 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
         Tenant if found, None otherwise
     """
     hostname = hostname.split(":")[0].lower()
-    
+
     # Normalize: try both with and without www
     hostnames_to_try = [hostname]
     if hostname.startswith("www."):
@@ -190,11 +190,12 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
             # PostgreSQL uses jsonb_extract_path_text
             result = await db.execute(
                 select(Tenant).where(
-                    func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain") == check_hostname,
+                    func.jsonb_extract_path_text(Tenant.settings, "shop", "custom_domain")
+                    == check_hostname,
                     Tenant.is_active.is_(True),
                 )
             )
-        
+
         tenant = result.scalar_one_or_none()
         if tenant:
             return tenant
@@ -205,14 +206,16 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
         for check_hostname in hostnames_to_try:
             result = await db.execute(
                 select(Tenant).where(
-                    Tenant.settings["shop"]["additional_domains"].astext.contains(f'"{check_hostname}"'),
+                    Tenant.settings["shop"]["additional_domains"].astext.contains(
+                        f'"{check_hostname}"'
+                    ),
                     Tenant.is_active.is_(True),
                 )
             )
             tenant = result.scalar_one_or_none()
             if tenant:
                 return tenant
-    
+
     return None
 
 

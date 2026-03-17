@@ -458,7 +458,9 @@ class EtsySyncService:
                     "sku": variant.sku or f"{product.sku}-{variant.size}",
                     "size": variant.size,
                     "price": variant_price,
-                    "quantity": variant.units_in_stock if variant.fulfilment_type == "stock" else 999,
+                    "quantity": variant.units_in_stock
+                    if variant.fulfilment_type == "stock"
+                    else 999,
                     "property_values": [
                         {
                             "property_id": ETSY_SIZE_PROPERTY_ID,

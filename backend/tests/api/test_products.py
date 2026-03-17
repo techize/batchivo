@@ -1002,7 +1002,11 @@ class TestImportImageFromUrl:
         ):
             resp = await client.post(
                 f"/api/v1/products/{test_product.id}/images/import-url",
-                json={"url": "https://cdn.example.com/product.jpg", "alt_text": "Test", "is_primary": True},
+                json={
+                    "url": "https://cdn.example.com/product.jpg",
+                    "alt_text": "Test",
+                    "is_primary": True,
+                },
             )
 
         assert resp.status_code == 201
@@ -1127,9 +1131,7 @@ class TestProductEdgeCases:
 
 
 @pytest_asyncio.fixture
-async def test_variant(
-    db_session: AsyncSession, test_product: Product
-) -> ProductVariant:
+async def test_variant(db_session: AsyncSession, test_product: Product) -> ProductVariant:
     """Create a test product variant."""
     variant = ProductVariant(
         id=uuid4(),
@@ -1155,9 +1157,7 @@ async def test_variant(
 class TestProductVariantEndpoints:
     """Tests for /api/v1/products/{id}/variants CRUD."""
 
-    async def test_list_variants_empty(
-        self, client: AsyncClient, test_product: Product
-    ):
+    async def test_list_variants_empty(self, client: AsyncClient, test_product: Product):
         """GET variants returns empty list when none exist."""
         response = await client.get(f"/api/v1/products/{test_product.id}/variants")
         assert response.status_code == 200
@@ -1180,9 +1180,7 @@ class TestProductVariantEndpoints:
         response = await client.get(f"/api/v1/products/{uuid4()}/variants")
         assert response.status_code == 404
 
-    async def test_create_variant_stock(
-        self, client: AsyncClient, test_product: Product
-    ):
+    async def test_create_variant_stock(self, client: AsyncClient, test_product: Product):
         """POST creates a stock variant with auto-generated SKU."""
         payload = {
             "size": "Medium",
@@ -1205,9 +1203,7 @@ class TestProductVariantEndpoints:
         assert data["units_in_stock"] == 10
         assert data["lead_time_days"] is None
 
-    async def test_create_variant_print_to_order(
-        self, client: AsyncClient, test_product: Product
-    ):
+    async def test_create_variant_print_to_order(self, client: AsyncClient, test_product: Product):
         """POST creates a print-to-order variant."""
         payload = {
             "size": "XL",
@@ -1229,9 +1225,7 @@ class TestProductVariantEndpoints:
         assert data["lead_time_days"] == 7
         assert data["sku"] == f"{test_product.sku}-XL"
 
-    async def test_create_variant_custom_sku(
-        self, client: AsyncClient, test_product: Product
-    ):
+    async def test_create_variant_custom_sku(self, client: AsyncClient, test_product: Product):
         """POST respects explicitly provided SKU."""
         payload = {
             "size": "Large",
@@ -1287,9 +1281,7 @@ class TestProductVariantEndpoints:
         assert data["fulfilment_type"] == "print_to_order"
         assert data["lead_time_days"] == 5
 
-    async def test_update_variant_not_found(
-        self, client: AsyncClient, test_product: Product
-    ):
+    async def test_update_variant_not_found(self, client: AsyncClient, test_product: Product):
         """PUT returns 404 for unknown variant."""
         response = await client.put(
             f"/api/v1/products/{test_product.id}/variants/{uuid4()}",
@@ -1310,25 +1302,18 @@ class TestProductVariantEndpoints:
         assert response.status_code == 204
 
         # Confirm gone
-        list_response = await client.get(
-            f"/api/v1/products/{test_product.id}/variants"
-        )
+        list_response = await client.get(f"/api/v1/products/{test_product.id}/variants")
         assert list_response.json() == []
 
-    async def test_delete_variant_not_found(
-        self, client: AsyncClient, test_product: Product
-    ):
+    async def test_delete_variant_not_found(self, client: AsyncClient, test_product: Product):
         """DELETE returns 404 for unknown variant."""
-        response = await client.delete(
-            f"/api/v1/products/{test_product.id}/variants/{uuid4()}"
-        )
+        response = await client.delete(f"/api/v1/products/{test_product.id}/variants/{uuid4()}")
         assert response.status_code == 404
 
-    async def test_create_variant_requires_auth(
-        self, test_product: Product
-    ):
+    async def test_create_variant_requires_auth(self, test_product: Product):
         """POST requires authentication (401 without token)."""
         from httpx import AsyncClient as RawClient
+
         async with RawClient(base_url="http://test") as anon_client:
             response = await anon_client.post(
                 f"/api/v1/products/{test_product.id}/variants",

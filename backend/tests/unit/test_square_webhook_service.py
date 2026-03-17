@@ -146,9 +146,7 @@ def create_payment_failed_event(
                     "status": "FAILED",
                     "amount_money": {"amount": 5000, "currency": "GBP"},
                     "errors": [{"code": error_code, "detail": error_detail}],
-                    "card_details": {
-                        "errors": [{"code": error_code, "detail": error_detail}]
-                    },
+                    "card_details": {"errors": [{"code": error_code, "detail": error_detail}]},
                 }
             }
         },
@@ -611,15 +609,15 @@ class TestRetryLogic:
     def test_exponential_backoff_calculation(self):
         """Test exponential backoff delay calculation."""
         # Attempt 1: base delay
-        delay_1 = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER ** 0)
+        delay_1 = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER**0)
         assert delay_1 == RETRY_BACKOFF_BASE
 
         # Attempt 2: doubled
-        delay_2 = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER ** 1)
+        delay_2 = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER**1)
         assert delay_2 == RETRY_BACKOFF_BASE * 2
 
         # Attempt 3: quadrupled
-        delay_3 = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER ** 2)
+        delay_3 = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER**2)
         assert delay_3 == RETRY_BACKOFF_BASE * 4
 
 
@@ -645,9 +643,7 @@ class TestDeadLetterQueue:
         webhook_event.first_received_at = datetime.now(timezone.utc)
         webhook_event.error_details = {"traceback": "test"}
 
-        await webhook_service._handle_failure(
-            webhook_event, "Permanent failure", "Traceback here"
-        )
+        await webhook_service._handle_failure(webhook_event, "Permanent failure", "Traceback here")
 
         # Verify dead letter record was created
         mock_db.add.assert_called()

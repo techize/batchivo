@@ -88,7 +88,9 @@ class TestShopifySyncService:
                 service._get_credentials()
 
     @pytest.mark.asyncio
-    async def test_build_product_payload_single_variant(self, db_session, test_tenant, shop_product):
+    async def test_build_product_payload_single_variant(
+        self, db_session, test_tenant, shop_product
+    ):
         """Verify payload structure for a product with no size variants."""
         from app.services.shopify_sync import ShopifySyncService
 
@@ -104,6 +106,7 @@ class TestShopifySyncService:
             # Fetch fresh product with relationships
             from sqlalchemy import select
             from sqlalchemy.orm import selectinload
+
             result = await db_session.execute(
                 select(Product)
                 .where(Product.id == product_id)
@@ -127,7 +130,9 @@ class TestShopifySyncService:
         assert payload["product"]["variants"][0]["inventory_policy"] == "continue"  # print_to_order
 
     @pytest.mark.asyncio
-    async def test_get_listing_for_product_returns_none_when_missing(self, db_session, test_tenant, shop_product):
+    async def test_get_listing_for_product_returns_none_when_missing(
+        self, db_session, test_tenant, shop_product
+    ):
         from app.services.shopify_sync import ShopifySyncService
 
         product_id, tenant_id = shop_product
@@ -146,7 +151,9 @@ class TestShopifySyncEndpoints:
     """Integration-style tests against the API endpoints (mocked HTTP)."""
 
     @pytest.mark.asyncio
-    async def test_sync_shopify_success(self, client, db_session, test_tenant, shop_product, auth_headers):
+    async def test_sync_shopify_success(
+        self, client, db_session, test_tenant, shop_product, auth_headers
+    ):
         """POST /sync/shopify creates a listing when Shopify returns 201."""
         product_id, _ = shop_product
 
@@ -227,7 +234,7 @@ class TestShopifySyncEndpoints:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["shop"]["synced"] is True   # shop_visible=True
+        assert data["shop"]["synced"] is True  # shop_visible=True
         assert data["shopify"]["synced"] is False
         assert data["etsy"]["synced"] is False
 

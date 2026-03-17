@@ -81,9 +81,7 @@ class TestMoonrakerAdapterOffline:
     async def test_server_error_returns_offline(self):
         adapter = MoonrakerAdapter(_config())
         with respx.mock:
-            respx.get(f"{BASE_URL}/printer/objects/query").mock(
-                return_value=httpx.Response(500)
-            )
+            respx.get(f"{BASE_URL}/printer/objects/query").mock(return_value=httpx.Response(500))
             state = await adapter.get_status()
         assert state.status == "offline"
 

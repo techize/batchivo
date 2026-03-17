@@ -267,8 +267,7 @@ class SquareWebhookService:
         currency = payment.get("amount_money", {}).get("currency", "GBP")
 
         logger.info(
-            f"Payment created: payment_id={payment_id} status={status} "
-            f"amount={amount} {currency}"
+            f"Payment created: payment_id={payment_id} status={status} amount={amount} {currency}"
         )
 
         # Log the payment event
@@ -298,9 +297,7 @@ class SquareWebhookService:
         logger.info(f"Payment updated: payment_id={payment_id} status={new_status}")
 
         # Find associated order
-        order_result = await self.db.execute(
-            select(Order).where(Order.payment_id == payment_id)
-        )
+        order_result = await self.db.execute(select(Order).where(Order.payment_id == payment_id))
         order = order_result.scalar_one_or_none()
 
         if order:
@@ -315,8 +312,7 @@ class SquareWebhookService:
             await self.db.commit()
 
             logger.info(
-                f"Updated order {order.order_number} payment_status: "
-                f"{old_status} -> {new_status}"
+                f"Updated order {order.order_number} payment_status: {old_status} -> {new_status}"
             )
             result["actions"].append(
                 f"Updated order {order.order_number} payment status to {new_status}"
@@ -350,12 +346,14 @@ class SquareWebhookService:
 
         # Extract error details from payment
         card_details = payment.get("card_details", {})
-        error_code = card_details.get("errors", [{}])[0].get("code") if card_details.get(
-            "errors"
-        ) else None
-        error_detail = card_details.get("errors", [{}])[0].get("detail") if card_details.get(
-            "errors"
-        ) else None
+        error_code = (
+            card_details.get("errors", [{}])[0].get("code") if card_details.get("errors") else None
+        )
+        error_detail = (
+            card_details.get("errors", [{}])[0].get("detail")
+            if card_details.get("errors")
+            else None
+        )
 
         # Also check top-level errors
         if not error_code and payment.get("errors"):
@@ -368,9 +366,7 @@ class SquareWebhookService:
         )
 
         # Find associated order if any
-        order_result = await self.db.execute(
-            select(Order).where(Order.payment_id == payment_id)
-        )
+        order_result = await self.db.execute(select(Order).where(Order.payment_id == payment_id))
         order = order_result.scalar_one_or_none()
 
         if order:
@@ -380,9 +376,7 @@ class SquareWebhookService:
             webhook_event.order_id = order.id
             await self.db.commit()
 
-            result["actions"].append(
-                f"Updated order {order.order_number} payment status to FAILED"
-            )
+            result["actions"].append(f"Updated order {order.order_number} payment status to FAILED")
 
         # Create detailed payment log for failed payment
         await self._create_payment_log(
@@ -431,9 +425,7 @@ class SquareWebhookService:
         )
 
         # Find associated order
-        order_result = await self.db.execute(
-            select(Order).where(Order.payment_id == payment_id)
-        )
+        order_result = await self.db.execute(select(Order).where(Order.payment_id == payment_id))
         order = order_result.scalar_one_or_none()
 
         if order and status == "COMPLETED":
@@ -445,9 +437,7 @@ class SquareWebhookService:
             await self.db.commit()
 
             logger.info(f"Updated order {order.order_number} to REFUNDED status")
-            result["actions"].append(
-                f"Updated order {order.order_number} to REFUNDED status"
-            )
+            result["actions"].append(f"Updated order {order.order_number} to REFUNDED status")
         elif order and status == "PENDING":
             # Refund is pending - log but don't update order yet
             webhook_event.order_id = order.id
@@ -466,7 +456,9 @@ class SquareWebhookService:
             order_id=order.id if order else None,
             order_number=order.order_number if order else None,
             operation=PaymentLogOperation.REFUND,
-            status=PaymentLogStatus.SUCCESS if status == "COMPLETED" else PaymentLogStatus.INITIATED,
+            status=PaymentLogStatus.SUCCESS
+            if status == "COMPLETED"
+            else PaymentLogStatus.INITIATED,
             amount=amount,
             currency=currency,
             request_data={
@@ -507,9 +499,7 @@ class SquareWebhookService:
                 await self.db.commit()
 
                 logger.info(f"Updated order {order.order_number} to REFUNDED status")
-                result["actions"].append(
-                    f"Updated order {order.order_number} to REFUNDED status"
-                )
+                result["actions"].append(f"Updated order {order.order_number} to REFUNDED status")
 
             # Log the successful refund
             await self._create_payment_log(
@@ -572,7 +562,9 @@ class SquareWebhookService:
 
         if webhook_event.attempt_count < webhook_event.max_attempts:
             # Schedule retry with exponential backoff
-            delay = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER ** (webhook_event.attempt_count - 1))
+            delay = RETRY_BACKOFF_BASE * (
+                RETRY_BACKOFF_MULTIPLIER ** (webhook_event.attempt_count - 1)
+            )
             webhook_event.status = WebhookEventStatus.FAILED.value
             webhook_event.next_retry_at = now + timedelta(seconds=delay)
 

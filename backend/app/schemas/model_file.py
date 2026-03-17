@@ -53,9 +53,7 @@ class ModelFileLocalCreate(BaseModel):
     """Schema for creating a local file reference (no upload, just path link)."""
 
     file_type: ModelFileType = Field(..., description="Type of file")
-    local_path: str = Field(
-        ..., max_length=1000, description="Local filesystem path to the file"
-    )
+    local_path: str = Field(..., max_length=1000, description="Local filesystem path to the file")
     part_name: Optional[str] = Field(
         None, max_length=100, description="Part name for multi-part models"
     )
@@ -84,7 +82,9 @@ class ModelFileResponse(BaseModel):
     file_location: str = Field(
         "uploaded", description="Where file is stored: 'uploaded' or 'local_reference'"
     )
-    file_url: Optional[str] = Field(None, description="URL to download the file (for uploaded files)")
+    file_url: Optional[str] = Field(
+        None, description="URL to download the file (for uploaded files)"
+    )
     local_path: Optional[str] = Field(
         None, description="Local filesystem path (for local_reference files)"
     )

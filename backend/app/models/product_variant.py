@@ -207,7 +207,9 @@ class ProductVariant(Base, UUIDMixin, TimestampMixin):
     __table_args__ = (
         UniqueConstraint("product_id", "size", name="uq_variant_product_size"),
         UniqueConstraint("product_id", "sku", name="uq_variant_product_sku"),
-        {"comment": "Size variants for products with per-size pricing and stock/print-to-order flags"},
+        {
+            "comment": "Size variants for products with per-size pricing and stock/print-to-order flags"
+        },
     )
 
     def __repr__(self) -> str:

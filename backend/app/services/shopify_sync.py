@@ -101,9 +101,7 @@ class ShopifySyncService:
     ) -> ExternalListing:
         """Create or update the ExternalListing record."""
         listing = await self.get_listing_for_product(product.id)
-        external_url = (
-            f"https://{self._settings.shopify_store_domain}/products/{shopify_handle}"
-        )
+        external_url = f"https://{self._settings.shopify_store_domain}/products/{shopify_handle}"
         if listing is None:
             listing = ExternalListing(
                 tenant_id=self.tenant_id,
@@ -138,9 +136,7 @@ class ShopifySyncService:
         """
         # Display description: shop_description > description > name
         body_html = (
-            getattr(product, "shop_description", None)
-            or product.description
-            or product.name
+            getattr(product, "shop_description", None) or product.description or product.name
         )
 
         # Tags: merge product.tags (new field) with category slugs
@@ -170,9 +166,7 @@ class ShopifySyncService:
             for v in active_variants:
                 price_pence = base_price_pence + v.price_adjustment_pence
                 price_str = f"{price_pence / 100:.2f}"
-                inventory_policy = (
-                    "continue" if v.fulfilment_type == "print_to_order" else "deny"
-                )
+                inventory_policy = "continue" if v.fulfilment_type == "print_to_order" else "deny"
                 shopify_variants.append(
                     {
                         "option1": v.size,
@@ -200,9 +194,7 @@ class ShopifySyncService:
                     "price": price_str,
                     "inventory_management": "shopify",
                     "inventory_policy": inventory_policy,
-                    "inventory_quantity": (
-                        0 if product.print_to_order else product.units_in_stock
-                    ),
+                    "inventory_quantity": (0 if product.print_to_order else product.units_in_stock),
                     "requires_shipping": True,
                     "weight": product.weight_grams or 0,
                     "weight_unit": "g",

@@ -91,18 +91,19 @@ def _extract_order_data(payload: dict) -> dict:
     county = shipping_addr.get("province") or billing_addr.get("province")
     postcode = shipping_addr.get("zip") or billing_addr.get("zip") or ""
     country = shipping_addr.get("country") or billing_addr.get("country") or "United Kingdom"
-    phone = (
-        shipping_addr.get("phone")
-        or customer.get("phone")
-        or payload.get("phone")
-    )
+    phone = shipping_addr.get("phone") or customer.get("phone") or payload.get("phone")
 
     # Shipping method
     shipping_lines = payload.get("shipping_lines") or []
     shipping_method = shipping_lines[0].get("title") if shipping_lines else "Standard"
-    shipping_cost = Decimal(str(payload.get("total_shipping_price_set", {}).get(
-        "shop_money", {}).get("amount", "0"
-    ) or shipping_lines[0].get("price", "0") if shipping_lines else "0"))
+    shipping_cost = Decimal(
+        str(
+            payload.get("total_shipping_price_set", {}).get("shop_money", {}).get("amount", "0")
+            or shipping_lines[0].get("price", "0")
+            if shipping_lines
+            else "0"
+        )
+    )
 
     # Financials
     subtotal = Decimal(str(payload.get("subtotal_price") or "0"))
@@ -112,7 +113,9 @@ def _extract_order_data(payload: dict) -> dict:
     # Discount
     discount_codes = payload.get("discount_codes") or []
     discount_code = discount_codes[0].get("code") if discount_codes else None
-    discount_amount = Decimal(str(discount_codes[0].get("amount", "0"))) if discount_codes else Decimal("0")
+    discount_amount = (
+        Decimal(str(discount_codes[0].get("amount", "0"))) if discount_codes else Decimal("0")
+    )
 
     # Payment
     payment_gateway = payload.get("payment_gateway") or "shopify"
@@ -147,9 +150,7 @@ def _extract_order_data(payload: dict) -> dict:
     }
 
 
-async def _get_or_create_shopify_channel(
-    db: AsyncSession, tenant_id, slug: str
-) -> Optional[str]:
+async def _get_or_create_shopify_channel(db: AsyncSession, tenant_id, slug: str) -> Optional[str]:
     """Return the Shopify sales channel ID for the tenant, creating if needed."""
     result = await db.execute(
         select(SalesChannel).where(

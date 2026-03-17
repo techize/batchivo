@@ -20,7 +20,6 @@ import pytest
 from httpx import AsyncClient
 
 
-
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -275,9 +274,7 @@ class TestModelFileDetails:
         file_id = upload_response.json()["file"]["id"]
 
         # Get details
-        response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/{file_id}"
-        )
+        response = await client.get(f"/api/v1/models/{test_model.id}/files/{file_id}")
 
         assert response.status_code == 200
         result = response.json()
@@ -290,9 +287,7 @@ class TestModelFileDetails:
         """Test getting details of non-existent file."""
         fake_file_id = uuid4()
 
-        response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/{fake_file_id}"
-        )
+        response = await client.get(f"/api/v1/models/{test_model.id}/files/{fake_file_id}")
 
         assert response.status_code == 404
 
@@ -316,9 +311,7 @@ class TestModelFileDownload:
         )
         file_id = upload_response.json()["file"]["id"]
 
-        response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/{file_id}/download"
-        )
+        response = await client.get(f"/api/v1/models/{test_model.id}/files/{file_id}/download")
 
         assert response.status_code == 200
         assert response.content == stl_content
@@ -329,9 +322,7 @@ class TestModelFileDownload:
         """Test downloading non-existent file."""
         fake_file_id = uuid4()
 
-        response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/{fake_file_id}/download"
-        )
+        response = await client.get(f"/api/v1/models/{test_model.id}/files/{fake_file_id}/download")
 
         assert response.status_code == 404
 
@@ -402,9 +393,7 @@ class TestModelFileUpdate:
         assert response.json()["is_primary"] is True
 
         # Verify file1 is no longer primary
-        file1_response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/{file1_id}"
-        )
+        file1_response = await client.get(f"/api/v1/models/{test_model.id}/files/{file1_id}")
         assert file1_response.json()["is_primary"] is False
 
 
@@ -429,16 +418,12 @@ class TestModelFileDelete:
         file_id = upload_response.json()["file"]["id"]
 
         # Delete it
-        response = await client.delete(
-            f"/api/v1/models/{test_model.id}/files/{file_id}"
-        )
+        response = await client.delete(f"/api/v1/models/{test_model.id}/files/{file_id}")
 
         assert response.status_code == 204
 
         # Verify it's gone
-        get_response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/{file_id}"
-        )
+        get_response = await client.get(f"/api/v1/models/{test_model.id}/files/{file_id}")
         assert get_response.status_code == 404
 
     @pytest.mark.asyncio
@@ -446,9 +431,7 @@ class TestModelFileDelete:
         """Test deleting non-existent file."""
         fake_file_id = uuid4()
 
-        response = await client.delete(
-            f"/api/v1/models/{test_model.id}/files/{fake_file_id}"
-        )
+        response = await client.delete(f"/api/v1/models/{test_model.id}/files/{fake_file_id}")
 
         assert response.status_code == 404
 
@@ -473,9 +456,7 @@ class TestPrimaryFile:
             data={"file_type": "source_stl", "is_primary": "true"},
         )
 
-        response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/primary"
-        )
+        response = await client.get(f"/api/v1/models/{test_model.id}/files/primary")
 
         assert response.status_code == 200
         assert response.json()["original_filename"] == "primary.stl"
@@ -484,16 +465,12 @@ class TestPrimaryFile:
     @pytest.mark.asyncio
     async def test_get_primary_file_none_exists(self, client: AsyncClient, test_model):
         """Test getting primary file when none exists."""
-        response = await client.get(
-            f"/api/v1/models/{test_model.id}/files/primary"
-        )
+        response = await client.get(f"/api/v1/models/{test_model.id}/files/primary")
 
         assert response.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_get_primary_file_filtered_by_type(
-        self, client: AsyncClient, test_model
-    ):
+    async def test_get_primary_file_filtered_by_type(self, client: AsyncClient, test_model):
         """Test getting primary file filtered by type."""
         stl_content = create_minimal_stl()
         gcode_content = create_minimal_gcode()
@@ -569,9 +546,7 @@ class TestTenantIsolation:
         await db_session.commit()
 
         # Try to access the file (should not find it due to tenant isolation)
-        response = await client.get(
-            f"/api/v1/models/{other_model.id}/files/{other_file.id}"
-        )
+        response = await client.get(f"/api/v1/models/{other_model.id}/files/{other_file.id}")
 
         # Should get 404 because tenant filter excludes it
         assert response.status_code == 404

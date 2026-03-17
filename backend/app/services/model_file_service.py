@@ -89,9 +89,7 @@ def extract_3mf_thumbnail(file_content: bytes) -> Optional[Tuple[bytes, str]]:
                 # Try exact match first
                 if thumb_path in namelist:
                     thumbnail_data = zf.read(thumb_path)
-                    content_type = (
-                        "image/png" if thumb_path.endswith(".png") else "image/jpeg"
-                    )
+                    content_type = "image/png" if thumb_path.endswith(".png") else "image/jpeg"
                     logger.info(f"Extracted 3MF thumbnail from: {thumb_path}")
                     return (thumbnail_data, content_type)
 
@@ -577,9 +575,7 @@ class ModelFileService:
 
             # Update model with the new image URL
             model.image_url = result["image_url"]
-            logger.info(
-                f"Saved 3MF thumbnail for model {model.id}: {result['image_url']}"
-            )
+            logger.info(f"Saved 3MF thumbnail for model {model.id}: {result['image_url']}")
             return True
 
         except ImageStorageError as e:

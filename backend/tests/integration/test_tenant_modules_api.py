@@ -116,9 +116,7 @@ class TestTenantModulesAPI:
 
         app.state.limiter.enabled = False
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as ac:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
 
         app.state.limiter.enabled = True
@@ -152,9 +150,7 @@ class TestTenantModulesAPI:
 
         app.state.limiter.enabled = False
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as ac:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
 
         app.state.limiter.enabled = True
@@ -295,9 +291,7 @@ class TestTenantModulesAPI:
     ):
         """Test listing modules for non-existent tenant returns 404."""
         fake_id = uuid4()
-        response = await platform_admin_client.get(
-            f"/api/v1/platform/tenants/{fake_id}/modules"
-        )
+        response = await platform_admin_client.get(f"/api/v1/platform/tenants/{fake_id}/modules")
 
         assert response.status_code == 404
 
@@ -665,7 +659,9 @@ class TestUserModulesAPI:
             assert "routes" in module
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="Module discovery has import errors in knitting modules (yarn.py, needle.py)")
+    @pytest.mark.skip(
+        reason="Module discovery has import errors in knitting modules (yarn.py, needle.py)"
+    )
     async def test_list_modules_with_include_disabled(
         self,
         client: AsyncClient,
@@ -686,7 +682,9 @@ class TestUserModulesAPI:
         assert all(s in ["active", "disabled", "coming_soon"] for s in statuses)
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="Module discovery has import errors in knitting modules (yarn.py, needle.py)")
+    @pytest.mark.skip(
+        reason="Module discovery has import errors in knitting modules (yarn.py, needle.py)"
+    )
     async def test_get_specific_module(
         self,
         client: AsyncClient,

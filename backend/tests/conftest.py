@@ -230,9 +230,7 @@ async def client(
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     # Re-enable rate limiting after test
@@ -261,9 +259,7 @@ async def unauthenticated_client(
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     # Re-enable rate limiting after test
@@ -605,9 +601,7 @@ async def customer_client(
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     # Re-enable rate limiting after test

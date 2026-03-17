@@ -138,9 +138,7 @@ class EmailService:
                 payload["attributes"] = attributes
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    BREVO_CONTACTS_API_URL, json=payload, headers=headers
-                )
+                response = await client.post(BREVO_CONTACTS_API_URL, json=payload, headers=headers)
 
                 if response.status_code == 201:
                     logger.info(f"Newsletter subscription created for {email}")

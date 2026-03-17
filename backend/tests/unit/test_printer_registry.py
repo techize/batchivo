@@ -64,9 +64,7 @@ class TestPrinterRegistry:
         """All Bambu models default to bambu_lan connection type."""
         bambu = [m for m in PRINTER_MODELS.values() if m.manufacturer == "Bambu Lab"]
         for model in bambu:
-            assert model.connection_type == "bambu_lan", (
-                f"{model.model_key} should use bambu_lan"
-            )
+            assert model.connection_type == "bambu_lan", f"{model.model_key} should use bambu_lan"
 
     def test_all_model_keys_match_dict_keys(self):
         """Each model_key value must equal its dictionary key."""

@@ -1409,11 +1409,17 @@ class ProductionRunService:
             return
 
         if successful_quantity <= 0:
-            logger.debug(f"Skipping rolling average update for model {model_id}: no successful units")
+            logger.debug(
+                f"Skipping rolling average update for model {model_id}: no successful units"
+            )
             return
 
         # Calculate new rolling average
-        old_avg = Decimal(str(model.actual_production_cost)) if model.actual_production_cost else Decimal("0")
+        old_avg = (
+            Decimal(str(model.actual_production_cost))
+            if model.actual_production_cost
+            else Decimal("0")
+        )
         old_count = model.production_cost_count or 0
 
         if old_count == 0:
@@ -1422,7 +1428,10 @@ class ProductionRunService:
         else:
             # Weighted rolling average
             total_weight = old_count + successful_quantity
-            new_avg = (old_avg * Decimal(str(old_count)) + actual_cost_per_unit * Decimal(str(successful_quantity))) / Decimal(str(total_weight))
+            new_avg = (
+                old_avg * Decimal(str(old_count))
+                + actual_cost_per_unit * Decimal(str(successful_quantity))
+            ) / Decimal(str(total_weight))
 
         # Update model
         model.actual_production_cost = new_avg.quantize(Decimal("0.0001"))

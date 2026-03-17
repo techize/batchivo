@@ -133,9 +133,7 @@ class MoonrakerAdapter:
         """
         try:
             async with self._client() as client:
-                resp = await client.get(
-                    f"/printer/objects/query?{_STATUS_OBJECTS}"
-                )
+                resp = await client.get(f"/printer/objects/query?{_STATUS_OBJECTS}")
                 resp.raise_for_status()
                 return self._parse_status(resp.json())
         except Exception as exc:

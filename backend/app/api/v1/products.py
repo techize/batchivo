@@ -50,7 +50,11 @@ from app.schemas.product_image import (
 )
 from app.services.costing import CostingService
 from app.services.etsy_sync import EtsySyncService, EtsySyncError
-from app.services.shopify_sync import ShopifySyncService, ShopifySyncError, ShopifyNotConfiguredError
+from app.services.shopify_sync import (
+    ShopifySyncService,
+    ShopifySyncError,
+    ShopifyNotConfiguredError,
+)
 from app.services.image_storage import ImageStorage, ImageStorageError, get_image_storage
 from app.services.search_service import SearchService, get_search_service
 from app.schemas.external_listing import (
@@ -1376,7 +1380,9 @@ async def import_product_image_from_url(
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image exceeds 10 MB limit")
 
-    content_type = resp.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+    content_type = (
+        resp.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+    )
     filename = parsed.path.rstrip("/").split("/")[-1] or "import.jpg"
 
     try:
@@ -1402,8 +1408,9 @@ async def import_product_image_from_url(
     if is_primary:
         # Clear existing primary flag
         await db.execute(
-            select(ProductImage)
-            .where(ProductImage.product_id == product_id, ProductImage.is_primary.is_(True))
+            select(ProductImage).where(
+                ProductImage.product_id == product_id, ProductImage.is_primary.is_(True)
+            )
         )
 
     image = ProductImage(
@@ -1822,9 +1829,7 @@ async def get_product_sync_status(
 # ==================== Product Variant Management ====================
 
 
-async def _get_product_for_tenant(
-    product_id: UUID, tenant_id: UUID, db: AsyncSession
-) -> Product:
+async def _get_product_for_tenant(product_id: UUID, tenant_id: UUID, db: AsyncSession) -> Product:
     """Fetch a product scoped to tenant or raise 404."""
     result = await db.execute(
         select(Product).where(Product.id == product_id, Product.tenant_id == tenant_id)

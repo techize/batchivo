@@ -79,6 +79,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
+
 class CORSPreflightMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method == "OPTIONS":
@@ -92,11 +93,14 @@ class CORSPreflightMiddleware(BaseHTTPMiddleware):
                         "Access-Control-Allow-Origin": origin,
                         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
                         "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Tenant-ID, X-Shop-Hostname",
-                        "Access-Control-Allow-Credentials": "true" if settings.cors_allow_credentials else "false",
+                        "Access-Control-Allow-Credentials": "true"
+                        if settings.cors_allow_credentials
+                        else "false",
                         "Access-Control-Max-Age": "3600",
                     },
                 )
         return await call_next(request)
+
 
 app.add_middleware(CORSPreflightMiddleware)
 
