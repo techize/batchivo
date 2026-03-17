@@ -18,7 +18,7 @@ from uuid import uuid4
 import jwt
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -363,7 +363,9 @@ class TestUnauthorizedResponses:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 response = await client.get(
                     "/api/v1/products",
                     headers={"Authorization": f"Bearer {token}"},
@@ -392,7 +394,9 @@ class TestUnauthorizedResponses:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 response = await client.get(
                     "/api/v1/products",
                     headers={"Authorization": f"Bearer {refresh_token}"},
@@ -453,7 +457,9 @@ class TestForbiddenResponses:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Try to access tenant members (admin only)
                 response = await client.get("/api/v1/settings/members")
                 # This endpoint requires admin role
@@ -488,7 +494,9 @@ class TestForbiddenResponses:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Try to access platform admin endpoint
                 response = await client.get("/api/v1/platform/tenants")
                 assert response.status_code == 403
@@ -546,7 +554,9 @@ class TestCrossTenantAccess:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Try to access other tenant via header
                 response = await client.get(
                     "/api/v1/products",
@@ -695,7 +705,9 @@ class TestRoleBasedAccessControl:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Admin should be able to access settings
                 response = await client.get("/api/v1/settings/members")
                 assert response.status_code in [200, 404]  # 200 or 404 if endpoint exists
@@ -729,7 +741,9 @@ class TestRoleBasedAccessControl:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Owner should access everything an admin can
                 response = await client.get("/api/v1/settings/members")
                 assert response.status_code in [200, 404]
@@ -847,7 +861,9 @@ class TestAuthenticationHeaders:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Standard Bearer
                 response = await client.get(
                     "/api/v1/products",
@@ -877,7 +893,9 @@ class TestAuthenticationHeaders:
         app.state.limiter.enabled = False
 
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Extra space after Bearer
                 response = await client.get(
                     "/api/v1/products",

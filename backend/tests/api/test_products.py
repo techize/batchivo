@@ -1312,12 +1312,15 @@ class TestProductVariantEndpoints:
 
     async def test_create_variant_requires_auth(self, test_product: Product):
         """POST requires authentication (401 without token)."""
-        from httpx import AsyncClient as RawClient
+        from httpx import ASGITransport, AsyncClient as RawClient
 
-        async with RawClient(base_url="http://test") as anon_client:
+        from app.main import app
+
+        async with RawClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as anon_client:
             response = await anon_client.post(
                 f"/api/v1/products/{test_product.id}/variants",
                 json={"size": "S", "fulfilment_type": "stock"},
             )
-        # Without credentials the fixture client handles auth; raw client gets 401/422
-        assert response.status_code in (401, 422)
+        assert response.status_code == 401

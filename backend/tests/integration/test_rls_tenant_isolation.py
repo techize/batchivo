@@ -20,7 +20,7 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 from fastapi import Request
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_tenant_db
@@ -421,7 +421,9 @@ class TestApplicationLevelIsolation:
 
         try:
             app.state.limiter.enabled = False
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 response = await client.get("/api/v1/spools")
                 assert response.status_code == 200
 
@@ -478,7 +480,9 @@ class TestApplicationLevelIsolation:
 
         try:
             app.state.limiter.enabled = False
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 # Try to access Tenant B's spool
                 tenant_b_spool_id = spools_tenant_b[0].id
                 response = await client.get(f"/api/v1/spools/{tenant_b_spool_id}")

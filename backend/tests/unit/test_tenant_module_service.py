@@ -461,7 +461,7 @@ class TestInitializeTenantModules:
         mock_db.execute.return_value = mock_result
 
         service = TenantModuleService(db=mock_db)
-        await service.initialize_tenant_modules(tenant_id)
+        result = await service.initialize_tenant_modules(tenant_id)
 
         assert result == existing_modules
         # reset_to_defaults should NOT have been called
