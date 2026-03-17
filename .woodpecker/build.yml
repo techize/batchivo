@@ -68,7 +68,7 @@ steps:
       - scan-deps-backend
     environment:
       DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
-      SECRET_KEY: test-secret-key-for-ci
+      SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
       PGPASSWORD: test
     commands:
       - cd backend
