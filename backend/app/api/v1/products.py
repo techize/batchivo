@@ -45,12 +45,17 @@ from app.schemas.product_image import (
 )
 from app.services.costing import CostingService
 from app.services.etsy_sync import EtsySyncService, EtsySyncError
+from app.services.shopify_sync import ShopifySyncService, ShopifySyncError, ShopifyNotConfiguredError
 from app.services.image_storage import ImageStorage, ImageStorageError, get_image_storage
 from app.services.search_service import SearchService, get_search_service
 from app.schemas.external_listing import (
+    ExternalListingResponse,
     SyncToEtsyRequest,
     SyncToEtsyResponse,
-    ExternalListingResponse,
+    SyncToShopifyRequest,
+    SyncToShopifyResponse,
+    ProductSyncStatusResponse,
+    SyncStatusChannel,
 )
 
 router = APIRouter()
@@ -1580,6 +1585,133 @@ async def sync_product_to_etsy(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
+
+
+# ==================== Shopify Sync ====================
+
+
+@router.post("/{product_id}/sync/shopify", response_model=SyncToShopifyResponse)
+async def sync_product_to_shopify(
+    product_id: UUID,
+    request: SyncToShopifyRequest = SyncToShopifyRequest(),
+    db: AsyncSession = Depends(get_db),
+    tenant: CurrentTenant = None,
+    user: CurrentUser = None,
+    _admin: RequireAdmin = None,
+):
+    """
+    Sync a product to Shopify.
+
+    Creates a new Shopify listing if one doesn't exist, or updates the existing one.
+    Batchivo is always the source of truth — sync overwrites Shopify data.
+    """
+    query = (
+        select(Product)
+        .where(
+            Product.id == product_id,
+            Product.tenant_id == tenant.id,
+        )
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
+            selectinload(Product.external_listings),
+            selectinload(Product.variants),
+            selectinload(Product.categories),
+        )
+    )
+    result = await db.execute(query)
+    product = result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+
+    if not product.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot sync inactive product",
+        )
+
+    try:
+        sync_service = ShopifySyncService(db, tenant.id)
+        success, message, listing = await sync_service.sync_product(product, force=request.force)
+        await db.commit()
+
+        return SyncToShopifyResponse(
+            success=success,
+            message=message,
+            listing=ExternalListingResponse.model_validate(listing) if listing else None,
+            shopify_url=listing.external_url if listing else None,
+        )
+
+    except ShopifyNotConfiguredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+        )
+    except ShopifySyncError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+
+
+# ==================== Sync Status ====================
+
+
+@router.get("/{product_id}/sync-status", response_model=ProductSyncStatusResponse)
+async def get_product_sync_status(
+    product_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    tenant: CurrentTenant = None,
+    user: CurrentUser = None,
+):
+    """
+    Get multi-channel sync status for a product.
+
+    Returns sync health for: own shop, Shopify, and Etsy.
+    """
+    from app.models.external_listing import ExternalListing as ExternalListingModel
+
+    result = await db.execute(
+        select(Product).where(Product.id == product_id, Product.tenant_id == tenant.id)
+    )
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    # Fetch all external listings for this product
+    listings_result = await db.execute(
+        select(ExternalListingModel).where(
+            ExternalListingModel.product_id == product_id,
+            ExternalListingModel.tenant_id == tenant.id,
+        )
+    )
+    listings = {lst.platform: lst for lst in listings_result.scalars().all()}
+
+    def channel_status(listing) -> SyncStatusChannel:
+        if listing is None:
+            return SyncStatusChannel(synced=False)
+        return SyncStatusChannel(
+            synced=listing.sync_status == "synced",
+            last_synced_at=listing.last_synced_at,
+            external_url=listing.external_url,
+            sync_status=listing.sync_status,
+            last_sync_error=listing.last_sync_error,
+        )
+
+    return ProductSyncStatusResponse(
+        product_id=product_id,
+        shop=SyncStatusChannel(
+            synced=product.shop_visible,
+            external_url=f"https://www.mystmereforge.co.uk/product/{product.id}",
+        ),
+        shopify=channel_status(listings.get("shopify")),
+        etsy=channel_status(listings.get("etsy")),
+    )
 
 
 # ==================== Product Variant Management ====================

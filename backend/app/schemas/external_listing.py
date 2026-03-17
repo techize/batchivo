@@ -52,3 +52,39 @@ class SyncToEtsyResponse(BaseModel):
     etsy_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SyncToShopifyRequest(BaseModel):
+    """Request schema for syncing a product to Shopify."""
+
+    force: bool = Field(False, description="Force sync even if already up-to-date")
+
+
+class SyncToShopifyResponse(BaseModel):
+    """Response schema for Shopify sync operation."""
+
+    success: bool
+    message: str
+    listing: Optional[ExternalListingResponse] = None
+    shopify_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SyncStatusChannel(BaseModel):
+    """Sync status for one channel."""
+
+    synced: bool
+    last_synced_at: Optional[datetime] = None
+    external_url: Optional[str] = None
+    sync_status: Optional[str] = None
+    last_sync_error: Optional[str] = None
+
+
+class ProductSyncStatusResponse(BaseModel):
+    """Multi-channel sync status for a product."""
+
+    product_id: UUID
+    shop: SyncStatusChannel  # Own shop (always synced if shop_visible=true)
+    shopify: SyncStatusChannel
+    etsy: SyncStatusChannel
