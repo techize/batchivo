@@ -27,6 +27,7 @@ resources:
   - 20-backend-policy.yaml
   - 30-postgres-policy.yaml
   - 40-redis-policy.yaml
+  - 45-bucket-creator-policy.yaml
   - 50-minio-policy.yaml
   - 60-cloudflared-policy.yaml
   - 70-backup-policy.yaml

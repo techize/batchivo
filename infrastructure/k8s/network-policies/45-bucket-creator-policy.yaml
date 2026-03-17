@@ -1,0 +1,24 @@
+# Bucket Creator Network Policy
+# Allows mc (MinIO client) job pods to reach MinIO for bucket setup.
+# Applies to any pod with role=bucket-creator label.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-bucket-creator-egress
+  namespace: batchivo
+spec:
+  podSelector:
+    matchLabels:
+      role: bucket-creator
+  policyTypes:
+    - Egress
+  egress:
+    # Allow egress to MinIO S3 API for bucket management
+    - to:
+        - podSelector:
+            matchLabels:
+              app: minio
+      ports:
+        - protocol: TCP
+          port: 9000

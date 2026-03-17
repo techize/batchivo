@@ -6,6 +6,9 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 300
   template:
+    metadata:
+      labels:
+        role: bucket-creator
     spec:
       restartPolicy: OnFailure
       securityContext:

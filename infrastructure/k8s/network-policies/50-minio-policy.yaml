@@ -28,12 +28,17 @@ spec:
       ports:
         - protocol: TCP
           port: 9000  # S3 API
-    # Allow ingress from all pods in namespace for mc client jobs
-    # (minio-create-bucket job needs access)
+    # Allow ingress from bucket-creator jobs (minio-create-bucket, minio-create-staging-bucket)
     - from:
-        - podSelector: {}  # All pods in namespace
+        - podSelector:
+            matchLabels:
+              role: bucket-creator
       ports:
         - protocol: TCP
           port: 9000
+    # Allow console access via port-forward (local admin only)
+    - from:
+        - podSelector: {}  # Any pod in namespace (port-forward only reachable locally)
+      ports:
         - protocol: TCP
-          port: 9001  # Console (for admin access via port-forward)
+          port: 9001
