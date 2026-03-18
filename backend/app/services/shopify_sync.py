@@ -213,7 +213,7 @@ class ShopifySyncService:
                 if url.startswith("/uploads/products/"):
                     url = url.replace(
                         "/uploads/products/",
-                        f"https://{self._settings.shopify_store_domain}/api/v1/shop/images/",
+                        "https://api.batchivo.com/api/v1/shop/images/",
                     )
                 elif url.startswith("/api/v1/shop/images/"):
                     url = f"https://api.batchivo.com{url}"

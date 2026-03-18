@@ -130,6 +130,57 @@ class TestShopifySyncService:
         assert payload["product"]["variants"][0]["inventory_policy"] == "continue"  # print_to_order
 
     @pytest.mark.asyncio
+    async def test_build_product_payload_image_url_uses_api_batchivo(
+        self, db_session, test_tenant, shop_product
+    ):
+        """Images stored as /uploads/products/... must resolve to api.batchivo.com, not the
+        storefront domain (which is password-protected and inaccessible to Shopify)."""
+        from app.models.product_image import ProductImage
+        from app.services.shopify_sync import ShopifySyncService
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        product_id, tenant_id = shop_product
+
+        # Add a product image with a /uploads/products/ path
+        image = ProductImage(
+            tenant_id=test_tenant.id,
+            product_id=product_id,
+            image_url="/uploads/products/abc123/photo.jpg",
+            is_primary=True,
+            display_order=0,
+        )
+        db_session.add(image)
+        await db_session.flush()
+
+        with patch("app.services.shopify_sync.get_settings") as mock_settings:
+            cfg = MagicMock()
+            cfg.shopify_store_domain = "mystmereforge.myshopify.com"
+            cfg.shopify_access_token = "shpat_test"
+            mock_settings.return_value = cfg
+
+            service = ShopifySyncService(db_session, tenant_id)
+
+            result = await db_session.execute(
+                select(Product)
+                .where(Product.id == product_id)
+                .options(
+                    selectinload(Product.images),
+                    selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
+                    selectinload(Product.variants),
+                    selectinload(Product.categories),
+                )
+            )
+            product = result.scalar_one()
+
+            payload = service._build_product_payload(product)
+
+        images = payload["product"]["images"]
+        assert len(images) == 1
+        assert images[0]["src"] == "https://api.batchivo.com/api/v1/shop/images/abc123/photo.jpg"
+        assert "mystmereforge.myshopify.com" not in images[0]["src"]
+
+    @pytest.mark.asyncio
     async def test_get_listing_for_product_returns_none_when_missing(
         self, db_session, test_tenant, shop_product
     ):
