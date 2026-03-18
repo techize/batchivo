@@ -202,13 +202,15 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
 
     # If not found, check additional_domains array (PostgreSQL only for now)
     if dialect == "postgresql":
-        # Check if any hostname variant is in the additional_domains JSONB array
+        # Check if any hostname variant is in the additional_domains JSONB array.
+        # Use jsonb_extract_path_text to get the array as a JSON string, then check
+        # containment via LIKE. This avoids the AttributeError from chaining [] on JSONB.
         for check_hostname in hostnames_to_try:
             result = await db.execute(
                 select(Tenant).where(
-                    Tenant.settings["shop"]["additional_domains"].astext.contains(
-                        f'"{check_hostname}"'
-                    ),
+                    func.jsonb_extract_path_text(
+                        Tenant.settings, "shop", "additional_domains"
+                    ).contains(f'"{check_hostname}"'),
                     Tenant.is_active.is_(True),
                 )
             )
