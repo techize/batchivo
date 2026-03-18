@@ -43,7 +43,7 @@ spec:
       - name: harbor-creds
       containers:
       - name: frontend
-        image: registry.techize.co.uk/batchivo/batchivo-frontend:bb4a5d173fbecafbc7a7f2d976658273664b42e2
+        image: registry.techize.co.uk/batchivo/batchivo-frontend:ef33a5e50e9b87f7891b2d71f9ada2f62a87dd61
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
