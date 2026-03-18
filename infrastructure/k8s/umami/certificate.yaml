@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: analytics-batchivo-com-tls
+  namespace: umami
+spec:
+  secretName: analytics-batchivo-com-tls
+  dnsNames:
+  - analytics.batchivo.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io

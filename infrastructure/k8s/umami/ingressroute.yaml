@@ -16,3 +16,5 @@ spec:
     services:
     - name: umami
       port: 3000
+  tls:
+    secretName: analytics-batchivo-com-tls
