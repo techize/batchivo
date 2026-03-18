@@ -14,8 +14,9 @@
 #                     └──> build-frontend ────────────────────────────┴──> scan-frontend ─┘
 #
 # Expected time: ~25-28 min
+# Note: pipeline timeout is set to 120min via Woodpecker SQLite repos.timeout —
+# the top-level 'timeout' key is not supported in Woodpecker v3.x schema.
 #
-timeout: 90
 
 when:
   - event: push
