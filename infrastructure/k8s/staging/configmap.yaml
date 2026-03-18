@@ -4,10 +4,10 @@ metadata:
   name: backend-config
   namespace: batchivo-staging
 data:
-  # Database - uses batchivo_staging database in shared PostgreSQL
-  DB_HOST: "postgres.batchivo.svc.cluster.local"
+  # Database - uses staging-local PostgreSQL (postgres pod in batchivo-staging namespace)
+  DB_HOST: "postgres.batchivo-staging.svc.cluster.local"
   DB_PORT: "5432"
-  DB_NAME: "batchivo_staging"
+  DB_NAME: "batchivo"
   # Redis - shared with production (different key prefix via app)
   REDIS_URL: "redis://redis.batchivo.svc.cluster.local:6379/1"
   # Environment
