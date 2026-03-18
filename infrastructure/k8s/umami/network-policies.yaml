@@ -1,0 +1,112 @@
+---
+# Allow ingress to Umami from Traefik (for internal cluster routing)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-umami-ingress-from-traefik
+  namespace: umami
+spec:
+  podSelector:
+    matchLabels:
+      app: umami
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+---
+# Allow ingress to Umami from Cloudflare Tunnel (direct proxy routing)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-umami-ingress-from-cloudflared
+  namespace: umami
+spec:
+  podSelector:
+    matchLabels:
+      app: umami
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cloudflare-tunnel
+          podSelector:
+            matchLabels:
+              app: cloudflared
+      ports:
+        - port: 3000
+          protocol: TCP
+---
+# Default deny all ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: umami
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Default deny all egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: umami
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+---
+# Allow Umami pod to connect to Postgres
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-umami-to-postgres
+  namespace: umami
+spec:
+  podSelector:
+    matchLabels:
+      app: umami
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: umami-postgres
+      ports:
+        - port: 5432
+          protocol: TCP
+---
+# Allow Postgres ingress from Umami
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-ingress
+  namespace: umami
+spec:
+  podSelector:
+    matchLabels:
+      app: umami-postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: umami
+      ports:
+        - port: 5432
+          protocol: TCP
