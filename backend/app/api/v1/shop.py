@@ -103,6 +103,7 @@ class ShopProduct(BaseModel):
     backstory: Optional[str] = None  # For dragons
     variants: list[ShopProductVariant] = []  # Size variants (empty = no sizing)
     created_at: Optional[str] = None  # ISO8601 timestamp for "sort by newest"
+    seo_slug: Optional[str] = None  # URL-friendly slug for canonical URLs
 
     model_config = {"from_attributes": True}
 
@@ -442,6 +443,7 @@ async def get_products(
             free_shipping=getattr(product, "free_shipping", False),
             is_dragon=is_dragon,
             created_at=product.created_at.isoformat() if product.created_at else None,
+            seo_slug=getattr(product, "seo_slug", None),
         )
         shop_products.append(shop_product)
 
@@ -563,6 +565,7 @@ async def get_product(
             backstory=getattr(product, "backstory", None),
             variants=shop_variants,
             created_at=product.created_at.isoformat() if product.created_at else None,
+            seo_slug=getattr(product, "seo_slug", None),
         )
     }
 
@@ -775,6 +778,7 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
                 free_shipping=getattr(product, "free_shipping", False),
                 is_dragon=True,
                 backstory=getattr(product, "backstory", None),
+                seo_slug=getattr(product, "seo_slug", None),
             )
         )
 

@@ -96,12 +96,13 @@ async def db_engine():
     """Create a test database engine (function-scoped for test isolation)."""
     # SQLite needs check_same_thread=False; PostgreSQL gets an explicit connect_timeout
     connect_args = {"check_same_thread": False} if _IS_SQLITE else {"connect_timeout": 15}
+    # pool_timeout and pool_pre_ping are not supported by SQLite's StaticPool
+    extra_kwargs = {} if _IS_SQLITE else {"pool_timeout": 30, "pool_pre_ping": True}
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         connect_args=connect_args,
-        pool_timeout=30,
-        pool_pre_ping=True,
+        **extra_kwargs,
     )
 
     # Drop any existing tables first (important for PostgreSQL persistence)

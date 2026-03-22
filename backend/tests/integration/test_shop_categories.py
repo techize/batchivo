@@ -384,3 +384,55 @@ class TestShopDragonsCategories:
                 assert isinstance(dragon["categories"], list)
                 assert len(dragon["categories"]) >= 1
                 assert dragon["categories"][0]["slug"] == "dragons"
+
+
+class TestShopProductSeoSlug:
+    """Test seo_slug is exposed in shop product responses."""
+
+    @pytest.mark.asyncio
+    async def test_product_list_includes_seo_slug(
+        self,
+        shop_client: AsyncClient,
+        shop_product_dragon: Product,
+    ):
+        """seo_slug field is present in shop product list response."""
+        response = await shop_client.get("/api/v1/shop/products")
+        assert response.status_code == 200
+        data = response.json()
+        products = data["data"]
+        assert len(products) >= 1
+        assert "seo_slug" in products[0]
+
+    @pytest.mark.asyncio
+    async def test_product_detail_includes_seo_slug(
+        self,
+        shop_client: AsyncClient,
+        shop_product_dragon: Product,
+    ):
+        """seo_slug field is present in shop product detail response."""
+        response = await shop_client.get(
+            f"/api/v1/shop/products/{shop_product_dragon.id}"
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "seo_slug" in data["data"]
+
+    @pytest.mark.asyncio
+    async def test_product_seo_slug_value(
+        self,
+        db_session,
+        shop_client: AsyncClient,
+        shop_product_dragon: Product,
+    ):
+        """seo_slug reflects the value stored on the product."""
+        shop_product_dragon.seo_slug = "red-dragon-miniature"
+        await db_session.commit()
+
+        response = await shop_client.get("/api/v1/shop/products")
+        assert response.status_code == 200
+        data = response.json()
+        dragon = next(
+            (p for p in data["data"] if p["sku"] == "DRAGON-001"), None
+        )
+        assert dragon is not None
+        assert dragon["seo_slug"] == "red-dragon-miniature"
