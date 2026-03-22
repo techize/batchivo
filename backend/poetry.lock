@@ -3770,4 +3770,4 @@ dev = ["black", "fakeredis", "httpx", "moto", "mypy", "pytest", "pytest-asyncio"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "2858ca7f76e451506ed5946895dd421c5bcd96d775ece949c26943ce20ff9276"
+content-hash = "be15f48d50e3a79c10d46e4becec3d34d490659d10118da591fdd7a9f26da285"
