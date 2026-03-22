@@ -8,6 +8,7 @@ Usage:
     success, message, listing = await sync_service.sync_product(product)
 """
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -75,6 +76,35 @@ class ShopifySyncService:
             "X-Shopify-Access-Token": token,
             "Content-Type": "application/json",
         }
+
+    async def _shopify_request(
+        self,
+        client: httpx.AsyncClient,
+        method: str,
+        url: str,
+        headers: dict,
+        json: dict,
+        max_retries: int = 3,
+    ) -> httpx.Response:
+        """Make a Shopify API request with automatic 429 retry.
+
+        Respects the ``Retry-After`` response header when present,
+        falling back to exponential backoff (2s, 4s, 8s).
+        """
+        for attempt in range(max_retries):
+            resp = await client.request(method, url, headers=headers, json=json)
+            if resp.status_code != 429:
+                return resp
+            retry_after = float(resp.headers.get("Retry-After", 2 ** (attempt + 1)))
+            logger.warning(
+                "Shopify rate limit hit (attempt %d/%d), retrying after %.1fs",
+                attempt + 1,
+                max_retries,
+                retry_after,
+            )
+            await asyncio.sleep(retry_after)
+        # Final attempt — return whatever we get
+        return await client.request(method, url, headers=headers, json=json)
 
     # ------------------------------------------------------------------
     # External listing helpers
@@ -280,7 +310,8 @@ class ShopifySyncService:
                 if existing_listing and existing_listing.external_id:
                     # UPDATE existing Shopify product
                     shopify_id = existing_listing.external_id
-                    resp = await client.put(
+                    resp = await self._shopify_request(
+                        client, "PUT",
                         f"{base_url}/products/{shopify_id}.json",
                         headers=headers,
                         json=payload,
@@ -288,7 +319,8 @@ class ShopifySyncService:
                     action = "updated"
                 else:
                     # CREATE new Shopify product
-                    resp = await client.post(
+                    resp = await self._shopify_request(
+                        client, "POST",
                         f"{base_url}/products.json",
                         headers=headers,
                         json=payload,
