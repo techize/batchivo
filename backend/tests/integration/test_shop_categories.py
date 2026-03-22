@@ -410,9 +410,7 @@ class TestShopProductSeoSlug:
         shop_product_dragon: Product,
     ):
         """seo_slug field is present in shop product detail response."""
-        response = await shop_client.get(
-            f"/api/v1/shop/products/{shop_product_dragon.id}"
-        )
+        response = await shop_client.get(f"/api/v1/shop/products/{shop_product_dragon.id}")
         assert response.status_code == 200
         data = response.json()
         assert "seo_slug" in data["data"]
@@ -431,8 +429,6 @@ class TestShopProductSeoSlug:
         response = await shop_client.get("/api/v1/shop/products")
         assert response.status_code == 200
         data = response.json()
-        dragon = next(
-            (p for p in data["data"] if p["sku"] == "DRAGON-001"), None
-        )
+        dragon = next((p for p in data["data"] if p["sku"] == "DRAGON-001"), None)
         assert dragon is not None
         assert dragon["seo_slug"] == "red-dragon-miniature"
