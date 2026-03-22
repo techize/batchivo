@@ -101,9 +101,12 @@ class ShopProduct(BaseModel):
     free_shipping: bool = False  # Qualifies for free shipping
     is_dragon: bool = False
     backstory: Optional[str] = None  # For dragons
+    feature_title: Optional[str] = None  # Lore/showcase title (not for SEO use)
     variants: list[ShopProductVariant] = []  # Size variants (empty = no sizing)
     created_at: Optional[str] = None  # ISO8601 timestamp for "sort by newest"
     seo_slug: Optional[str] = None  # URL-friendly slug for canonical URLs
+    seo_title: Optional[str] = None  # SEO page title (overrides name-based default)
+    seo_description: Optional[str] = None  # SEO meta description
 
     model_config = {"from_attributes": True}
 
@@ -525,9 +528,6 @@ async def get_product(
     # Use shop_description if available, otherwise fall back to description
     display_description = getattr(product, "shop_description", None) or product.description
 
-    # Use feature_title if available (for dragons), otherwise use name
-    display_name = getattr(product, "feature_title", None) or product.name
-
     # Build variant list (active variants only, sorted by display_order)
     shop_variants = [
         ShopProductVariant(
@@ -551,7 +551,7 @@ async def get_product(
         "data": ShopProduct(
             id=str(product.id),
             sku=product.sku or "",
-            name=display_name,
+            name=product.name,
             description=display_description,
             price=base_price_pence,
             images=product_images,
@@ -563,9 +563,12 @@ async def get_product(
             free_shipping=getattr(product, "free_shipping", False),
             is_dragon=is_dragon,
             backstory=getattr(product, "backstory", None),
+            feature_title=getattr(product, "feature_title", None),
             variants=shop_variants,
             created_at=product.created_at.isoformat() if product.created_at else None,
             seo_slug=getattr(product, "seo_slug", None),
+            seo_title=getattr(product, "seo_title", None),
+            seo_description=getattr(product, "seo_description", None),
         )
     }
 
@@ -757,9 +760,6 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
                 slug=product.designer.slug,
             )
 
-        # Use feature_title if available (e.g., dragon name), otherwise product name
-        display_name = getattr(product, "feature_title", None) or product.name
-
         # Use shop_description if available, otherwise fall back to description
         display_description = getattr(product, "shop_description", None) or product.description
 
@@ -767,7 +767,7 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
             ShopProduct(
                 id=str(product.id),
                 sku=product.sku or "",
-                name=display_name,
+                name=product.name,
                 description=display_description,
                 price=price * 100,
                 images=product_images,
@@ -778,7 +778,10 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
                 free_shipping=getattr(product, "free_shipping", False),
                 is_dragon=True,
                 backstory=getattr(product, "backstory", None),
+                feature_title=getattr(product, "feature_title", None),
                 seo_slug=getattr(product, "seo_slug", None),
+                seo_title=getattr(product, "seo_title", None),
+                seo_description=getattr(product, "seo_description", None),
             )
         )
 
