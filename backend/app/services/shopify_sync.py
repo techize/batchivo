@@ -265,7 +265,7 @@ class ShopifySyncService:
             and not force
             and existing_listing.last_synced_at
             and product.updated_at
-            and product.updated_at <= existing_listing.last_synced_at.replace(tzinfo=None)
+            and product.updated_at.replace(tzinfo=None) <= existing_listing.last_synced_at.replace(tzinfo=None)
         ):
             return (
                 True,
