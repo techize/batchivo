@@ -199,12 +199,14 @@ class EmailService:
             logger.warning("Email service not configured - skipping order confirmation")
             return False
 
+        safe_name = html.escape(customer_name)
+
         # Build order items HTML
         items_html = ""
         for item in order_items:
             items_html += f"""
             <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item["name"]}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{html.escape(str(item["name"]))}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">{item["quantity"]}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">£{item["price"]:.2f}</td>
             </tr>
@@ -212,12 +214,12 @@ class EmailService:
 
         # Build shipping address
         address_lines = [
-            shipping_address.get("address_line1", ""),
-            shipping_address.get("address_line2", ""),
-            shipping_address.get("city", ""),
-            shipping_address.get("county", ""),
-            shipping_address.get("postcode", ""),
-            shipping_address.get("country", ""),
+            html.escape(shipping_address.get("address_line1", "")),
+            html.escape(shipping_address.get("address_line2", "")),
+            html.escape(shipping_address.get("city", "")),
+            html.escape(shipping_address.get("county", "")),
+            html.escape(shipping_address.get("postcode", "")),
+            html.escape(shipping_address.get("country", "")),
         ]
         address_html = "<br>".join(line for line in address_lines if line)
 
@@ -245,7 +247,7 @@ class EmailService:
 
             <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #111; margin-top: 0;">Thank you for your order!</h2>
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>We've received your order and are getting it ready. We'll send you another email when your order ships.</p>
             </div>
 
@@ -340,11 +342,13 @@ class EmailService:
         currency_symbols = {"GBP": "£", "USD": "$", "EUR": "€"}
         symbol = currency_symbols.get(currency, currency)
 
+        safe_name = html.escape(customer_name)
+
         reason_section = ""
         if reason:
             reason_section = f"""
             <div style="background: #f3f4f6; border-radius: 4px; padding: 15px; margin: 20px 0;">
-                <strong>Reason:</strong> {reason}
+                <strong>Reason:</strong> {html.escape(reason)}
             </div>
             """
 
@@ -363,7 +367,7 @@ class EmailService:
 
             <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #92400e; margin-top: 0;">Refund Processed</h2>
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>We've processed a refund for your order <strong>#{order_number}</strong>.</p>
             </div>
 
@@ -607,14 +611,17 @@ class EmailService:
             logger.warning("Email service not configured - skipping shipped notification")
             return False
 
+        safe_name = html.escape(customer_name)
+
         # Build tracking section
         tracking_section = ""
         if tracking_number:
+            safe_tracking = html.escape(tracking_number)
             if tracking_url:
                 tracking_section = f"""
                 <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
                     <p style="margin: 0 0 10px; color: #166534;"><strong>Tracking Number:</strong></p>
-                    <p style="margin: 0 0 15px; font-size: 1.3em; font-family: monospace; color: #111;">{tracking_number}</p>
+                    <p style="margin: 0 0 15px; font-size: 1.3em; font-family: monospace; color: #111;">{safe_tracking}</p>
                     <a href="{tracking_url}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                         Track Your Package
                     </a>
@@ -624,7 +631,7 @@ class EmailService:
                 tracking_section = f"""
                 <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
                     <p style="margin: 0 0 10px; color: #166534;"><strong>Tracking Number:</strong></p>
-                    <p style="margin: 0; font-size: 1.3em; font-family: monospace; color: #111;">{tracking_number}</p>
+                    <p style="margin: 0; font-size: 1.3em; font-family: monospace; color: #111;">{safe_tracking}</p>
                     <p style="margin: 10px 0 0; color: #666; font-size: 0.9em;">
                         Track your parcel at <a href="https://www.royalmail.com/track-your-item" style="color: #8b5cf6;">royalmail.com</a>
                     </p>
@@ -659,8 +666,8 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {customer_name},</p>
-                <p>Great news! Your order has been dispatched and is making its way to you via <strong>{shipping_method}</strong>.</p>
+                <p>Hi {safe_name},</p>
+                <p>Great news! Your order has been dispatched and is making its way to you via <strong>{html.escape(shipping_method)}</strong>.</p>
 
                 {tracking_section}
 
@@ -714,6 +721,8 @@ class EmailService:
             logger.warning("Email service not configured - skipping delivered notification")
             return False
 
+        safe_name = html.escape(customer_name)
+
         # Build social section only if handle is configured
         social_section = ""
         if self.shop_social_handle:
@@ -747,7 +756,7 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>Your order has been delivered! We hope you love your new items. 🎉</p>
 
                 {social_section}
@@ -806,12 +815,14 @@ class EmailService:
             logger.warning("Email service not configured - skipping cancellation notification")
             return False
 
+        safe_name = html.escape(customer_name)
+
         # Build reason section
         reason_section = ""
         if reason:
             reason_section = f"""
             <div style="background: #f3f4f6; border-radius: 4px; padding: 15px; margin: 20px 0;">
-                <strong>Reason:</strong> {reason}
+                <strong>Reason:</strong> {html.escape(reason)}
             </div>
             """
 
@@ -821,7 +832,7 @@ class EmailService:
             refund_section = f"""
             <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0;">
                 <p style="margin: 0; color: #166534;">
-                    <strong>Refund Information:</strong> {refund_info}
+                    <strong>Refund Information:</strong> {html.escape(refund_info)}
                 </p>
             </div>
             """
@@ -846,7 +857,7 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>Your order <strong>#{order_number}</strong> has been cancelled.</p>
 
                 {reason_section}
@@ -905,6 +916,7 @@ class EmailService:
 
         # Use configured shop name if not provided
         display_shop_name = shop_name or self.shop_name
+        safe_name = html.escape(customer_name)
 
         verification_url = f"{self.frontend_base_url}/verify-email?token={verification_token}"
 
@@ -927,7 +939,7 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>Thank you for creating an account with {display_shop_name}! We're excited to have you.</p>
                 <p>With your account, you can:</p>
                 <ul style="color: #666;">
@@ -990,6 +1002,7 @@ class EmailService:
 
         # Use configured shop name if not provided
         display_shop_name = shop_name or self.shop_name
+        safe_name = html.escape(customer_name)
 
         verification_url = f"{self.frontend_base_url}/verify-email?token={verification_token}"
 
@@ -1007,7 +1020,7 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>Please verify your email address by clicking the button below:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
@@ -1062,6 +1075,7 @@ class EmailService:
 
         # Use configured shop name if not provided
         display_shop_name = shop_name or self.shop_name
+        safe_name = html.escape(customer_name)
 
         reset_url = f"{self.frontend_base_url}/reset-password?token={reset_token}"
 
@@ -1083,7 +1097,7 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {customer_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>We received a request to reset your password. Click the button below to create a new password:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
@@ -1135,6 +1149,7 @@ class EmailService:
             logger.warning("Email service not configured - skipping admin password reset email")
             return False
 
+        safe_name = html.escape(user_name)
         reset_url = f"https://batchivo.com/reset-password?token={reset_token}"
 
         html_content = f"""
@@ -1155,7 +1170,7 @@ class EmailService:
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <p>Hi {user_name},</p>
+                <p>Hi {safe_name},</p>
                 <p>We received a request to reset your password. Click the button below to create a new password:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
