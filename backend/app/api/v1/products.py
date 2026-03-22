@@ -16,6 +16,7 @@ def _slugify(text: str) -> str:
     slug = re.sub(r"[\s_-]+", "-", slug)
     return slug.strip("-")
 
+
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select

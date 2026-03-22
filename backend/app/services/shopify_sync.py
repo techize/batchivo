@@ -295,7 +295,8 @@ class ShopifySyncService:
             and not force
             and existing_listing.last_synced_at
             and product.updated_at
-            and product.updated_at.replace(tzinfo=None) <= existing_listing.last_synced_at.replace(tzinfo=None)
+            and product.updated_at.replace(tzinfo=None)
+            <= existing_listing.last_synced_at.replace(tzinfo=None)
         ):
             return (
                 True,
@@ -311,7 +312,8 @@ class ShopifySyncService:
                     # UPDATE existing Shopify product
                     shopify_id = existing_listing.external_id
                     resp = await self._shopify_request(
-                        client, "PUT",
+                        client,
+                        "PUT",
                         f"{base_url}/products/{shopify_id}.json",
                         headers=headers,
                         json=payload,
@@ -320,7 +322,8 @@ class ShopifySyncService:
                 else:
                     # CREATE new Shopify product
                     resp = await self._shopify_request(
-                        client, "POST",
+                        client,
+                        "POST",
                         f"{base_url}/products.json",
                         headers=headers,
                         json=payload,
