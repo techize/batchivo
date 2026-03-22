@@ -233,7 +233,7 @@ class TestShopifySyncEndpoints:
             mock_http = AsyncMock()
             mock_http.__aenter__ = AsyncMock(return_value=mock_http)
             mock_http.__aexit__ = AsyncMock(return_value=None)
-            mock_http.post = AsyncMock(return_value=mock_response)
+            mock_http.request = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value = mock_http
 
             resp = await client.post(
