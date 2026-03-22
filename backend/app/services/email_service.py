@@ -1,5 +1,6 @@
 """Email service using Brevo for transactional emails."""
 
+import html
 import logging
 from typing import Optional
 
@@ -441,12 +442,18 @@ class EmailService:
         }
         subject_label = subject_labels.get(subject, subject.title())
 
+        safe_name = html.escape(name)
+        safe_email = html.escape(email)
+        safe_reference = html.escape(reference)
+        safe_subject_label = html.escape(subject_label)
+        safe_message = html.escape(message)
+
         order_section = ""
         if order_number:
             order_section = f"""
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Related Order:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">{order_number}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{html.escape(order_number)}</td>
             </tr>
             """
 
@@ -456,16 +463,16 @@ class EmailService:
         <html>
         <head>
             <meta charset="utf-8">
-            <title>New Contact Form Submission - {reference}</title>
+            <title>New Contact Form Submission - {safe_reference}</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{html.escape(self.shop_name)}</h1>
                 <p style="color: #666; margin: 0;">New Contact Form Submission</p>
             </div>
 
             <div style="background: #172c3c; border-radius: 8px; padding: 20px; margin-bottom: 20px; color: #BDBCB9;">
-                <h2 style="color: #fff; margin-top: 0;">Reference: {reference}</h2>
+                <h2 style="color: #fff; margin-top: 0;">Reference: {safe_reference}</h2>
                 <p>You've received a new message from the website contact form.</p>
             </div>
 
@@ -474,17 +481,17 @@ class EmailService:
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; width: 120px;">Name:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{name}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{safe_name}</td>
                     </tr>
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Email:</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                            <a href="mailto:{email}" style="color: {self.shop_brand_color};">{email}</a>
+                            <a href="mailto:{safe_email}" style="color: {self.shop_brand_color};">{safe_email}</a>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Subject:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{subject_label}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{safe_subject_label}</td>
                     </tr>
                     {order_section}
                 </table>
@@ -492,13 +499,13 @@ class EmailService:
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0; color: #111;">Message</h3>
-                <div style="background: #f9fafb; border-radius: 4px; padding: 15px; white-space: pre-wrap;">{message}</div>
+                <div style="background: #f9fafb; border-radius: 4px; padding: 15px; white-space: pre-wrap;">{safe_message}</div>
             </div>
 
             <div style="text-align: center; margin-top: 20px;">
-                <a href="mailto:{email}?subject=Re: {subject_label} - {reference}"
+                <a href="mailto:{safe_email}?subject=Re: {safe_subject_label} - {safe_reference}"
                    style="display: inline-block; background: {self.shop_brand_color}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                    Reply to {name}
+                    Reply to {safe_name}
                 </a>
             </div>
         </body>
@@ -511,35 +518,35 @@ class EmailService:
         <html>
         <head>
             <meta charset="utf-8">
-            <title>We've received your message - {reference}</title>
+            <title>We've received your message - {safe_reference}</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{self.shop_name}</h1>
-                <p style="color: #666; margin: 0;">{self.shop_tagline}</p>
+                <h1 style="color: {self.shop_brand_color}; margin-bottom: 5px;">{html.escape(self.shop_name)}</h1>
+                <p style="color: #666; margin: 0;">{html.escape(self.shop_tagline)}</p>
             </div>
 
             <div style="background: #172c3c; border-radius: 8px; padding: 20px; margin-bottom: 20px; color: #BDBCB9;">
                 <h2 style="color: #fff; margin-top: 0;">Thanks for getting in touch!</h2>
-                <p>Hi {name},</p>
+                <p>Hi {safe_name},</p>
                 <p>We've received your message and will get back to you within 24-48 hours during weekdays.</p>
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; color: #111;">Your Reference: {reference}</h3>
+                <h3 style="margin-top: 0; color: #111;">Your Reference: {safe_reference}</h3>
                 <p style="color: #666; font-size: 0.9em;">Please keep this reference number in case you need to follow up.</p>
 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                    <strong>Subject:</strong> {subject_label}<br>
+                    <strong>Subject:</strong> {safe_subject_label}<br>
                     <strong>Your message:</strong>
-                    <div style="background: #f9fafb; border-radius: 4px; padding: 15px; margin-top: 10px; white-space: pre-wrap; font-size: 0.9em;">{message}</div>
+                    <div style="background: #f9fafb; border-radius: 4px; padding: 15px; margin-top: 10px; white-space: pre-wrap; font-size: 0.9em;">{safe_message}</div>
                 </div>
             </div>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em;">
                 <p>In the meantime, feel free to browse our shop!</p>
                 <p style="margin-top: 15px;">
-                    <a href="{self.shop_website_url}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
+                    <a href="{html.escape(self.shop_website_url)}" style="color: {self.shop_brand_color};">{self.shop_website_url.replace("https://", "").replace("http://", "")}</a>
                 </p>
             </div>
         </body>
@@ -1204,12 +1211,16 @@ class EmailService:
             logger.warning("Email service not configured - skipping return submitted email")
             return False
 
+        safe_name = html.escape(customer_name)
+        safe_rma = html.escape(rma_number)
+        safe_order = html.escape(order_number)
+
         reason_html = ""
         if return_reason:
             reason_html = f"""
             <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
                 <h3 style="color: #374151; margin-top: 0;">Your reason</h3>
-                <p style="margin-bottom: 0; color: #6b7280;">{return_reason}</p>
+                <p style="margin-bottom: 0; color: #6b7280;">{html.escape(return_reason)}</p>
             </div>
             """
 
@@ -1219,17 +1230,17 @@ class EmailService:
         <head><meta charset="utf-8"><title>Return Request Received</title></head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #6366f1; margin-bottom: 5px;">{self.from_name}</h1>
+                <h1 style="color: #6366f1; margin-bottom: 5px;">{html.escape(self.from_name)}</h1>
             </div>
 
             <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #1d4ed8; margin-top: 0;">Return Request Received</h2>
-                <p style="margin-bottom: 0;">RMA #: <strong>{rma_number}</strong></p>
+                <p style="margin-bottom: 0;">RMA #: <strong>{safe_rma}</strong></p>
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
-                <p>Hi {customer_name},</p>
-                <p>We've received your return request for order <strong>{order_number}</strong>. We'll review it and be in touch shortly.</p>
+                <p>Hi {safe_name},</p>
+                <p>We've received your return request for order <strong>{safe_order}</strong>. We'll review it and be in touch shortly.</p>
                 {reason_html}
                 <p>In the meantime, please keep the item(s) safe and in their original condition.</p>
                 <p>You'll receive another email once we've reviewed your request.</p>
@@ -1278,20 +1289,25 @@ class EmailService:
             logger.warning("Email service not configured - skipping return approved email")
             return False
 
+        safe_name = html.escape(customer_name)
+        safe_rma = html.escape(rma_number)
+        safe_order = html.escape(order_number)
+
         instructions_html = ""
         if return_instructions:
             instructions_html = f"""
             <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0;">
                 <h3 style="color: #166534; margin-top: 0;">Return Instructions</h3>
-                <p style="margin-bottom: 0;">{return_instructions}</p>
+                <p style="margin-bottom: 0;">{html.escape(return_instructions)}</p>
             </div>
             """
 
         label_html = ""
         if return_label_url:
+            safe_label_url = html.escape(return_label_url)
             label_html = f"""
             <div style="text-align: center; margin: 20px 0;">
-                <a href="{return_label_url}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                <a href="{safe_label_url}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                     Download Return Label
                 </a>
             </div>
@@ -1303,17 +1319,17 @@ class EmailService:
         <head><meta charset="utf-8"><title>Return Approved</title></head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #6366f1; margin-bottom: 5px;">{self.from_name}</h1>
+                <h1 style="color: #6366f1; margin-bottom: 5px;">{html.escape(self.from_name)}</h1>
             </div>
 
             <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #166534; margin-top: 0;">✓ Return Request Approved</h2>
-                <p style="margin-bottom: 0;">RMA #: <strong>{rma_number}</strong></p>
+                <p style="margin-bottom: 0;">RMA #: <strong>{safe_rma}</strong></p>
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
-                <p>Hi {customer_name},</p>
-                <p>Your return request for order <strong>{order_number}</strong> has been approved.</p>
+                <p>Hi {safe_name},</p>
+                <p>Your return request for order <strong>{safe_order}</strong> has been approved.</p>
                 {instructions_html}
                 {label_html}
                 <p>Please ensure items are securely packaged before shipping.</p>
@@ -1360,6 +1376,10 @@ class EmailService:
             logger.warning("Email service not configured - skipping return completed email")
             return False
 
+        safe_name = html.escape(customer_name)
+        safe_rma = html.escape(rma_number)
+        safe_order = html.escape(order_number)
+
         resolution_html = ""
         if refund_amount:
             resolution_html = f"""
@@ -1371,7 +1391,7 @@ class EmailService:
         elif replacement_order_number:
             resolution_html = f"""
             <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0;"><strong>Replacement Order:</strong> #{replacement_order_number}</p>
+                <p style="margin: 0;"><strong>Replacement Order:</strong> #{html.escape(replacement_order_number)}</p>
                 <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">Your replacement order has been created and will ship soon.</p>
             </div>
             """
@@ -1382,17 +1402,17 @@ class EmailService:
         <head><meta charset="utf-8"><title>Return Completed</title></head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #6366f1; margin-bottom: 5px;">{self.from_name}</h1>
+                <h1 style="color: #6366f1; margin-bottom: 5px;">{html.escape(self.from_name)}</h1>
             </div>
 
             <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #166534; margin-top: 0;">✓ Return Completed</h2>
-                <p style="margin-bottom: 0;">RMA #: <strong>{rma_number}</strong></p>
+                <p style="margin-bottom: 0;">RMA #: <strong>{safe_rma}</strong></p>
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
-                <p>Hi {customer_name},</p>
-                <p>Your return for order <strong>{order_number}</strong> has been processed.</p>
+                <p>Hi {safe_name},</p>
+                <p>Your return for order <strong>{safe_order}</strong> has been processed.</p>
                 {resolution_html}
                 <p>Thank you for your patience throughout this process.</p>
             </div>
@@ -1436,27 +1456,31 @@ class EmailService:
             logger.warning("Email service not configured - skipping return rejected email")
             return False
 
+        safe_name = html.escape(customer_name)
+        safe_rma = html.escape(rma_number)
+        safe_order = html.escape(order_number)
+
         html_content = f"""
         <!DOCTYPE html>
         <html>
         <head><meta charset="utf-8"><title>Return Request Update</title></head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #6366f1; margin-bottom: 5px;">{self.from_name}</h1>
+                <h1 style="color: #6366f1; margin-bottom: 5px;">{html.escape(self.from_name)}</h1>
             </div>
 
             <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="color: #991b1b; margin-top: 0;">Return Request Update</h2>
-                <p style="margin-bottom: 0;">RMA #: <strong>{rma_number}</strong></p>
+                <p style="margin-bottom: 0;">RMA #: <strong>{safe_rma}</strong></p>
             </div>
 
             <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
-                <p>Hi {customer_name},</p>
-                <p>We've reviewed your return request for order <strong>{order_number}</strong> and unfortunately we're unable to approve it at this time.</p>
+                <p>Hi {safe_name},</p>
+                <p>We've reviewed your return request for order <strong>{safe_order}</strong> and unfortunately we're unable to approve it at this time.</p>
 
                 <div style="background: #f9fafb; border-radius: 6px; padding: 15px; margin: 20px 0;">
                     <p style="margin: 0; color: #666;"><strong>Reason:</strong></p>
-                    <p style="margin: 5px 0 0 0;">{rejection_reason}</p>
+                    <p style="margin: 5px 0 0 0;">{html.escape(rejection_reason)}</p>
                 </div>
 
                 <p>If you have questions about this decision or would like to discuss further, please reply to this email.</p>
