@@ -1179,6 +1179,78 @@ class EmailService:
             logger.error(f"Failed to send admin password reset email to {to_email}")
             return False
 
+    def send_return_submitted(
+        self,
+        to_email: str,
+        customer_name: str,
+        rma_number: str,
+        order_number: str,
+        return_reason: str | None = None,
+    ) -> bool:
+        """
+        Send return submission confirmation email to customer.
+
+        Args:
+            to_email: Customer email
+            customer_name: Customer name
+            rma_number: RMA number for the return
+            order_number: Original order number
+            return_reason: Optional reason the customer gave for the return
+
+        Returns:
+            True if sent successfully
+        """
+        if not self.is_configured:
+            logger.warning("Email service not configured - skipping return submitted email")
+            return False
+
+        reason_html = ""
+        if return_reason:
+            reason_html = f"""
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #374151; margin-top: 0;">Your reason</h3>
+                <p style="margin-bottom: 0; color: #6b7280;">{return_reason}</p>
+            </div>
+            """
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"><title>Return Request Received</title></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #6366f1; margin-bottom: 5px;">{self.from_name}</h1>
+            </div>
+
+            <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <h2 style="color: #1d4ed8; margin-top: 0;">Return Request Received</h2>
+                <p style="margin-bottom: 0;">RMA #: <strong>{rma_number}</strong></p>
+            </div>
+
+            <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+                <p>Hi {customer_name},</p>
+                <p>We've received your return request for order <strong>{order_number}</strong>. We'll review it and be in touch shortly.</p>
+                {reason_html}
+                <p>In the meantime, please keep the item(s) safe and in their original condition.</p>
+                <p>You'll receive another email once we've reviewed your request.</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
+                <p>Questions? Reply to this email for assistance.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        if self._send_email_sync(
+            to_email, f"Return Request Received - RMA #{rma_number}", html_content
+        ):
+            logger.info(f"Return submitted email sent to {to_email} for RMA {rma_number}")
+            return True
+        else:
+            logger.error(f"Failed to send return submitted email to {to_email}")
+            return False
+
     def send_return_approved(
         self,
         to_email: str,

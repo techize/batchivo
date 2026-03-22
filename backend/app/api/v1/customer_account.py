@@ -4,8 +4,11 @@ Handles customer profile, addresses, and order history.
 All endpoints require customer authentication.
 """
 
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, desc, func
@@ -592,7 +595,22 @@ async def create_return_request(
     )
     return_request = result.scalar_one()
 
-    # TODO: Send return request confirmation email
+    # Send return request confirmation email
+    try:
+        from app.services.email_service import get_email_service
+
+        email_service = get_email_service()
+        email_service.send_return_submitted(
+            to_email=return_request.customer_email,
+            customer_name=return_request.customer_name or return_request.customer_email,
+            rma_number=return_request.rma_number,
+            order_number=return_request.order.order_number
+            if return_request.order
+            else str(order_id),
+            return_reason=return_request.reason_details or return_request.reason,
+        )
+    except Exception:
+        logger.warning("Failed to send return submitted email", exc_info=True)
 
     return _build_customer_return_response(return_request)
 
