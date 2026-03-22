@@ -312,8 +312,9 @@ async def list_orders(
 
     Returns orders placed by this customer, ordered by most recent first.
     """
-    # Base query - find orders by customer email for now
-    # TODO: Add customer_id FK to orders after migration
+    # Query by email — orders.customer_id FK exists but may be null for guest orders
+    # and pre-account-feature orders; email match is the reliable fallback.
+    # Performance: ix_orders_tenant_lower_email covers (tenant_id, lower(customer_email)).
     query = (
         select(Order)
         .where(
