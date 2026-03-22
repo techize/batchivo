@@ -94,8 +94,8 @@ async def _drop_all_tables(conn, is_sqlite: bool):
 @pytest_asyncio.fixture(scope="function")
 async def db_engine():
     """Create a test database engine (function-scoped for test isolation)."""
-    # SQLite needs check_same_thread=False; PostgreSQL gets an explicit connect_timeout
-    connect_args = {"check_same_thread": False} if _IS_SQLITE else {"connect_timeout": 15}
+    # SQLite needs check_same_thread=False; PostgreSQL gets an explicit timeout (asyncpg 0.31+)
+    connect_args = {"check_same_thread": False} if _IS_SQLITE else {"timeout": 15}
     # pool_timeout and pool_pre_ping are not supported by SQLite's StaticPool
     extra_kwargs = {} if _IS_SQLITE else {"pool_timeout": 30, "pool_pre_ping": True}
     engine = create_async_engine(

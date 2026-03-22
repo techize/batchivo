@@ -464,11 +464,13 @@ async def get_product(
     product_id: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get single product details."""
+    """Get single product details. Accepts either a UUID or a seo_slug."""
     try:
         product_uuid = UUID(product_id)
+        id_filter = Product.id == product_uuid
     except ValueError:
-        raise HTTPException(status_code=404, detail="Product not found")
+        # Not a UUID — treat as seo_slug
+        id_filter = Product.seo_slug == product_id
 
     result = await db.execute(
         select(Product)
@@ -479,7 +481,7 @@ async def get_product(
             selectinload(Product.designer),
             selectinload(Product.variants),
         )
-        .where(Product.id == product_uuid)
+        .where(id_filter)
         .where(Product.shop_visible.is_(True))
     )
     product = result.scalar_one_or_none()
