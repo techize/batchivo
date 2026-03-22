@@ -58,6 +58,8 @@ else:
 
 # Determine if we're using SQLite (for connect_args)
 _IS_SQLITE = TEST_DATABASE_URL.startswith("sqlite")
+# asyncpg uses 'timeout'; psycopg uses 'connect_timeout' (PostgreSQL native option)
+_IS_ASYNCPG = "+asyncpg" in TEST_DATABASE_URL
 
 
 async def _drop_all_tables(conn, is_sqlite: bool):
@@ -94,8 +96,13 @@ async def _drop_all_tables(conn, is_sqlite: bool):
 @pytest_asyncio.fixture(scope="function")
 async def db_engine():
     """Create a test database engine (function-scoped for test isolation)."""
-    # SQLite needs check_same_thread=False; PostgreSQL gets an explicit timeout (asyncpg 0.31+)
-    connect_args = {"check_same_thread": False} if _IS_SQLITE else {"timeout": 15}
+    # SQLite needs check_same_thread=False; PostgreSQL timeout key differs by driver
+    if _IS_SQLITE:
+        connect_args = {"check_same_thread": False}
+    elif _IS_ASYNCPG:
+        connect_args = {"timeout": 15}  # asyncpg 0.31+ parameter name
+    else:
+        connect_args = {"connect_timeout": 15}  # psycopg / libpq standard
     # pool_timeout and pool_pre_ping are not supported by SQLite's StaticPool
     extra_kwargs = {} if _IS_SQLITE else {"pool_timeout": 30, "pool_pre_ping": True}
     engine = create_async_engine(
