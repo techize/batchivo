@@ -288,3 +288,4 @@ steps:
         echo "Failed after 3 attempts"
         exit 1
 # Note: volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
+# Note: 2026-03-22 — if all pipelines fail fast with "cannot ack workflow" errors, restart woodpecker-server pod (SQLite queue state corruption after 5+ days uptime)
