@@ -84,6 +84,7 @@ class Order(Base, UUIDMixin, TimestampMixin):
     customer_email: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
+        index=True,
         comment="Customer email address",
     )
     customer_name: Mapped[str] = mapped_column(
