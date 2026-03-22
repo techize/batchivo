@@ -15,6 +15,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import func, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1892,3 +1893,51 @@ async def mark_review_helpful(
             "helpful_count": review.helpful_count,
         }
     }
+
+
+@router.get("/sitemap.xml", response_class=PlainTextResponse)
+async def get_sitemap(
+    shop_context: ShopContext,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate a dynamic XML sitemap for the shop.
+
+    Returns all shop-visible, active products as sitemap URLs.
+    Public endpoint — no authentication required.
+    Designed to be proxied by nginx at /sitemap.xml.
+    """
+    shop_tenant, _channel = shop_context
+
+    result = await db.execute(
+        select(Product)
+        .where(
+            Product.tenant_id == shop_tenant.id,
+            Product.shop_visible.is_(True),
+            Product.is_active.is_(True),
+        )
+        .order_by(Product.updated_at.desc())
+    )
+    products = result.scalars().all()
+
+    base_url = "https://www.mystmereforge.co.uk"
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    urls = [
+        f"""  <url>
+    <loc>{base_url}/product/{product.id}</loc>
+    <lastmod>{product.updated_at.strftime("%Y-%m-%d") if product.updated_at else today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>"""
+        for product in products
+    ]
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(urls)
+        + "\n</urlset>"
+    )
+
+    return PlainTextResponse(content=xml, media_type="application/xml")

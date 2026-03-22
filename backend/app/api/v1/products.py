@@ -1,11 +1,20 @@
 """Product catalog API endpoints (sellable items composed of models)."""
 
+import re
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
 import ipaddress
 import socket
+
+
+def _slugify(text: str) -> str:
+    """Convert text to a URL-friendly slug."""
+    slug = text.lower().strip()
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[\s_-]+", "-", slug)
+    return slug.strip("-")
 
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -271,6 +280,10 @@ async def create_product(
         tenant_id=tenant.id,
         **product_dict,
     )
+
+    # Auto-generate seo_slug from name if not explicitly provided
+    if not product.seo_slug:
+        product.seo_slug = _slugify(product.name)
 
     db.add(product)
     await db.flush()  # Get the product ID
@@ -575,6 +588,10 @@ async def update_product(
     update_data = product_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(product, field, value)
+
+    # Auto-generate seo_slug from (new) name if name changed and seo_slug wasn't explicitly set
+    if "name" in update_data and "seo_slug" not in update_data and not product.seo_slug:
+        product.seo_slug = _slugify(product.name)
 
     await db.commit()
     await db.refresh(product)
