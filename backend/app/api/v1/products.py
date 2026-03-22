@@ -607,9 +607,13 @@ async def delete_product(
     tenant: CurrentTenant,
     _: RequireAdmin,
     db: AsyncSession = Depends(get_db),
+    purge: bool = Query(False, description="Hard-delete the product from the database. Only allowed on inactive products."),
 ):
     """
-    Delete a product (soft delete by setting is_active=False).
+    Delete a product.
+
+    Without ?purge=true: soft delete by setting is_active=False.
+    With ?purge=true: hard delete from the database. Only allowed on inactive products.
 
     Requires admin role or higher.
     """
@@ -627,7 +631,16 @@ async def delete_product(
             detail="Product not found",
         )
 
-    product.is_active = False
+    if purge:
+        if product.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cannot purge an active product. Deactivate it first.",
+            )
+        await db.delete(product)
+    else:
+        product.is_active = False
+
     await db.commit()
 
 
