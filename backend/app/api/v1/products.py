@@ -607,7 +607,10 @@ async def delete_product(
     tenant: CurrentTenant,
     _: RequireAdmin,
     db: AsyncSession = Depends(get_db),
-    purge: bool = Query(False, description="Hard-delete the product from the database. Only allowed on inactive products."),
+    purge: bool = Query(
+        False,
+        description="Hard-delete the product from the database. Only allowed on inactive products.",
+    ),
 ):
     """
     Delete a product.
