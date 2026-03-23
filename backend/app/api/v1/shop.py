@@ -1944,7 +1944,8 @@ async def get_sitemap(
     """
     Generate a dynamic XML sitemap for the shop.
 
-    Returns all shop-visible, active products as sitemap URLs.
+    Combines static site pages, blog posts, and all shop-visible products.
+    Product URLs use seo_slug for canonical human-readable paths.
     Public endpoint — no authentication required.
     Designed to be proxied by nginx at /sitemap.xml.
     """
@@ -1964,9 +1965,66 @@ async def get_sitemap(
     base_url = "https://www.mystmereforge.co.uk"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    urls = [
+    # Static pages: (path, priority, changefreq)
+    static_pages = [
+        ("/", "1.0", "daily"),
+        ("/shop", "0.9", "daily"),
+        ("/dragons", "0.9", "weekly"),
+        ("/shop?category=dragons", "0.8", "weekly"),
+        ("/shop?category=dinosaurs", "0.8", "weekly"),
+        ("/shop?category=animals-and-pets", "0.8", "weekly"),
+        ("/shop?category=wildlife", "0.8", "weekly"),
+        ("/shop?category=trinkets", "0.8", "weekly"),
+        ("/shop?category=dioramas", "0.8", "weekly"),
+        ("/shop?category=tiny-terras", "0.8", "weekly"),
+        ("/shop?category=special-editions", "0.8", "weekly"),
+        ("/designers", "0.7", "weekly"),
+        ("/blog", "0.8", "weekly"),
+        ("/about", "0.6", "monthly"),
+        ("/contact", "0.6", "monthly"),
+        ("/faq", "0.6", "monthly"),
+        ("/custom-orders", "0.6", "monthly"),
+        ("/shipping", "0.5", "monthly"),
+        ("/order-lookup", "0.4", "monthly"),
+        ("/privacy", "0.3", "monthly"),
+        ("/terms", "0.3", "monthly"),
+        ("/returns", "0.4", "monthly"),
+    ]
+
+    # Blog post slugs (static — stored in frontend data layer)
+    blog_slugs = [
+        "caelith-the-sky-crystal-dragon-of-the-mystmere-valley",
+        "floreth-the-one-who-blooms-where-rest-is-found",
+        "how-we-3d-print-articulated-flexi-dragons-uk-workshop",
+        "best-handmade-dragon-gifts-2026-uk",
+        "how-our-dragons-are-made",
+        "guide-to-articulated-dragons",
+        "dragon-gifts-for-fantasy-lovers",
+        "what-is-an-articulated-dragon",
+    ]
+
+    static_urls = [
         f"""  <url>
-    <loc>{base_url}/product/{product.id}</loc>
+    <loc>{base_url}{path}</loc>
+    <changefreq>{freq}</changefreq>
+    <priority>{priority}</priority>
+  </url>"""
+        for path, priority, freq in static_pages
+    ]
+
+    blog_urls = [
+        f"""  <url>
+    <loc>{base_url}/blog/{slug}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>"""
+        for slug in blog_slugs
+    ]
+
+    # Product pages — canonical URL uses seo_slug if available, fallback to UUID
+    product_urls = [
+        f"""  <url>
+    <loc>{base_url}/products/{product.seo_slug if product.seo_slug else product.id}</loc>
     <lastmod>{product.updated_at.strftime("%Y-%m-%d") if product.updated_at else today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -1974,10 +2032,11 @@ async def get_sitemap(
         for product in products
     ]
 
+    all_urls = static_urls + blog_urls + product_urls
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(urls)
+        + "\n".join(all_urls)
         + "\n</urlset>"
     )
 
