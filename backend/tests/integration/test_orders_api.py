@@ -691,7 +691,7 @@ class TestResendOrderEmail:
     async def test_resend_confirmation_email(self, client: AsyncClient, test_order: Order):
         """Test resending order confirmation email."""
         with patch("app.services.email_service.get_email_service") as mock_get_email:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_confirmation.return_value = True
             mock_get_email.return_value = mock_service
 
@@ -715,7 +715,7 @@ class TestResendOrderEmail:
         await db_session.commit()
 
         with patch("app.services.email_service.get_email_service") as mock_get_email:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_shipped.return_value = True
             mock_get_email.return_value = mock_service
 
@@ -751,7 +751,7 @@ class TestResendOrderEmail:
         await db_session.commit()
 
         with patch("app.services.email_service.get_email_service") as mock_get_email:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_delivered.return_value = True
             mock_get_email.return_value = mock_service
 
@@ -803,7 +803,7 @@ class TestResendOrderEmail:
     async def test_resend_email_service_failure(self, client: AsyncClient, test_order: Order):
         """Test email service failure returns appropriate response."""
         with patch("app.services.email_service.get_email_service") as mock_get_email:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_confirmation.return_value = False
             mock_get_email.return_value = mock_service
 

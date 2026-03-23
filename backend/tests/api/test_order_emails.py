@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from uuid import uuid4
 
 from app.models.order import Order, OrderItem, OrderStatus
@@ -116,7 +116,7 @@ class TestResendOrderEmail:
     ):
         """Test resending confirmation email successfully."""
         with patch("app.services.email_service.get_email_service") as mock_get_service:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_confirmation.return_value = True
             mock_get_service.return_value = mock_service
 
@@ -140,7 +140,7 @@ class TestResendOrderEmail:
     ):
         """Test resending shipped email successfully."""
         with patch("app.services.email_service.get_email_service") as mock_get_service:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_shipped.return_value = True
             mock_get_service.return_value = mock_service
 
@@ -165,7 +165,7 @@ class TestResendOrderEmail:
     ):
         """Test resending delivered email successfully."""
         with patch("app.services.email_service.get_email_service") as mock_get_service:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_delivered.return_value = True
             mock_get_service.return_value = mock_service
 
@@ -236,7 +236,7 @@ class TestResendOrderEmail:
     ):
         """Test resending email when service is not configured."""
         with patch("app.services.email_service.get_email_service") as mock_get_service:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_confirmation.return_value = False
             mock_get_service.return_value = mock_service
 
@@ -260,7 +260,7 @@ class TestCancelOrderEmail:
     ):
         """Test cancelling order sends notification email."""
         with patch("app.services.email_service.get_email_service") as mock_get_service:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_cancelled.return_value = True
             mock_get_service.return_value = mock_service
 
@@ -285,7 +285,7 @@ class TestCancelOrderEmail:
     ):
         """Test that email failure doesn't prevent order cancellation."""
         with patch("app.services.email_service.get_email_service") as mock_get_service:
-            mock_service = MagicMock()
+            mock_service = AsyncMock()
             mock_service.send_order_cancelled.side_effect = Exception("Email failed")
             mock_get_service.return_value = mock_service
 
@@ -303,14 +303,14 @@ class TestCancelOrderEmail:
 class TestEmailServiceCancelMethod:
     """Tests for email service send_order_cancelled method."""
 
-    def test_send_order_cancelled_with_reason(self):
+    async def test_send_order_cancelled_with_reason(self):
         """Test send_order_cancelled includes reason in email."""
         from app.services.email_service import EmailService
 
         service = EmailService()
 
         # Test with no API key (will return False but won't crash)
-        result = service.send_order_cancelled(
+        result = await service.send_order_cancelled(
             to_email="test@example.com",
             customer_name="Test User",
             order_number="MF-TEST-001",
@@ -320,13 +320,13 @@ class TestEmailServiceCancelMethod:
         # Without API key configured, should return False
         assert result is False
 
-    def test_send_order_cancelled_without_reason(self):
+    async def test_send_order_cancelled_without_reason(self):
         """Test send_order_cancelled works without reason."""
         from app.services.email_service import EmailService
 
         service = EmailService()
 
-        result = service.send_order_cancelled(
+        result = await service.send_order_cancelled(
             to_email="test@example.com",
             customer_name="Test User",
             order_number="MF-TEST-001",
@@ -334,13 +334,13 @@ class TestEmailServiceCancelMethod:
 
         assert result is False  # No API key configured
 
-    def test_send_order_cancelled_with_refund_info(self):
+    async def test_send_order_cancelled_with_refund_info(self):
         """Test send_order_cancelled includes refund info."""
         from app.services.email_service import EmailService
 
         service = EmailService()
 
-        result = service.send_order_cancelled(
+        result = await service.send_order_cancelled(
             to_email="test@example.com",
             customer_name="Test User",
             order_number="MF-TEST-001",
