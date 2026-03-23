@@ -434,9 +434,9 @@ class TestApplicationLevelIsolation:
                 )
 
                 # Should only see Tenant A's 3 spools
-                assert len(spools) == 3, (
-                    f"Expected 3 spools, got {len(spools)}: {[s.get('spool_id') for s in spools]}"
-                )
+                assert (
+                    len(spools) == 3
+                ), f"Expected 3 spools, got {len(spools)}: {[s.get('spool_id') for s in spools]}"
 
                 # Verify all spools belong to Tenant A
                 spool_ids = {s["spool_id"] for s in spools}
