@@ -107,6 +107,7 @@ class ShopProduct(BaseModel):
     seo_slug: Optional[str] = None  # URL-friendly slug for canonical URLs
     seo_title: Optional[str] = None  # SEO page title (overrides name-based default)
     seo_description: Optional[str] = None  # SEO meta description
+    shop_url: Optional[str] = None  # Canonical product URL on the storefront
 
     model_config = {"from_attributes": True}
 
@@ -449,6 +450,11 @@ async def get_products(
             is_dragon=is_dragon,
             created_at=product.created_at.isoformat() if product.created_at else None,
             seo_slug=getattr(product, "seo_slug", None),
+            shop_url=(
+                f"https://www.mystmereforge.co.uk/products/{product.seo_slug}"
+                if getattr(product, "seo_slug", None)
+                else f"https://www.mystmereforge.co.uk/product/{product.id}"
+            ),
         )
         shop_products.append(shop_product)
 
@@ -466,27 +472,35 @@ async def get_product(
     product_id: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get single product details. Accepts either a UUID or a seo_slug."""
+    """Get single product details. Accepts a UUID or seo_slug (including Shopify-style slug-N suffixes)."""
+    import re as _re
+
+    async def _fetch_product(filter_expr):
+        r = await db.execute(
+            select(Product)
+            .options(
+                selectinload(Product.pricing),
+                selectinload(Product.images),
+                selectinload(Product.categories),
+                selectinload(Product.designer),
+                selectinload(Product.variants),
+            )
+            .where(filter_expr)
+            .where(Product.shop_visible.is_(True))
+        )
+        return r.scalar_one_or_none()
+
     try:
         product_uuid = UUID(product_id)
-        id_filter = Product.id == product_uuid
+        product = await _fetch_product(Product.id == product_uuid)
     except ValueError:
-        # Not a UUID — treat as seo_slug
-        id_filter = Product.seo_slug == product_id
-
-    result = await db.execute(
-        select(Product)
-        .options(
-            selectinload(Product.pricing),
-            selectinload(Product.images),
-            selectinload(Product.categories),
-            selectinload(Product.designer),
-            selectinload(Product.variants),
-        )
-        .where(id_filter)
-        .where(Product.shop_visible.is_(True))
-    )
-    product = result.scalar_one_or_none()
+        # Not a UUID — try exact seo_slug match first
+        product = await _fetch_product(Product.seo_slug == product_id)
+        # Fall back: strip Shopify-style trailing -N suffix (e.g. capybara-1 → capybara)
+        if not product:
+            base_slug = _re.sub(r"-\d+$", "", product_id)
+            if base_slug != product_id:
+                product = await _fetch_product(Product.seo_slug == base_slug)
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -574,6 +588,11 @@ async def get_product(
             seo_slug=getattr(product, "seo_slug", None),
             seo_title=getattr(product, "seo_title", None),
             seo_description=getattr(product, "seo_description", None),
+            shop_url=(
+                f"https://www.mystmereforge.co.uk/products/{product.seo_slug}"
+                if getattr(product, "seo_slug", None)
+                else f"https://www.mystmereforge.co.uk/product/{product.id}"
+            ),
         )
     }
 
