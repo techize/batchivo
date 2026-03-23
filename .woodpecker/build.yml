@@ -13,7 +13,7 @@
 # scan-deps-frontend ─┬──> frontend ──────────────────────────────────┤                   ├──> deploy
 #                     └──> build-frontend ────────────────────────────┴──> scan-frontend ─┘
 #
-# Expected time: ~25-28 min
+# Expected time: ~20-23 min
 # Note: pipeline timeout is set to 120min via Woodpecker SQLite repos.timeout —
 # the top-level 'timeout' key is not supported in Woodpecker v3.x schema.
 #
@@ -71,18 +71,20 @@ steps:
     image: *ci_python_image
     depends_on:
       - scan-deps-backend
-    # volumes disabled: Woodpecker agent next-bef0abaa4a has a DNS name bug for
-    # hostPath volumes (/ prefix → leading hyphen = invalid). Re-enable once patched.
+    # Volume cache for pip and poetry virtualenvs
+    # Re-enabled 2026-03-23: Woodpecker v3.12.0 fixed DNS name bug for hostPath volumes
+    volumes:
+      - /cache/batchivo/pip:/root/.cache/pip
+      - /cache/batchivo/poetry:/root/.cache/pypoetry
     environment:
       DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
       SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
       PGPASSWORD: test
     commands:
       - cd backend
-      - pip install --quiet poetry
       - echo "=== Installing dependencies ==="
+      # poetry is pre-installed in ci-python:3.12 image; pip cache mounted at /root/.cache/pip
       - poetry install --no-interaction --quiet --extras dev
-      - apt-get update -qq && apt-get install -y -qq postgresql-client > /dev/null
       - echo "=== Waiting for postgres to be ready ==="
       - until pg_isready -h postgres -U test -q 2>/dev/null; do echo "postgres not ready, retrying..."; sleep 1; done
       - echo "Postgres is ready"
@@ -101,7 +103,9 @@ steps:
     image: *node_image
     depends_on:
       - scan-deps-frontend
-    # volumes disabled: same Woodpecker agent DNS name bug as backend step above
+    # Volume cache for npm - re-enabled 2026-03-23 (Woodpecker v3.12.0 fixes DNS name bug)
+    volumes:
+      - /cache/batchivo/npm:/root/.npm
     commands:
       - cd frontend
       - echo "=== Installing dependencies ==="
@@ -287,5 +291,7 @@ steps:
         done
         echo "Failed after 3 attempts"
         exit 1
-# Note: volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
+# Note: volumes re-enabled 2026-03-23 — Woodpecker v3.12.0 fixed the DNS name bug
+# (was disabled 2026-03-17 due to Woodpecker agent next-bef0abaa4a DNS label bug)
+# Note: poetry now pre-installed in ci-python:3.12 image (Dockerfile.ci updated 2026-03-23)
 # Note: 2026-03-22 — if all pipelines fail fast with "cannot ack workflow" errors, restart woodpecker-server pod (SQLite queue state corruption after 5+ days uptime)
