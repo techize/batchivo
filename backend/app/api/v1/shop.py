@@ -597,6 +597,167 @@ async def get_product(
     }
 
 
+@router.get("/products/{product_id}/related")
+async def get_related_products(
+    product_id: str,
+    shop_context: ShopContext,
+    db: AsyncSession = Depends(get_db),
+    limit: int = 4,
+):
+    """
+    Return products related to the given product, ranked by number of shared categories.
+
+    Accepts UUID or seo_slug for product_id.
+    Excludes the source product and hidden/inactive products.
+    Public endpoint — no authentication required.
+    """
+    shop_tenant, channel = shop_context
+
+    # Resolve product by UUID or seo_slug
+    try:
+        product_uuid = UUID(product_id)
+        source = await db.execute(
+            select(Product).where(
+                Product.id == product_uuid,
+                Product.tenant_id == shop_tenant.id,
+            )
+        )
+    except ValueError:
+        source = await db.execute(
+            select(Product).where(
+                Product.seo_slug == product_id,
+                Product.tenant_id == shop_tenant.id,
+            )
+        )
+    source_product = source.scalars().first()
+    if not source_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Get category IDs for the source product
+    cat_result = await db.execute(
+        select(product_categories.c.category_id).where(
+            product_categories.c.product_id == source_product.id
+        )
+    )
+    source_category_ids = [row[0] for row in cat_result.fetchall()]
+
+    if not source_category_ids:
+        # No categories — fall back to other shop-visible products
+        result = await db.execute(
+            select(Product)
+            .options(
+                selectinload(Product.pricing),
+                selectinload(Product.images),
+                selectinload(Product.categories),
+                selectinload(Product.designer),
+            )
+            .where(
+                Product.tenant_id == shop_tenant.id,
+                Product.shop_visible.is_(True),
+                Product.is_active.is_(True),
+                Product.id != source_product.id,
+            )
+            .order_by(func.random())
+            .limit(limit)
+        )
+        related = result.scalars().all()
+    else:
+        # Find products sharing the most categories with the source product
+        shared_count = (
+            select(
+                product_categories.c.product_id,
+                func.count(product_categories.c.category_id).label("shared"),
+            )
+            .where(product_categories.c.category_id.in_(source_category_ids))
+            .group_by(product_categories.c.product_id)
+            .subquery()
+        )
+
+        result = await db.execute(
+            select(Product)
+            .options(
+                selectinload(Product.pricing),
+                selectinload(Product.images),
+                selectinload(Product.categories),
+                selectinload(Product.designer),
+            )
+            .join(shared_count, Product.id == shared_count.c.product_id)
+            .where(
+                Product.tenant_id == shop_tenant.id,
+                Product.shop_visible.is_(True),
+                Product.is_active.is_(True),
+                Product.id != source_product.id,
+            )
+            .order_by(desc(shared_count.c.shared))
+            .limit(limit)
+        )
+        related = result.scalars().all()
+
+    shop_products = []
+    for product in related:
+        price = Decimal("0")
+        if channel:
+            for pricing in product.pricing:
+                if pricing.sales_channel_id == channel.id and pricing.is_active:
+                    price = pricing.list_price or Decimal("0")
+                    break
+        if price == 0 and product.pricing:
+            active = [p for p in product.pricing if p.is_active]
+            if active:
+                price = active[0].list_price or Decimal("0")
+
+        product_images = []
+        for img in getattr(product, "images", []):
+            image_url = img.image_url
+            if image_url.startswith("/uploads/products/"):
+                image_url = image_url.replace("/uploads/products/", "/api/v1/shop/images/")
+            product_images.append(
+                ShopProductImage(url=image_url, alt=img.alt_text or "", is_primary=img.is_primary)
+            )
+
+        product_categories_list = [
+            ShopProductCategory(slug=cat.slug, name=cat.name)
+            for cat in getattr(product, "categories", [])
+            if cat.is_active
+        ]
+
+        designer_info = None
+        if product.designer and product.designer.is_active:
+            designer_info = ShopProductDesigner(
+                id=str(product.designer.id),
+                name=product.designer.name,
+                slug=product.designer.slug,
+            )
+
+        is_print_to_order = getattr(product, "print_to_order", False)
+        shop_products.append(
+            ShopProduct(
+                id=str(product.id),
+                sku=product.sku or "",
+                name=product.name,
+                description=product.description,
+                price=price * 100,
+                images=product_images,
+                categories=product_categories_list,
+                designer=designer_info,
+                in_stock=is_print_to_order or product.units_in_stock > 0,
+                stock_count=None if is_print_to_order else product.units_in_stock,
+                print_to_order=is_print_to_order,
+                free_shipping=getattr(product, "free_shipping", False),
+                is_dragon=getattr(product, "is_dragon", False),
+                created_at=product.created_at.isoformat() if product.created_at else None,
+                seo_slug=getattr(product, "seo_slug", None),
+                shop_url=(
+                    f"https://www.mystmereforge.co.uk/products/{product.seo_slug}"
+                    if getattr(product, "seo_slug", None)
+                    else f"https://www.mystmereforge.co.uk/product/{product.id}"
+                ),
+            )
+        )
+
+    return {"data": shop_products}
+
+
 @router.get("/categories")
 async def get_categories(db: AsyncSession = Depends(get_db)):
     """Get product categories for shop navigation."""
