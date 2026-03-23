@@ -788,6 +788,8 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
         # Use shop_description if available, otherwise fall back to description
         display_description = getattr(product, "shop_description", None) or product.description
 
+        is_print_to_order = getattr(product, "print_to_order", False)
+
         shop_products.append(
             ShopProduct(
                 id=str(product.id),
@@ -798,8 +800,9 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
                 images=product_images,
                 categories=product_categories_list,
                 designer=designer_info,
-                in_stock=product.units_in_stock > 0,
-                print_to_order=getattr(product, "print_to_order", False),
+                in_stock=is_print_to_order or product.units_in_stock > 0,
+                stock_count=None if is_print_to_order else product.units_in_stock,
+                print_to_order=is_print_to_order,
                 free_shipping=getattr(product, "free_shipping", False),
                 is_dragon=True,
                 backstory=getattr(product, "backstory", None),
@@ -807,6 +810,11 @@ async def get_dragons(db: AsyncSession = Depends(get_db)):
                 seo_slug=getattr(product, "seo_slug", None),
                 seo_title=getattr(product, "seo_title", None),
                 seo_description=getattr(product, "seo_description", None),
+                shop_url=(
+                    f"https://www.mystmereforge.co.uk/products/{product.seo_slug}"
+                    if getattr(product, "seo_slug", None)
+                    else f"https://www.mystmereforge.co.uk/product/{product.id}"
+                ),
             )
         )
 
