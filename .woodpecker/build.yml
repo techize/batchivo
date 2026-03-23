@@ -92,7 +92,7 @@ steps:
       - poetry run ruff check .
       - poetry run ruff format --check .
       - echo "=== Running tests (4 parallel workers) ==="
-      - poetry run pytest tests/ -n 4 --dist worksteal --tb=short -q
+      - poetry run pytest tests/ -n 4 --dist worksteal --tb=short -v 2>&1 | tail -100
 
   # ============================================
   # Frontend: Lint + Test
