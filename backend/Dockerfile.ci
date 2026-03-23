@@ -1,8 +1,11 @@
 # CI test image for batchivo backend
-# Extends python:3.12-slim with postgresql-client pre-installed
-# so the test pipeline does not re-install apt packages on every run.
+# Extends python:3.12-slim with postgresql-client and poetry pre-installed
+# so the test pipeline does not re-install apt packages or poetry on every run.
 FROM python:3.12-slim
 
 RUN apt-get update -qq \
     && apt-get install -y -qq postgresql-client \
     && rm -rf /var/lib/apt/lists/*
+
+# Pre-install Poetry so every CI run skips this install step (~30s saved per build)
+RUN pip install --no-cache-dir "poetry>=2.0.0"
