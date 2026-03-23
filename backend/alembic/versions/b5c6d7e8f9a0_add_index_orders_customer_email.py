@@ -1,6 +1,6 @@
 """Add index on orders.customer_email for faster customer account lookups.
 
-Revision ID: a4b5c6d7e8f9
+Revision ID: b5c6d7e8f9a0
 Revises: z3a4b5c6d7e8
 Create Date: 2026-03-22 13:00:00.000000
 
@@ -13,7 +13,7 @@ from alembic import op
 
 
 # revision identifiers
-revision = "a4b5c6d7e8f9"
+revision = "b5c6d7e8f9a0"
 down_revision = "z3a4b5c6d7e8"
 branch_labels = None
 depends_on = None

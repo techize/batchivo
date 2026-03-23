@@ -1,7 +1,7 @@
 """Add composite indexes for common query patterns.
 
-Revision ID: a4b5c6d7e8f9
-Revises: z3a4b5c6d7e8
+Revision ID: c6d7e8f9a0b1
+Revises: b5c6d7e8f9a0
 Create Date: 2026-03-23 09:00:00.000000
 
 Adds composite indexes to eliminate full table scans on frequently-combined filter
@@ -16,8 +16,8 @@ from alembic import op
 
 
 # revision identifiers
-revision = "a4b5c6d7e8f9"
-down_revision = "z3a4b5c6d7e8"
+revision = "c6d7e8f9a0b1"
+down_revision = "b5c6d7e8f9a0"
 branch_labels = None
 depends_on = None
 
