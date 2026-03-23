@@ -269,7 +269,7 @@ async def approve_return_request(
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
-        email_service.send_return_approved(
+        await email_service.send_return_approved(
             to_email=return_request.customer_email,
             customer_name=return_request.customer_name,
             rma_number=return_request.rma_number,
@@ -423,7 +423,7 @@ async def complete_return_request(
                 replacement_order_number = replacement_order.order_number
 
         email_service = get_email_service()
-        email_service.send_return_completed(
+        await email_service.send_return_completed(
             to_email=return_request.customer_email,
             customer_name=return_request.customer_name,
             rma_number=return_request.rma_number,
@@ -489,7 +489,7 @@ async def reject_return_request(
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
-        email_service.send_return_rejected(
+        await email_service.send_return_rejected(
             to_email=return_request.customer_email,
             customer_name=return_request.customer_name,
             rma_number=return_request.rma_number,

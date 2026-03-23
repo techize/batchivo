@@ -166,7 +166,7 @@ class EmailService:
             logger.error(f"Newsletter subscription failed for {email}: {e}")
             return False, "An error occurred during subscription"
 
-    def send_order_confirmation(
+    async def send_order_confirmation(
         self,
         to_email: str,
         customer_name: str,
@@ -304,14 +304,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Order Confirmation - {order_number}", html_content):
+        if await self._send_email_async(to_email, f"Order Confirmation - {order_number}", html_content):
             logger.info(f"Order confirmation email sent to {to_email} for order {order_number}")
             return True
         else:
             logger.error(f"Failed to send order confirmation email to {to_email}")
             return False
 
-    def send_refund_confirmation(
+    async def send_refund_confirmation(
         self,
         to_email: str,
         customer_name: str,
@@ -402,14 +402,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Refund Confirmation - {order_number}", html_content):
+        if await self._send_email_async(to_email, f"Refund Confirmation - {order_number}", html_content):
             logger.info(f"Refund confirmation email sent to {to_email} for order {order_number}")
             return True
         else:
             logger.error(f"Failed to send refund confirmation email to {to_email}")
             return False
 
-    def send_contact_notification(
+    async def send_contact_notification(
         self,
         name: str,
         email: str,
@@ -559,7 +559,7 @@ class EmailService:
 
         try:
             # Send to shop owner
-            if not self._send_email_sync(
+            if not await self._send_email_async(
                 self.shop_support_email,
                 f"[Contact Form] {subject_label} from {name} - {reference}",
                 owner_html,
@@ -570,7 +570,7 @@ class EmailService:
             logger.info(f"Contact notification sent to shop owner for {reference}")
 
             # Send confirmation to customer
-            if not self._send_email_sync(
+            if not await self._send_email_async(
                 email,
                 f"We've received your message - {reference}",
                 customer_html,
@@ -584,7 +584,7 @@ class EmailService:
             logger.error(f"Failed to send contact notification: {e}")
             return False
 
-    def send_order_shipped(
+    async def send_order_shipped(
         self,
         to_email: str,
         customer_name: str,
@@ -691,7 +691,7 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(
+        if await self._send_email_async(
             to_email, f"Your Order Has Shipped! - {order_number}", html_content
         ):
             logger.info(f"Shipped notification email sent to {to_email} for order {order_number}")
@@ -700,7 +700,7 @@ class EmailService:
             logger.error(f"Failed to send shipped notification email to {to_email}")
             return False
 
-    def send_order_delivered(
+    async def send_order_delivered(
         self,
         to_email: str,
         customer_name: str,
@@ -781,7 +781,7 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(
+        if await self._send_email_async(
             to_email, f"Your Order Has Been Delivered! - {order_number}", html_content
         ):
             logger.info(f"Delivered notification email sent to {to_email} for order {order_number}")
@@ -790,7 +790,7 @@ class EmailService:
             logger.error(f"Failed to send delivered notification email to {to_email}")
             return False
 
-    def send_order_cancelled(
+    async def send_order_cancelled(
         self,
         to_email: str,
         customer_name: str,
@@ -882,7 +882,7 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Order Cancelled - {order_number}", html_content):
+        if await self._send_email_async(to_email, f"Order Cancelled - {order_number}", html_content):
             logger.info(
                 f"Cancellation notification email sent to {to_email} for order {order_number}"
             )
@@ -891,7 +891,7 @@ class EmailService:
             logger.error(f"Failed to send cancellation notification email to {to_email}")
             return False
 
-    def send_customer_welcome(
+    async def send_customer_welcome(
         self,
         to_email: str,
         customer_name: str,
@@ -970,14 +970,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Welcome to {display_shop_name}!", html_content):
+        if await self._send_email_async(to_email, f"Welcome to {display_shop_name}!", html_content):
             logger.info(f"Welcome email sent to {to_email}")
             return True
         else:
             logger.error(f"Failed to send welcome email to {to_email}")
             return False
 
-    def send_customer_verification(
+    async def send_customer_verification(
         self,
         to_email: str,
         customer_name: str,
@@ -1043,14 +1043,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, "Verify Your Email", html_content):
+        if await self._send_email_async(to_email, "Verify Your Email", html_content):
             logger.info(f"Verification email sent to {to_email}")
             return True
         else:
             logger.error(f"Failed to send verification email to {to_email}")
             return False
 
-    def send_customer_password_reset(
+    async def send_customer_password_reset(
         self,
         to_email: str,
         customer_name: str,
@@ -1121,14 +1121,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, "Reset Your Password", html_content):
+        if await self._send_email_async(to_email, "Reset Your Password", html_content):
             logger.info(f"Password reset email sent to {to_email}")
             return True
         else:
             logger.error(f"Failed to send password reset email to {to_email}")
             return False
 
-    def send_admin_password_reset(
+    async def send_admin_password_reset(
         self,
         to_email: str,
         user_name: str,
@@ -1194,14 +1194,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, "Reset Your Batchivo Password", html_content):
+        if await self._send_email_async(to_email, "Reset Your Batchivo Password", html_content):
             logger.info(f"Admin password reset email sent to {to_email}")
             return True
         else:
             logger.error(f"Failed to send admin password reset email to {to_email}")
             return False
 
-    def send_return_submitted(
+    async def send_return_submitted(
         self,
         to_email: str,
         customer_name: str,
@@ -1268,7 +1268,7 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(
+        if await self._send_email_async(
             to_email, f"Return Request Received - RMA #{rma_number}", html_content
         ):
             logger.info(f"Return submitted email sent to {to_email} for RMA {rma_number}")
@@ -1277,7 +1277,7 @@ class EmailService:
             logger.error(f"Failed to send return submitted email to {to_email}")
             return False
 
-    def send_return_approved(
+    async def send_return_approved(
         self,
         to_email: str,
         customer_name: str,
@@ -1357,14 +1357,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Return Approved - RMA #{rma_number}", html_content):
+        if await self._send_email_async(to_email, f"Return Approved - RMA #{rma_number}", html_content):
             logger.info(f"Return approved email sent to {to_email} for RMA {rma_number}")
             return True
         else:
             logger.error(f"Failed to send return approved email to {to_email}")
             return False
 
-    def send_return_completed(
+    async def send_return_completed(
         self,
         to_email: str,
         customer_name: str,
@@ -1439,14 +1439,14 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(to_email, f"Return Completed - RMA #{rma_number}", html_content):
+        if await self._send_email_async(to_email, f"Return Completed - RMA #{rma_number}", html_content):
             logger.info(f"Return completed email sent to {to_email} for RMA {rma_number}")
             return True
         else:
             logger.error(f"Failed to send return completed email to {to_email}")
             return False
 
-    def send_return_rejected(
+    async def send_return_rejected(
         self,
         to_email: str,
         customer_name: str,
@@ -1508,7 +1508,7 @@ class EmailService:
         </html>
         """
 
-        if self._send_email_sync(
+        if await self._send_email_async(
             to_email, f"Return Request Update - RMA #{rma_number}", html_content
         ):
             logger.info(f"Return rejected email sent to {to_email} for RMA {rma_number}")

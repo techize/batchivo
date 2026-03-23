@@ -87,7 +87,7 @@ async def register_customer(
     # Send welcome/verification email
     email_service = get_email_service()
     if email_service.is_configured:
-        email_service.send_customer_welcome(
+        await email_service.send_customer_welcome(
             to_email=customer.email,
             customer_name=customer.full_name,
             verification_token=verification_token,
@@ -263,7 +263,7 @@ async def forgot_password(
         # Send reset email
         email_service = get_email_service()
         if email_service.is_configured:
-            email_service.send_customer_password_reset(
+            await email_service.send_customer_password_reset(
                 to_email=customer.email,
                 customer_name=customer.full_name,
                 reset_token=reset_token,
@@ -398,7 +398,7 @@ async def resend_verification(
     # Send verification email
     email_service = get_email_service()
     if email_service.is_configured:
-        email_service.send_customer_verification(
+        await email_service.send_customer_verification(
             to_email=customer.email,
             customer_name=customer.full_name,
             verification_token=verification_token,

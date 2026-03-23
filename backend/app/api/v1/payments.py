@@ -208,7 +208,7 @@ async def process_payment(
 
         # Send confirmation email and track result
         email_service = get_email_service()
-        email_sent = email_service.send_order_confirmation(
+        email_sent = await email_service.send_order_confirmation(
             to_email=request.customer.email,
             customer_name=customer_name,
             order_number=order_number,

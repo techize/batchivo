@@ -612,7 +612,7 @@ async def create_return_request(
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
-        email_service.send_return_submitted(
+        await email_service.send_return_submitted(
             to_email=return_request.customer_email,
             customer_name=return_request.customer_name or return_request.customer_email,
             rma_number=return_request.rma_number,

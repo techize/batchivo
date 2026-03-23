@@ -1348,7 +1348,7 @@ async def complete_checkout(
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
-        email_service.send_order_confirmation(
+        await email_service.send_order_confirmation(
             to_email=shipping["email"],
             customer_name=shipping["name"],
             order_number=db_order.order_number,
@@ -1529,7 +1529,7 @@ async def submit_contact(submission: ContactSubmission):
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
-        email_service.send_contact_notification(
+        await email_service.send_contact_notification(
             name=submission.name,
             email=submission.email,
             subject=submission.subject,

@@ -39,7 +39,7 @@ async def send_test_email(
         )
 
     # Send test order confirmation
-    success = email_service.send_order_confirmation(
+    success = await email_service.send_order_confirmation(
         to_email=request.to_email,
         customer_name="Test Customer",
         order_number="TEST-20251229-001",

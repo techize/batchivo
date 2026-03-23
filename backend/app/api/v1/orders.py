@@ -497,7 +497,7 @@ async def ship_order(
     # Send shipped notification email
     try:
         email_service = get_email_service()
-        email_sent = email_service.send_order_shipped(
+        email_sent = await email_service.send_order_shipped(
             to_email=order.customer_email,
             customer_name=order.customer_name,
             order_number=order.order_number,
@@ -637,7 +637,7 @@ async def deliver_order(
     # Send delivered notification email
     try:
         email_service = get_email_service()
-        email_sent = email_service.send_order_delivered(
+        email_sent = await email_service.send_order_delivered(
             to_email=order.customer_email,
             customer_name=order.customer_name,
             order_number=order.order_number,
@@ -889,7 +889,7 @@ async def refund_order(
     # Send refund confirmation email
     try:
         email_service = get_email_service()
-        email_service.send_refund_confirmation(
+        await email_service.send_refund_confirmation(
             to_email=order.customer_email,
             customer_name=order.customer_name,
             order_number=order.order_number,
@@ -968,7 +968,7 @@ async def cancel_order(
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
-        email_service.send_order_cancelled(
+        await email_service.send_order_cancelled(
             to_email=order.customer_email,
             customer_name=order.customer_name,
             order_number=order.order_number,
@@ -1025,7 +1025,7 @@ async def resend_order_email(
     try:
         if request.email_type == "confirmation":
             # Re-send order confirmation
-            email_sent = email_service.send_order_confirmation(
+            email_sent = await email_service.send_order_confirmation(
                 to_email=order.customer_email,
                 customer_name=order.customer_name,
                 order_number=order.order_number,
@@ -1061,7 +1061,7 @@ async def resend_order_email(
                     status_code=400,
                     detail="Order has not been shipped yet",
                 )
-            email_sent = email_service.send_order_shipped(
+            email_sent = await email_service.send_order_shipped(
                 to_email=order.customer_email,
                 customer_name=order.customer_name,
                 order_number=order.order_number,
@@ -1081,7 +1081,7 @@ async def resend_order_email(
                     status_code=400,
                     detail="Order has not been delivered yet",
                 )
-            email_sent = email_service.send_order_delivered(
+            email_sent = await email_service.send_order_delivered(
                 to_email=order.customer_email,
                 customer_name=order.customer_name,
                 order_number=order.order_number,

@@ -230,7 +230,7 @@ async def forgot_password(
 
         # Send password reset email
         email_service = get_email_service()
-        email_sent = email_service.send_admin_password_reset(
+        email_sent = await email_service.send_admin_password_reset(
             to_email=user.email,
             user_name=user.full_name or user.email.split("@")[0],
             reset_token=reset_token,
