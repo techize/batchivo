@@ -306,3 +306,50 @@ class TestProductCostCalculation:
         """Test product with associated models shows cost breakdown."""
         # This test will be skipped if the models relationship isn't implemented
         pytest.skip("Product-Model relationship test - implement when models exist")
+
+
+class TestProductListDetailConsistency:
+    """Regression tests: list endpoint must return same field values as detail endpoint."""
+
+    @pytest.mark.asyncio
+    async def test_list_and_detail_fields_match(self, client: AsyncClient, auth_headers: dict):
+        """list and detail endpoints must return the same field values for a product."""
+        sku = f"CONSIST-{uuid4().hex[:8].upper()}"
+        create_resp = await client.post(
+            "/api/v1/products",
+            headers=auth_headers,
+            json={
+                "sku": sku,
+                "name": "Consistency Test Dragon",
+                "print_to_order": True,
+                "free_shipping": True,
+                "is_featured": True,
+                "is_dragon": True,
+                "seo_slug": "consistency-test-dragon",
+                "seo_title": "Consistency Test",
+                "tags": ["test", "dragon"],
+            },
+        )
+        assert create_resp.status_code in [200, 201]
+        product_id = create_resp.json()["id"]
+
+        detail_resp = await client.get(f"/api/v1/products/{product_id}", headers=auth_headers)
+        assert detail_resp.status_code == 200
+        detail = detail_resp.json()
+
+        list_resp = await client.get(f"/api/v1/products?search={sku}", headers=auth_headers)
+        assert list_resp.status_code == 200
+        products = list_resp.json()["products"]
+        assert len(products) == 1
+        listed = products[0]
+
+        fields = [
+            "print_to_order", "free_shipping", "is_featured", "is_dragon",
+            "seo_slug", "seo_title", "tags", "shop_visible",
+        ]
+        for field in fields:
+            assert listed[field] == detail[field], (
+                f"Field '{field}' differs: list={listed[field]!r}, detail={detail[field]!r}"
+            )
+
+        await client.delete(f"/api/v1/products/{product_id}", headers=auth_headers)
