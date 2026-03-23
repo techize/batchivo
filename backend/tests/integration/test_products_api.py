@@ -344,8 +344,14 @@ class TestProductListDetailConsistency:
         listed = products[0]
 
         fields = [
-            "print_to_order", "free_shipping", "is_featured", "is_dragon",
-            "seo_slug", "seo_title", "tags", "shop_visible",
+            "print_to_order",
+            "free_shipping",
+            "is_featured",
+            "is_dragon",
+            "seo_slug",
+            "seo_title",
+            "tags",
+            "shop_visible",
         ]
         for field in fields:
             assert listed[field] == detail[field], (

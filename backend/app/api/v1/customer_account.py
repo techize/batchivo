@@ -433,9 +433,7 @@ async def list_returns(
         func.lower(ReturnRequest.customer_email) == customer.email.lower(),
     )
 
-    count_result = await db.execute(
-        select(func.count(ReturnRequest.id)).where(*base_filter)
-    )
+    count_result = await db.execute(select(func.count(ReturnRequest.id)).where(*base_filter))
     total = count_result.scalar_one()
 
     result = await db.execute(

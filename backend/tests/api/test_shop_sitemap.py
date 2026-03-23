@@ -73,9 +73,7 @@ async def shop_product_no_slug(
 
 
 @pytest_asyncio.fixture
-async def hidden_product(
-    db_session: AsyncSession, test_tenant: Tenant
-) -> Product:
+async def hidden_product(db_session: AsyncSession, test_tenant: Tenant) -> Product:
     product = Product(
         id=uuid4(),
         tenant_id=test_tenant.id,
@@ -164,9 +162,7 @@ async def test_sitemap_falls_back_to_uuid_when_no_slug(
 
 
 @pytest.mark.anyio
-async def test_sitemap_excludes_hidden_products(
-    shop_client: AsyncClient, hidden_product: Product
-):
+async def test_sitemap_excludes_hidden_products(shop_client: AsyncClient, hidden_product: Product):
     """Products with shop_visible=False are excluded from the sitemap."""
     response = await shop_client.get("/api/v1/shop/sitemap.xml")
     assert response.status_code == 200

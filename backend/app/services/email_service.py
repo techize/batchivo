@@ -274,7 +274,9 @@ class EmailService:
         </html>
         """
 
-        if await self._send_email_async(to_email, f"Order Confirmation - {order_number}", html_content):
+        if await self._send_email_async(
+            to_email, f"Order Confirmation - {order_number}", html_content
+        ):
             logger.info(f"Order confirmation email sent to {to_email} for order {order_number}")
             return True
         else:
@@ -372,7 +374,9 @@ class EmailService:
         </html>
         """
 
-        if await self._send_email_async(to_email, f"Refund Confirmation - {order_number}", html_content):
+        if await self._send_email_async(
+            to_email, f"Refund Confirmation - {order_number}", html_content
+        ):
             logger.info(f"Refund confirmation email sent to {to_email} for order {order_number}")
             return True
         else:
@@ -852,7 +856,9 @@ class EmailService:
         </html>
         """
 
-        if await self._send_email_async(to_email, f"Order Cancelled - {order_number}", html_content):
+        if await self._send_email_async(
+            to_email, f"Order Cancelled - {order_number}", html_content
+        ):
             logger.info(
                 f"Cancellation notification email sent to {to_email} for order {order_number}"
             )
@@ -1327,7 +1333,9 @@ class EmailService:
         </html>
         """
 
-        if await self._send_email_async(to_email, f"Return Approved - RMA #{rma_number}", html_content):
+        if await self._send_email_async(
+            to_email, f"Return Approved - RMA #{rma_number}", html_content
+        ):
             logger.info(f"Return approved email sent to {to_email} for RMA {rma_number}")
             return True
         else:
@@ -1409,7 +1417,9 @@ class EmailService:
         </html>
         """
 
-        if await self._send_email_async(to_email, f"Return Completed - RMA #{rma_number}", html_content):
+        if await self._send_email_async(
+            to_email, f"Return Completed - RMA #{rma_number}", html_content
+        ):
             logger.info(f"Return completed email sent to {to_email} for RMA {rma_number}")
             return True
         else:
