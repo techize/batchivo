@@ -40,36 +40,6 @@ class EmailService:
         """Check if email service is configured."""
         return bool(self.api_key)
 
-    def _send_email_sync(
-        self,
-        to_email: str,
-        subject: str,
-        html_content: str,
-        reply_to: str | None = None,
-    ) -> bool:
-        """Synchronous email sending via Brevo (internal helper)."""
-        try:
-            headers = {
-                "api-key": self.api_key,
-                "Content-Type": "application/json",
-            }
-            payload = {
-                "sender": {"name": self.from_name, "email": self.from_address},
-                "to": [{"email": to_email}],
-                "subject": subject,
-                "htmlContent": html_content,
-            }
-            if reply_to:
-                payload["replyTo"] = {"email": reply_to}
-
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(BREVO_EMAIL_API_URL, json=payload, headers=headers)
-                response.raise_for_status()
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {e}")
-            return False
-
     async def _send_email_async(
         self,
         to_email: str,
