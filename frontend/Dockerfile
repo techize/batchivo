@@ -24,9 +24,8 @@ RUN npm run build
 # Stage 2: Runtime with nginx
 FROM nginx:1.29.5-alpine
 
-# Update system packages and install envsubst (from gettext)
-RUN apk upgrade --no-cache && \
-    apk add --no-cache gettext
+# Install envsubst (from gettext) — skip apk upgrade to avoid Alpine CDN TLS issues in CI
+RUN apk add --no-cache gettext
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
