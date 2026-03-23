@@ -424,25 +424,36 @@ def _build_customer_return_response(return_request: ReturnRequest) -> CustomerRe
 async def list_returns(
     customer: CurrentCustomer,
     db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
 ):
-    """List all return requests for the customer."""
+    """List return requests for the customer with pagination."""
+    base_filter = (
+        ReturnRequest.tenant_id == customer.tenant_id,
+        func.lower(ReturnRequest.customer_email) == customer.email.lower(),
+    )
+
+    count_result = await db.execute(
+        select(func.count(ReturnRequest.id)).where(*base_filter)
+    )
+    total = count_result.scalar_one()
+
     result = await db.execute(
         select(ReturnRequest)
-        .where(
-            ReturnRequest.tenant_id == customer.tenant_id,
-            func.lower(ReturnRequest.customer_email) == customer.email.lower(),
-        )
+        .where(*base_filter)
         .options(
             selectinload(ReturnRequest.items).selectinload(ReturnItem.order_item),
             selectinload(ReturnRequest.order),
         )
         .order_by(desc(ReturnRequest.created_at))
+        .offset((page - 1) * limit)
+        .limit(limit)
     )
     return_requests = result.scalars().all()
 
     return CustomerReturnListResponse(
         items=[_build_customer_return_response(rr) for rr in return_requests],
-        total=len(return_requests),
+        total=total,
     )
 
 

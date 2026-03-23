@@ -103,8 +103,16 @@ class ShopifySyncService:
                 retry_after,
             )
             await asyncio.sleep(retry_after)
-        # Final attempt — return whatever we get
-        return await client.request(method, url, headers=headers, json=json)
+        # Final attempt — log at error level if we still get rate-limited
+        resp = await client.request(method, url, headers=headers, json=json)
+        if resp.status_code == 429:
+            logger.error(
+                "Shopify rate limit exhausted after %d attempts for %s %s",
+                max_retries + 1,
+                method,
+                url,
+            )
+        return resp
 
     # ------------------------------------------------------------------
     # External listing helpers
