@@ -450,7 +450,11 @@ async def get_products(
             is_dragon=is_dragon,
             created_at=product.created_at.isoformat() if product.created_at else None,
             seo_slug=getattr(product, "seo_slug", None),
-            shop_url=f"https://www.mystmereforge.co.uk/product/{product.id}",
+            shop_url=(
+                f"https://www.mystmereforge.co.uk/products/{product.seo_slug}"
+                if getattr(product, "seo_slug", None)
+                else f"https://www.mystmereforge.co.uk/product/{product.id}"
+            ),
         )
         shop_products.append(shop_product)
 
@@ -584,7 +588,11 @@ async def get_product(
             seo_slug=getattr(product, "seo_slug", None),
             seo_title=getattr(product, "seo_title", None),
             seo_description=getattr(product, "seo_description", None),
-            shop_url=f"https://www.mystmereforge.co.uk/product/{product.id}",
+            shop_url=(
+                f"https://www.mystmereforge.co.uk/products/{product.seo_slug}"
+                if getattr(product, "seo_slug", None)
+                else f"https://www.mystmereforge.co.uk/product/{product.id}"
+            ),
         )
     }
 
