@@ -1,6 +1,8 @@
 """Tests for email service."""
 
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from app.services.email_service import EmailService, get_email_service
 
@@ -74,13 +76,14 @@ class TestEmailService:
 class TestSendOrderConfirmation:
     """Tests for send_order_confirmation method."""
 
-    def test_send_order_confirmation_not_configured(self):
+    @pytest.mark.anyio
+    async def test_send_order_confirmation_not_configured(self):
         """Test that email is not sent when service is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings(brevo_api_key="")
             service = EmailService()
 
-            result = service.send_order_confirmation(
+            result = await service.send_order_confirmation(
                 to_email="customer@example.com",
                 customer_name="John Doe",
                 order_number="MF-20251218-001",
@@ -98,19 +101,22 @@ class TestSendOrderConfirmation:
 
             assert result is False
 
-    def test_send_order_confirmation_success(self):
+    @pytest.mark.anyio
+    async def test_send_order_confirmation_success(self):
         """Test successful order confirmation email."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings()
-            with patch("app.services.email_service.httpx.Client") as mock_client:
+            with patch("app.services.email_service.httpx.AsyncClient") as mock_client:
                 mock_response = Mock()
                 mock_response.raise_for_status = Mock()
-                mock_client.return_value.__enter__ = Mock(return_value=mock_client.return_value)
-                mock_client.return_value.__exit__ = Mock(return_value=False)
-                mock_client.return_value.post.return_value = mock_response
+                mock_client.return_value.__aenter__ = AsyncMock(
+                    return_value=mock_client.return_value
+                )
+                mock_client.return_value.__aexit__ = AsyncMock(return_value=False)
+                mock_client.return_value.post = AsyncMock(return_value=mock_response)
 
                 service = EmailService()
-                result = service.send_order_confirmation(
+                result = await service.send_order_confirmation(
                     to_email="customer@example.com",
                     customer_name="John Doe",
                     order_number="MF-20251218-001",
@@ -135,17 +141,20 @@ class TestSendOrderConfirmation:
                 assert result is True
                 mock_client.return_value.post.assert_called_once()
 
-    def test_send_order_confirmation_exception(self):
+    @pytest.mark.anyio
+    async def test_send_order_confirmation_exception(self):
         """Test that exceptions are handled gracefully."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings()
-            with patch("app.services.email_service.httpx.Client") as mock_client:
-                mock_client.return_value.__enter__ = Mock(return_value=mock_client.return_value)
-                mock_client.return_value.__exit__ = Mock(return_value=False)
-                mock_client.return_value.post.side_effect = Exception("Brevo API error")
+            with patch("app.services.email_service.httpx.AsyncClient") as mock_client:
+                mock_client.return_value.__aenter__ = AsyncMock(
+                    return_value=mock_client.return_value
+                )
+                mock_client.return_value.__aexit__ = AsyncMock(return_value=False)
+                mock_client.return_value.post = AsyncMock(side_effect=Exception("Brevo API error"))
 
                 service = EmailService()
-                result = service.send_order_confirmation(
+                result = await service.send_order_confirmation(
                     to_email="customer@example.com",
                     customer_name="Test Customer",
                     order_number="MF-20251218-004",
@@ -205,13 +214,14 @@ class TestEmailServiceSingleton:
 class TestSendRefundConfirmation:
     """Tests for send_refund_confirmation method."""
 
-    def test_send_refund_confirmation_not_configured(self):
+    @pytest.mark.anyio
+    async def test_send_refund_confirmation_not_configured(self):
         """Test that refund email is not sent when service is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings(brevo_api_key="")
             service = EmailService()
 
-            result = service.send_refund_confirmation(
+            result = await service.send_refund_confirmation(
                 to_email="customer@example.com",
                 customer_name="John Doe",
                 order_number="MF-20251219-001",
@@ -220,19 +230,22 @@ class TestSendRefundConfirmation:
 
             assert result is False
 
-    def test_send_refund_confirmation_success(self):
+    @pytest.mark.anyio
+    async def test_send_refund_confirmation_success(self):
         """Test successful refund confirmation email."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings()
-            with patch("app.services.email_service.httpx.Client") as mock_client:
+            with patch("app.services.email_service.httpx.AsyncClient") as mock_client:
                 mock_response = Mock()
                 mock_response.raise_for_status = Mock()
-                mock_client.return_value.__enter__ = Mock(return_value=mock_client.return_value)
-                mock_client.return_value.__exit__ = Mock(return_value=False)
-                mock_client.return_value.post.return_value = mock_response
+                mock_client.return_value.__aenter__ = AsyncMock(
+                    return_value=mock_client.return_value
+                )
+                mock_client.return_value.__aexit__ = AsyncMock(return_value=False)
+                mock_client.return_value.post = AsyncMock(return_value=mock_response)
 
                 service = EmailService()
-                result = service.send_refund_confirmation(
+                result = await service.send_refund_confirmation(
                     to_email="customer@example.com",
                     customer_name="John Doe",
                     order_number="MF-20251219-001",
@@ -248,13 +261,14 @@ class TestSendRefundConfirmation:
 class TestSendContactNotification:
     """Tests for send_contact_notification method."""
 
-    def test_send_contact_notification_not_configured(self):
+    @pytest.mark.anyio
+    async def test_send_contact_notification_not_configured(self):
         """Test that contact email is not sent when service is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings(brevo_api_key="")
             service = EmailService()
 
-            result = service.send_contact_notification(
+            result = await service.send_contact_notification(
                 name="John Doe",
                 email="john@example.com",
                 subject="custom",
@@ -264,19 +278,22 @@ class TestSendContactNotification:
 
             assert result is False
 
-    def test_send_contact_notification_success(self):
+    @pytest.mark.anyio
+    async def test_send_contact_notification_success(self):
         """Test successful contact notification email to owner and customer."""
         with patch("app.services.email_service.get_settings") as mock_settings:
             mock_settings.return_value = get_mock_settings()
-            with patch("app.services.email_service.httpx.Client") as mock_client:
+            with patch("app.services.email_service.httpx.AsyncClient") as mock_client:
                 mock_response = Mock()
                 mock_response.raise_for_status = Mock()
-                mock_client.return_value.__enter__ = Mock(return_value=mock_client.return_value)
-                mock_client.return_value.__exit__ = Mock(return_value=False)
-                mock_client.return_value.post.return_value = mock_response
+                mock_client.return_value.__aenter__ = AsyncMock(
+                    return_value=mock_client.return_value
+                )
+                mock_client.return_value.__aexit__ = AsyncMock(return_value=False)
+                mock_client.return_value.post = AsyncMock(return_value=mock_response)
 
                 service = EmailService()
-                result = service.send_contact_notification(
+                result = await service.send_contact_notification(
                     name="John Doe",
                     email="john@example.com",
                     subject="custom",

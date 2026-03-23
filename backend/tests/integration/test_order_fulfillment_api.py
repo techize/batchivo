@@ -4,7 +4,7 @@ Integration tests for order fulfillment API endpoints.
 
 from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -314,7 +314,7 @@ class TestOrderStatusEmails:
         """Test shipping an order sends shipped notification email."""
         with patch("app.services.email_service.get_email_service") as mock_get_email:
             mock_email_service = MagicMock()
-            mock_email_service.send_order_shipped.return_value = True
+            mock_email_service.send_order_shipped = AsyncMock(return_value=True)
             mock_get_email.return_value = mock_email_service
 
             response = await client.post(
@@ -353,7 +353,7 @@ class TestOrderStatusEmails:
         """Test shipping still succeeds even if email fails."""
         with patch("app.services.email_service.get_email_service") as mock_get_email:
             mock_email_service = MagicMock()
-            mock_email_service.send_order_shipped.return_value = False
+            mock_email_service.send_order_shipped = AsyncMock(return_value=False)
             mock_get_email.return_value = mock_email_service
 
             response = await client.post(
@@ -380,7 +380,7 @@ class TestOrderStatusEmails:
         """Test shipping an order without tracking info."""
         with patch("app.services.email_service.get_email_service") as mock_get_email:
             mock_email_service = MagicMock()
-            mock_email_service.send_order_shipped.return_value = True
+            mock_email_service.send_order_shipped = AsyncMock(return_value=True)
             mock_get_email.return_value = mock_email_service
 
             response = await client.post(
@@ -434,7 +434,7 @@ class TestOrderStatusEmails:
 
         with patch("app.services.email_service.get_email_service") as mock_get_email:
             mock_email_service = MagicMock()
-            mock_email_service.send_order_delivered.return_value = True
+            mock_email_service.send_order_delivered = AsyncMock(return_value=True)
             mock_get_email.return_value = mock_email_service
 
             response = await client.post(f"/api/v1/orders/{order.id}/deliver")
@@ -488,7 +488,7 @@ class TestOrderStatusEmails:
 
         with patch("app.services.email_service.get_email_service") as mock_get_email:
             mock_email_service = MagicMock()
-            mock_email_service.send_order_delivered.return_value = False
+            mock_email_service.send_order_delivered = AsyncMock(return_value=False)
             mock_get_email.return_value = mock_email_service
 
             response = await client.post(f"/api/v1/orders/{order.id}/deliver")
