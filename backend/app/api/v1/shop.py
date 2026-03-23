@@ -245,7 +245,7 @@ async def get_products(
     search: Optional[str] = None,
     sort: Optional[str] = None,
     page: int = 1,
-    limit: int = 20,
+    limit: int = 200,
     db: AsyncSession = Depends(get_db),
     search_service: SearchService = Depends(get_search_service),
 ):
