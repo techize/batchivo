@@ -3,6 +3,7 @@
 # avoids ~2-3 min of pip/poetry installs on every run.
 #
 # Rebuild triggers (ci-image.yml): Dockerfile.ci, pyproject.toml, poetry.lock
+# Last forced rebuild: 2026-03-23 (pipeline 133 was canceled; triggering fresh build)
 FROM python:3.12-slim
 
 RUN apt-get update -qq \

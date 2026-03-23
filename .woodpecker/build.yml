@@ -79,6 +79,8 @@ steps:
       PGPASSWORD: test
     commands:
       - cd backend
+      - echo "=== Ensuring poetry is available ==="
+      - command -v poetry || pip install --quiet --no-cache-dir poetry
       - echo "=== Installing dependencies (fast path — deps pre-installed in CI image) ==="
       - poetry install --no-interaction --quiet --extras dev --no-root
       - echo "=== Waiting for postgres to be ready ==="
