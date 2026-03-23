@@ -1,12 +1,14 @@
 # Builds and pushes the CI test image (batchivo/ci-python:3.12).
-# Only runs when backend/Dockerfile.ci changes — keeps the image stable
-# between normal code pushes and avoids re-installing apt packages every run.
+# Triggers when Dockerfile.ci, pyproject.toml, or poetry.lock change so
+# pre-installed dependencies stay in sync with the lock file.
 
 when:
   - event: push
     branch: main
     path:
       - 'backend/Dockerfile.ci'
+      - 'backend/pyproject.toml'
+      - 'backend/poetry.lock'
 
 steps:
   build-ci-image:

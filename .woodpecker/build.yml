@@ -79,10 +79,8 @@ steps:
       PGPASSWORD: test
     commands:
       - cd backend
-      - pip install --quiet poetry
-      - echo "=== Installing dependencies ==="
-      - poetry install --no-interaction --quiet --extras dev
-      - apt-get update -qq && apt-get install -y -qq postgresql-client > /dev/null
+      - echo "=== Installing dependencies (fast path — deps pre-installed in CI image) ==="
+      - poetry install --no-interaction --quiet --extras dev --no-root
       - echo "=== Waiting for postgres to be ready ==="
       - until pg_isready -h postgres -U test -q 2>/dev/null; do echo "postgres not ready, retrying..."; sleep 1; done
       - echo "Postgres is ready"
