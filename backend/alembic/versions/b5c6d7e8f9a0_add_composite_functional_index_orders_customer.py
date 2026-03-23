@@ -28,12 +28,13 @@ depends_on = None
 
 def upgrade() -> None:
     # Drop the old plain index (replaced by the functional composite below)
-    op.drop_index("ix_orders_customer_email", table_name="orders")
+    # Use IF EXISTS — the index may not exist if the DB was set up without it
+    op.execute("DROP INDEX IF EXISTS ix_orders_customer_email")
 
     # Composite functional index: tenant isolation + case-insensitive email lookup
     op.execute(
         """
-        CREATE INDEX ix_orders_tenant_lower_email
+        CREATE INDEX IF NOT EXISTS ix_orders_tenant_lower_email
         ON orders (tenant_id, lower(customer_email))
         """
     )
