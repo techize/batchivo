@@ -22,7 +22,8 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime with nginx
-FROM nginx:1.29.5-alpine
+# Use Harbor proxy to avoid DockerHub rate limits in CI and pull pre-patched packages
+FROM registry.techize.co.uk/dockerhub-cache/nginx:1.29.5-alpine
 
 # Install envsubst (from gettext) — skip apk upgrade to avoid Alpine CDN TLS issues in CI
 RUN apk add --no-cache gettext
