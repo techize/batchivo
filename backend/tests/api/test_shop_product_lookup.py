@@ -116,6 +116,38 @@ async def test_get_product_unknown_uuid_returns_404(shop_client: AsyncClient):
 
 
 @pytest.mark.anyio
+async def test_get_product_shop_url_uses_uuid_format(
+    shop_client: AsyncClient, shop_product: Product
+):
+    """shop_url must use /product/{uuid} format, never /products/{slug}."""
+    response = await shop_client.get(f"/api/v1/shop/products/{shop_product.id}")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    expected = f"https://www.mystmereforge.co.uk/product/{shop_product.id}"
+    assert data["shop_url"] == expected, (
+        f"Expected /product/{{uuid}} format, got: {data['shop_url']}"
+    )
+
+
+@pytest.mark.anyio
+async def test_list_products_includes_shop_url(
+    shop_client: AsyncClient, shop_product: Product, test_tenant: Tenant
+):
+    """List endpoint must include shop_url with /product/{uuid} format on every product."""
+    response = await shop_client.get("/api/v1/shop/products")
+    assert response.status_code == 200
+    products = response.json()["data"]
+    assert len(products) >= 1
+    matching = [p for p in products if p["id"] == str(shop_product.id)]
+    assert matching, "Test product not found in list response"
+    product = matching[0]
+    expected = f"https://www.mystmereforge.co.uk/product/{shop_product.id}"
+    assert product.get("shop_url") == expected, (
+        f"List endpoint shop_url wrong. Expected {expected}, got: {product.get('shop_url')}"
+    )
+
+
+@pytest.mark.anyio
 async def test_get_hidden_product_by_slug_returns_404(
     db_session: AsyncSession,
     test_tenant: Tenant,
