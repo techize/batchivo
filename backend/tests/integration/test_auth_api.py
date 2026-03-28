@@ -82,8 +82,8 @@ class TestAuthEndpoints:
                 "full_name": "New User",
             },
         )
-        # Might be 201 (created) or 200 (success) depending on implementation
-        assert response.status_code in [200, 201]
+        # Registration is disabled for this single-tenant deployment
+        assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_register_duplicate_email(
@@ -98,7 +98,8 @@ class TestAuthEndpoints:
                 "full_name": "Duplicate User",
             },
         )
-        assert response.status_code in [400, 409]  # Bad request or conflict
+        # Registration is disabled — 403 before any email checks
+        assert response.status_code == 403
 
     @pytest.mark.skip(
         reason="Rate limiting disabled in test environment to prevent test interference"
@@ -189,8 +190,22 @@ class TestAuthSecurity:
                 "full_name": "Weak Password User",
             },
         )
-        # Should return validation error (422 or 400)
-        assert response.status_code in [400, 422]
+        # Registration is disabled -- 403 returned before validation
+        assert response.status_code == 403
+
+
+    @pytest.mark.asyncio
+    async def test_operator_registration_is_disabled(self, unauthenticated_client: AsyncClient):
+        """SEC: Operator registration endpoint must return 403 for all requests."""
+        response = await unauthenticated_client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "attacker@evil.com",
+                "password": "password123",
+                "full_name": "Attacker",
+            },
+        )
+        assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_jwt_contains_expected_claims(

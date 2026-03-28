@@ -46,6 +46,12 @@ async def register(
     3. Links the user to their workspace with OWNER role
     4. Returns JWT tokens for immediate login
     """
+    # SEC: Registration is disabled for this single-tenant deployment.
+    # Operator accounts must be created through the platform admin interface.
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Registration is disabled. Contact the platform administrator.",
+    )
     # Check if user already exists
     result = await db.execute(select(User).where(User.email == user_data.email))
     existing_user = result.scalar_one_or_none()
