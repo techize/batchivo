@@ -260,20 +260,22 @@ class ShopifySyncService:
         seo_title = getattr(product, "seo_title", None) or product.name
         seo_desc = getattr(product, "seo_description", None) or ""
 
-        payload: dict = {
-            "product": {
-                "title": product.feature_title or product.name,
-                "body_html": body_html,
-                "vendor": "Mystmere Forge",
-                "product_type": product_type,
-                "tags": tags_str,
-                "status": "active" if product.shop_visible else "draft",
-                "variants": shopify_variants,
-                "options": options,
-                "metafields_global_title_tag": seo_title[:70],
-                "metafields_global_description_tag": seo_desc[:320],
-            }
+        product_payload: dict = {
+            'title': product.feature_title or product.name,
+            'body_html': body_html,
+            'vendor': 'Mystmere Forge',
+            'product_type': product_type,
+            'tags': tags_str,
+            'status': 'active' if product.shop_visible else 'draft',
+            'variants': shopify_variants,
+            'options': options,
+            'metafields_global_title_tag': seo_title[:70],
+            'metafields_global_description_tag': seo_desc[:320],
         }
+        seo_slug = getattr(product, 'seo_slug', None)
+        if seo_slug:
+            product_payload['handle'] = seo_slug
+        payload: dict = {'product': product_payload}
         if image_objects:
             payload["product"]["images"] = image_objects
 

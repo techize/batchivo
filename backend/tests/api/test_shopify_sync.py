@@ -180,6 +180,74 @@ class TestShopifySyncService:
         assert images[0]["src"] == "https://api.batchivo.com/api/v1/shop/images/abc123/photo.jpg"
         assert "mystmereforge.myshopify.com" not in images[0]["src"]
 
+
+    @pytest.mark.asyncio
+    async def test_build_product_payload_includes_handle_when_seo_slug_set(
+        self, db_session, test_tenant, shop_product
+    ):
+        """seo_slug must appear as handle to prevent Shopify handle oscillation."""
+        from app.services.shopify_sync import ShopifySyncService
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        product_id, tenant_id = shop_product
+        r0 = await db_session.execute(select(Product).where(Product.id == product_id))
+        prod0 = r0.scalar_one()
+        prod0.seo_slug = 'test-dragon-uk'
+        await db_session.flush()
+
+        with patch('app.services.shopify_sync.get_settings') as mock_settings:
+            cfg = MagicMock()
+            cfg.shopify_store_domain = 'mystmereforge.myshopify.com'
+            cfg.shopify_access_token = 'shpat_test'
+            mock_settings.return_value = cfg
+            service = ShopifySyncService(db_session, tenant_id)
+            r1 = await db_session.execute(
+                select(Product)
+                .where(Product.id == product_id)
+                .options(
+                    selectinload(Product.images),
+                    selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
+                    selectinload(Product.variants),
+                    selectinload(Product.categories),
+                )
+            )
+            prod = r1.scalar_one()
+            payload = service._build_product_payload(prod)
+
+        assert payload['product']['handle'] == 'test-dragon-uk'
+
+    @pytest.mark.asyncio
+    async def test_build_product_payload_omits_handle_when_no_seo_slug(
+        self, db_session, test_tenant, shop_product
+    ):
+        """When seo_slug is not set, handle must be absent so Shopify keeps its own value."""
+        from app.services.shopify_sync import ShopifySyncService
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        product_id, tenant_id = shop_product
+        with patch('app.services.shopify_sync.get_settings') as mock_settings:
+            cfg = MagicMock()
+            cfg.shopify_store_domain = 'mystmereforge.myshopify.com'
+            cfg.shopify_access_token = 'shpat_test'
+            mock_settings.return_value = cfg
+            service = ShopifySyncService(db_session, tenant_id)
+            r2 = await db_session.execute(
+                select(Product)
+                .where(Product.id == product_id)
+                .options(
+                    selectinload(Product.images),
+                    selectinload(Product.pricing).selectinload(ProductPricing.sales_channel),
+                    selectinload(Product.variants),
+                    selectinload(Product.categories),
+                )
+            )
+            prod = r2.scalar_one()
+            payload = service._build_product_payload(prod)
+
+        assert 'handle' not in payload['product']
+
     @pytest.mark.asyncio
     async def test_get_listing_for_product_returns_none_when_missing(
         self, db_session, test_tenant, shop_product
