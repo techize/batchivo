@@ -14,7 +14,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import func, select, desc
@@ -1679,7 +1679,12 @@ async def get_order(
 
 
 @router.get("/images/{product_id}/{image_filename}")
-async def get_product_image(product_id: str, image_filename: str):
+async def get_product_image(
+    product_id: str,
+    image_filename: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
     """
     Serve product images through the API.
 
@@ -1687,19 +1692,46 @@ async def get_product_image(product_id: str, image_filename: str):
     and works with both local storage and S3/MinIO.
     """
     from app.services.image_storage import get_image_storage, ImageStorageError
+    from app.models.product_image import ProductImage
+    from email.utils import formatdate, parsedate_to_datetime
+    import calendar
 
-    storage = get_image_storage()
     image_url = f"/uploads/products/{product_id}/{image_filename}"
 
+    # Look up image record for cache metadata
+    stmt = select(ProductImage).where(ProductImage.image_url == image_url)
+    result = await db.execute(stmt)
+    img_record = result.scalar_one_or_none()
+
+    etag = None
+    last_modified_dt = None
+    if img_record:
+        etag = '"' + str(img_record.id) + '"'
+        last_modified_dt = img_record.created_at
+
+    # Handle conditional request headers for 304 Not Modified
+    if etag and request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    if last_modified_dt and request.headers.get("if-modified-since"):
+        try:
+            ims = parsedate_to_datetime(request.headers["if-modified-since"])
+            if last_modified_dt <= ims:
+                return Response(status_code=304)
+        except Exception:
+            pass
+
+    storage = get_image_storage()
     try:
-        content, content_type = await storage.get_image(image_url)
-        return Response(
-            content=content,
-            media_type=content_type,
-            headers={"Cache-Control": "no-cache, must-revalidate"},
-        )
+        image_content, content_type = await storage.get_image(image_url)
+        cache_headers = {"Cache-Control": "public, max-age=86400"}
+        if etag:
+            cache_headers["ETag"] = etag
+        if last_modified_dt:
+            cache_headers["Last-Modified"] = formatdate(calendar.timegm(last_modified_dt.timetuple()), usegmt=True)
+        return Response(content=image_content, media_type=content_type, headers=cache_headers)
     except ImageStorageError:
         raise HTTPException(status_code=404, detail="Image not found")
+
 
 
 # ============================================

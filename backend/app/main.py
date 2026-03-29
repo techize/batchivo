@@ -3,7 +3,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
 logger = logging.getLogger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.core.rate_limit import limiter
-from app.database import close_db, init_db
+from app.database import close_db, get_db, init_db
 from app.middleware.security import SecurityHeadersMiddleware
 
 settings = get_settings()
@@ -77,7 +77,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Early OPTIONS handler - bypass dependencies for CORS preflight
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 
 
 class CORSPreflightMiddleware(BaseHTTPMiddleware):
@@ -364,7 +363,12 @@ app.include_router(
 
 # Dynamic image serving endpoint (works with both local and S3 storage)
 @app.get("/uploads/products/{product_id}/{filename}")
-async def serve_uploaded_image(product_id: str, filename: str):
+async def serve_uploaded_image(
+    product_id: str,
+    filename: str,
+    request: Request,
+    db=Depends(get_db),
+):
     """
     Serve product images from storage (local or S3/MinIO).
 
@@ -372,17 +376,42 @@ async def serve_uploaded_image(product_id: str, filename: str):
     and works with both local filesystem and S3/MinIO storage backends.
     """
     from app.services.image_storage import get_image_storage, ImageStorageError
+    from app.models.product_image import ProductImage
+    from email.utils import formatdate, parsedate_to_datetime
+    from sqlalchemy import select
+    import calendar
 
-    storage = get_image_storage()
     image_url = f"/uploads/products/{product_id}/{filename}"
 
+    stmt = select(ProductImage).where(ProductImage.image_url == image_url)
+    result = await db.execute(stmt)
+    img_record = result.scalar_one_or_none()
+
+    etag = None
+    last_modified_dt = None
+    if img_record:
+        etag = '"' + str(img_record.id) + '"'
+        last_modified_dt = img_record.created_at
+
+    if etag and request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    if last_modified_dt and request.headers.get("if-modified-since"):
+        try:
+            ims = parsedate_to_datetime(request.headers["if-modified-since"])
+            if last_modified_dt <= ims:
+                return Response(status_code=304)
+        except Exception:
+            pass
+
+    storage = get_image_storage()
     try:
-        content, content_type = await storage.get_image(image_url)
-        return Response(
-            content=content,
-            media_type=content_type,
-            headers={"Cache-Control": "no-cache, must-revalidate"},
-        )
+        image_content, content_type = await storage.get_image(image_url)
+        cache_headers = {"Cache-Control": "public, max-age=86400"}
+        if etag:
+            cache_headers["ETag"] = etag
+        if last_modified_dt:
+            cache_headers["Last-Modified"] = formatdate(calendar.timegm(last_modified_dt.timetuple()), usegmt=True)
+        return Response(content=image_content, media_type=content_type, headers=cache_headers)
     except ImageStorageError:
         raise HTTPException(status_code=404, detail="Image not found")
 

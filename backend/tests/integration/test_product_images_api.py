@@ -182,7 +182,8 @@ class TestUploadsProxyEndpoint:
         response = await client.get(image.image_url)
         assert response.status_code == 200
         assert "cache-control" in response.headers
-        assert "no-cache" in response.headers["cache-control"]
+        assert "public" in response.headers["cache-control"]
+        assert "max-age=86400" in response.headers["cache-control"]
 
     @pytest.mark.asyncio
     async def test_serve_thumbnail_returns_content(
