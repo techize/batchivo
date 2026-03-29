@@ -345,7 +345,7 @@ async def get_products(
             )
 
         # Get total count (with same filters)
-        count_query = select(Product).where(
+        count_query = select(func.count()).select_from(Product).where(
             Product.tenant_id == shop_tenant.id,
             Product.is_active.is_(True),
             Product.shop_visible.is_(True),
@@ -364,7 +364,7 @@ async def get_products(
                 .where(Designer.is_active.is_(True))
             )
         count_result = await db.execute(count_query)
-        total = len(count_result.scalars().all())
+        total = count_result.scalar_one()
 
         # Apply pagination
         offset = (page - 1) * limit
