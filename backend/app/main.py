@@ -231,7 +231,8 @@ app.include_router(
     tags=["onboarding"],
 )
 app.include_router(users.router, prefix=f"{settings.api_v1_prefix}/users", tags=["users"])
-app.include_router(test.router, prefix=f"{settings.api_v1_prefix}/test", tags=["test"])
+if settings.environment != "production":
+    app.include_router(test.router, prefix=f"{settings.api_v1_prefix}/test", tags=["test"])
 app.include_router(spools.router, prefix=f"{settings.api_v1_prefix}/spools", tags=["spools"])
 app.include_router(
     consumables.router, prefix=f"{settings.api_v1_prefix}/consumables", tags=["consumables"]

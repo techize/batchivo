@@ -12,6 +12,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.auth.dependencies import CurrentUser
 from app.database import get_db
 from app.models.spoolmandb import SpoolmanDBFilament, SpoolmanDBManufacturer
 from app.schemas.spoolmandb import (
@@ -29,6 +30,7 @@ router = APIRouter()
 
 @router.get("/stats", response_model=SpoolmanDBStatsResponse)
 async def get_stats(
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> SpoolmanDBStatsResponse:
     """
@@ -44,6 +46,7 @@ async def get_stats(
 
 @router.post("/sync", response_model=SpoolmanDBSyncResponse)
 async def sync_database(
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> SpoolmanDBSyncResponse:
     """
