@@ -94,7 +94,7 @@ spec:
           restartPolicy: OnFailure
           initContainers:
           - name: mc-installer
-            image: minio/mc:latest
+            image: registry.techize.co.uk/dockerhub-cache/minio/mc:RELEASE.2025-02-15T10-36-16Z
             command: ["sh", "-c", "cp /usr/bin/mc /mc-bin/mc && chmod 755 /mc-bin/mc"]
             securityContext:
               runAsUser: 0
