@@ -86,6 +86,9 @@ spec:
     spec:
       backoffLimit: 3
       template:
+        metadata:
+          labels:
+            app: postgres-backup
         spec:
           securityContext:
             runAsNonRoot: true

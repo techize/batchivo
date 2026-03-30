@@ -3,8 +3,7 @@
 #   - Connect to postgres for pg_dump
 #   - Connect to MinIO to upload backups
 #   - Resolve DNS
-#   - Download MinIO client binary from dl.min.io (HTTPS)
-#   - Fetch Alpine packages (apk) for wget install
+# Note: mc binary sourced from Harbor init container; no internet egress needed
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -40,9 +39,3 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    # HTTPS for downloading mc binary (dl.min.io) and apk packages
-    - ports:
-        - protocol: TCP
-          port: 443
-        - protocol: TCP
-          port: 80
