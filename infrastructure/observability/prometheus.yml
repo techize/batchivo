@@ -24,12 +24,20 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Batchivo Backend (when running)
-  # Uncomment when backend is running with metrics endpoint
-  # - job_name: 'batchivo-backend'
-  #   static_configs:
-  #     - targets: ['host.docker.internal:8000']
-  #   metrics_path: '/metrics'
+  # Batchivo Backend (production - kubernetes_sd auto-discovers pods)
+  - job_name: 'batchivo-backend'
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: [batchivo]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name]
+        action: keep
+        regex: backend
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: metrics
+    metrics_path: /metrics
 
   # PostgreSQL Exporter (optional)
   # - job_name: 'postgres'
