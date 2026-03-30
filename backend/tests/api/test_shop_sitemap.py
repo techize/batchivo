@@ -173,3 +173,11 @@ async def test_sitemap_excludes_hidden_products(shop_client: AsyncClient, hidden
     assert response.status_code == 200
     assert "hidden-dragon" not in response.text
     assert str(hidden_product.id) not in response.text
+
+
+@pytest.mark.anyio
+async def test_sitemap_excludes_category_filter_urls(shop_client: AsyncClient):
+    """MYS-385: faceted nav ?category= URLs must not appear in sitemap."""
+    response = await shop_client.get("/api/v1/shop/sitemap.xml")
+    assert response.status_code == 200
+    assert "?category=" not in response.text
