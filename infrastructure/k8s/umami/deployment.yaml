@@ -53,7 +53,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: registry.techize.co.uk/dockerhub-cache/postgres:15-alpine
         ports:
         - containerPort: 5432
         env:
