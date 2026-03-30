@@ -33,7 +33,7 @@ spec:
         fsGroup: 999
       containers:
       - name: redis
-        image: redis:7-alpine
+        image: registry.techize.co.uk/dockerhub-cache/redis:7-alpine
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

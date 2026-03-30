@@ -44,7 +44,7 @@ spec:
         fsGroup: 70
       initContainers:
       - name: fix-permissions
-        image: busybox:1.36
+        image: registry.techize.co.uk/dockerhub-cache/busybox:1.36
         command: ["sh", "-c", "chown -R 70:70 /var/lib/postgresql/data"]
         volumeMounts:
         - name: postgres-data
@@ -53,7 +53,7 @@ spec:
           runAsUser: 0
       containers:
       - name: postgres
-        image: postgres:16-alpine
+        image: registry.techize.co.uk/dockerhub-cache/postgres:16-alpine
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

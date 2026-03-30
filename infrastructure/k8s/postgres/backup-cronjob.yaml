@@ -115,7 +115,7 @@ spec:
                 cpu: "100m"
           containers:
           - name: backup
-            image: postgres:16-alpine
+            image: registry.techize.co.uk/dockerhub-cache/postgres:16-alpine
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
