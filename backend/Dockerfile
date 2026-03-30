@@ -29,7 +29,9 @@ FROM python:3.12-alpine
 WORKDIR /app
 
 # Update packages, install runtime dependencies, and upgrade pip
-RUN apk upgrade --no-cache && \
+# --ignore alpine-baselayout: 3.7.2+
+# k8s service-account secrets in Kaniko are read-only
+RUN apk upgrade --no-cache --ignore alpine-baselayout && \
     apk add --no-cache libpq && \
     pip install --no-cache-dir --upgrade pip
 

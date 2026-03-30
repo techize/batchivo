@@ -193,7 +193,6 @@ class TestAuthSecurity:
         # Registration is disabled -- 403 returned before validation
         assert response.status_code == 403
 
-
     @pytest.mark.asyncio
     async def test_operator_registration_is_disabled(self, unauthenticated_client: AsyncClient):
         """SEC: Operator registration endpoint must return 403 for all requests."""

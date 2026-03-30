@@ -345,10 +345,14 @@ async def get_products(
             )
 
         # Get total count (with same filters)
-        count_query = select(func.count()).select_from(Product).where(
-            Product.tenant_id == shop_tenant.id,
-            Product.is_active.is_(True),
-            Product.shop_visible.is_(True),
+        count_query = (
+            select(func.count())
+            .select_from(Product)
+            .where(
+                Product.tenant_id == shop_tenant.id,
+                Product.is_active.is_(True),
+                Product.shop_visible.is_(True),
+            )
         )
         if category:
             count_query = (
@@ -1727,11 +1731,12 @@ async def get_product_image(
         if etag:
             cache_headers["ETag"] = etag
         if last_modified_dt:
-            cache_headers["Last-Modified"] = formatdate(calendar.timegm(last_modified_dt.timetuple()), usegmt=True)
+            cache_headers["Last-Modified"] = formatdate(
+                calendar.timegm(last_modified_dt.timetuple()), usegmt=True
+            )
         return Response(content=image_content, media_type=content_type, headers=cache_headers)
     except ImageStorageError:
         raise HTTPException(status_code=404, detail="Image not found")
-
 
 
 # ============================================

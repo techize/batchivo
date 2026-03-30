@@ -25,7 +25,9 @@ RUN npm run build
 FROM nginx:1.29.5-alpine
 
 # Upgrade packages and install envsubst (from gettext)
-RUN apk upgrade --no-cache && apk add --no-cache gettext
+# --ignore alpine-baselayout: 3.7.2+
+# k8s service-account secrets in Kaniko are read-only
+RUN apk upgrade --no-cache --ignore alpine-baselayout && apk add --no-cache gettext
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf

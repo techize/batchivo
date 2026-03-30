@@ -10,7 +10,13 @@ from app.models.sales_channel import SalesChannel
 
 @pytest_asyncio.fixture
 async def ch(db_session, test_tenant):
-    sc = SalesChannel(id=uuid4(), tenant_id=test_tenant.id, name="Shop", platform_type="online_shop", is_active=True)
+    sc = SalesChannel(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        name="Shop",
+        platform_type="online_shop",
+        is_active=True,
+    )
     db_session.add(sc)
     await db_session.commit()
     await db_session.refresh(sc)
@@ -21,9 +27,36 @@ async def ch(db_session, test_tenant):
 async def mixed(db_session, test_tenant, ch):
     # 3 visible active, 1 inactive, 1 hidden
     for s in ["VA", "VB", "VC"]:
-        db_session.add(Product(id=uuid4(), tenant_id=test_tenant.id, sku=s, name=s, is_active=True, shop_visible=True))
-    db_session.add(Product(id=uuid4(), tenant_id=test_tenant.id, sku="INA", name="Inactive", is_active=False, shop_visible=True))
-    db_session.add(Product(id=uuid4(), tenant_id=test_tenant.id, sku="HID", name="Hidden", is_active=True, shop_visible=False))
+        db_session.add(
+            Product(
+                id=uuid4(),
+                tenant_id=test_tenant.id,
+                sku=s,
+                name=s,
+                is_active=True,
+                shop_visible=True,
+            )
+        )
+    db_session.add(
+        Product(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            sku="INA",
+            name="Inactive",
+            is_active=False,
+            shop_visible=True,
+        )
+    )
+    db_session.add(
+        Product(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            sku="HID",
+            name="Hidden",
+            is_active=True,
+            shop_visible=False,
+        )
+    )
     await db_session.commit()
 
 
@@ -31,8 +64,13 @@ async def mixed(db_session, test_tenant, ch):
 async def lclient(db_session, test_tenant, ch):
     from app.auth.dependencies import get_shop_sales_channel
     from app.database import get_db
-    async def override_db(): yield db_session
-    async def override_ctx(): return (test_tenant, ch)
+
+    async def override_db():
+        yield db_session
+
+    async def override_ctx():
+        return (test_tenant, ch)
+
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_shop_sales_channel] = override_ctx
     app.state.limiter.enabled = False
