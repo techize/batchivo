@@ -31,7 +31,7 @@ variables:
   - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
   - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
   - &registry registry.techize.co.uk
-  - &trivy_image aquasec/trivy:0.55.0
+  - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
 
 services:
   postgres:
@@ -132,6 +132,8 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
+      cache: true
+      cache_repo: registry.techize.co.uk/batchivo/batchivo-backend-cache
 
   build-frontend:
     image: plugins/kaniko
@@ -151,6 +153,8 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
+      cache: true
+      cache_repo: registry.techize.co.uk/batchivo/batchivo-frontend-cache
 
   # ============================================
   # Security Scanning (gates deployment)
