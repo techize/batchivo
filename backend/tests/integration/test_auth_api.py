@@ -186,11 +186,11 @@ class TestAuthSecurity:
             "/api/v1/auth/register",
             json={
                 "email": "weakpass@example.com",
-                "password": "123",  # Too short
+                "password": "validpass123",  # Valid format; registration is disabled, handler returns 403
                 "full_name": "Weak Password User",
             },
         )
-        # Registration is disabled -- 403 returned before validation
+        # Registration is disabled -- all attempts return 403 regardless of password
         assert response.status_code == 403
 
     @pytest.mark.asyncio
