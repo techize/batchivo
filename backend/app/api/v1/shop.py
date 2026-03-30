@@ -37,6 +37,7 @@ from app.services.stock_reservation import (
 )
 from app.services.shipping_service import ShippingService, get_shipping_service
 from app.services.search_service import SearchService, get_search_service
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 
@@ -1168,7 +1169,9 @@ class ValidateDiscountResponse(BaseModel):
 
 
 @router.post("/checkout/validate-discount", response_model=ValidateDiscountResponse)
+@limiter.limit("20/minute")
 async def validate_discount(
+    http_request: Request,
     request: ValidateDiscountRequest,
     shop_context: ShopContext,
     db: AsyncSession = Depends(get_db),
@@ -1210,7 +1213,9 @@ async def validate_discount(
 
 
 @router.post("/checkout/create-payment")
+@limiter.limit("10/minute")
 async def create_checkout_session(
+    http_request: Request,
     request: CreateCheckoutRequest,
     shop_context: ShopContext,
     db: AsyncSession = Depends(get_db),
@@ -1329,7 +1334,9 @@ async def create_checkout_session(
 
 
 @router.post("/checkout/complete")
+@limiter.limit("5/minute")
 async def complete_checkout(
+    http_request: Request,
     request: CompleteCheckoutRequest,
     shop_context: ShopContext,
     db: AsyncSession = Depends(get_db),
@@ -2007,7 +2014,9 @@ async def get_product_reviews(
 
 
 @router.post("/products/{product_id}/reviews", response_model=ShopReviewSubmitResponse)
+@limiter.limit("10/minute")
 async def submit_product_review(
+    http_request: Request,
     product_id: str,
     review: ShopReviewCreate,
     db: AsyncSession = Depends(get_db),
