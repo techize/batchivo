@@ -1,7 +1,7 @@
 """Inventory Transaction model for audit trail of inventory changes."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Optional
@@ -126,7 +126,7 @@ class InventoryTransaction(Base, UUIDMixin, TimestampMixin):
     transaction_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
         comment="When the transaction occurred",
     )
 

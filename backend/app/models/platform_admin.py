@@ -1,7 +1,7 @@
 """Platform admin models for audit logging and settings."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, JSON, String, Text
@@ -77,7 +77,7 @@ class PlatformAdminAuditLog(Base, UUIDMixin):
     created_at: Mapped[datetime] = mapped_column(
         nullable=False,
         index=True,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
         comment="When the action was performed",
     )
 
@@ -128,8 +128,8 @@ class PlatformSetting(Base):
     # Audit fields
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
         comment="When the setting was last updated",
     )
 

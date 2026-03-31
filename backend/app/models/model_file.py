@@ -1,7 +1,7 @@
 """Model file for 3D model file tracking (STL, 3MF, gcode, etc.)."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
@@ -138,7 +138,7 @@ class ModelFile(Base, UUIDMixin, TimestampMixin):
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
         comment="When the file was uploaded",
     )
 
