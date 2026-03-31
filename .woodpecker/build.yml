@@ -50,17 +50,16 @@ steps:
   scan-deps-backend:
     image: *trivy_image
     commands:
-      # Report vulnerabilities but do not block on pre-existing unfixed deps.
-      # --ignore-unfixed: only flag CVEs that have a known fix available.
-      # --exit-code 1 will still fail the build if a fixable vuln is found.
-      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln backend/ || true
+      # Gate: fails build if fixable HIGH/CRITICAL dep vulnerability is found.
+      # --ignore-unfixed skips vulns with no upstream patch available.
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln backend/
       - trivy fs --severity HIGH,CRITICAL --exit-code 0 --scanners vuln backend/
       - echo "Backend dependencies scan complete"
 
   scan-deps-frontend:
     image: *trivy_image
     commands:
-      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln frontend/ || true
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln frontend/
       - trivy fs --severity HIGH,CRITICAL --exit-code 0 --scanners vuln frontend/
       - echo "Frontend dependencies scan complete"
 
