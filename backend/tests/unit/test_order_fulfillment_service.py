@@ -401,3 +401,134 @@ class TestOrderFulfillmentService:
         # Should succeed but skip the deleted product
         assert result.success is True
         assert order.fulfilled_at is not None
+
+    @pytest.mark.asyncio
+    async def test_check_low_stock_alerts_custom_threshold(
+        self,
+        db_session: AsyncSession,
+        test_tenant: Tenant,
+    ):
+        """low_stock_threshold on the product is respected instead of hard-coded 5."""
+        # Product with 8 units and a custom threshold of 10
+        product = Product(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            sku="FULFILL-THRESH",
+            name="Custom Threshold Product",
+            description="Product with custom low-stock threshold",
+            units_in_stock=8,
+            low_stock_threshold=10,
+            is_active=True,
+        )
+        db_session.add(product)
+        await db_session.flush()
+
+        order = Order(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            order_number="TEST-ORDER-THRESH",
+            status=OrderStatus.PENDING,
+            customer_email="test@example.com",
+            customer_name="Test Customer",
+            shipping_address_line1="123 Test St",
+            shipping_city="Test City",
+            shipping_postcode="TE1 1ST",
+            shipping_country="United Kingdom",
+            shipping_method="Test Shipping",
+            shipping_cost=Decimal("5.00"),
+            subtotal=Decimal("10.00"),
+            total=Decimal("15.00"),
+            currency="GBP",
+            payment_provider="test",
+            payment_status="completed",
+        )
+        db_session.add(order)
+        await db_session.flush()
+
+        item = OrderItem(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            order_id=order.id,
+            product_id=product.id,
+            product_sku=product.sku,
+            product_name=product.name,
+            quantity=1,  # leaves 7 in stock, still below threshold of 10
+            unit_price=Decimal("10.00"),
+            total_price=Decimal("10.00"),
+        )
+        db_session.add(item)
+        await db_session.commit()
+        await db_session.refresh(order)
+
+        service = OrderFulfillmentService(db_session, test_tenant)
+        await service.deduct_inventory(order)
+        alerts = await service.check_low_stock_alerts(order)
+
+        # Alert raised because 7 <= threshold 10
+        assert len(alerts) == 1
+        assert alerts[0]["product_sku"] == product.sku
+        assert alerts[0]["threshold"] == 10
+
+    @pytest.mark.asyncio
+    async def test_check_low_stock_alerts_above_custom_threshold(
+        self,
+        db_session: AsyncSession,
+        test_tenant: Tenant,
+    ):
+        """No alert when stock is above the product's custom threshold."""
+        # Product with 20 units and threshold of 5 (stock well above threshold)
+        product = Product(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            sku="FULFILL-ABOVE",
+            name="Above Threshold Product",
+            description="Product with plenty of stock",
+            units_in_stock=20,
+            low_stock_threshold=5,
+            is_active=True,
+        )
+        db_session.add(product)
+        await db_session.flush()
+
+        order = Order(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            order_number="TEST-ORDER-ABOVE",
+            status=OrderStatus.PENDING,
+            customer_email="test@example.com",
+            customer_name="Test Customer",
+            shipping_address_line1="123 Test St",
+            shipping_city="Test City",
+            shipping_postcode="TE1 1ST",
+            shipping_country="United Kingdom",
+            shipping_method="Test Shipping",
+            shipping_cost=Decimal("5.00"),
+            subtotal=Decimal("10.00"),
+            total=Decimal("15.00"),
+            currency="GBP",
+            payment_provider="test",
+            payment_status="completed",
+        )
+        db_session.add(order)
+        await db_session.flush()
+
+        item = OrderItem(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            order_id=order.id,
+            product_id=product.id,
+            product_sku=product.sku,
+            product_name=product.name,
+            quantity=1,  # leaves 19 in stock, well above threshold of 5
+            unit_price=Decimal("10.00"),
+            total_price=Decimal("10.00"),
+        )
+        db_session.add(item)
+        await db_session.commit()
+        await db_session.refresh(order)
+
+        service = OrderFulfillmentService(db_session, test_tenant)
+        await service.deduct_inventory(order)
+        alerts = await service.check_low_stock_alerts(order)
+
+        assert len(alerts) == 0

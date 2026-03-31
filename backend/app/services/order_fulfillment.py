@@ -295,9 +295,7 @@ class OrderFulfillmentService:
             if not product:
                 continue
 
-            # Check if stock is low (using a threshold of 5 as default)
-            # TODO: Make this configurable per product or tenant
-            reorder_threshold = 5
+            reorder_threshold = product.low_stock_threshold
             if product.units_in_stock <= reorder_threshold:
                 low_stock_alerts.append(
                     {

@@ -148,6 +148,13 @@ class Product(Base, UUIDMixin, TimestampMixin):
         server_default="0",
         comment="Packaged units ready to ship",
     )
+    low_stock_threshold: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=5,
+        server_default="5",
+        comment="Units-in-stock level at or below which a low-stock alert is raised",
+    )
 
     # Packaging - can be manual cost or linked to consumable
     packaging_cost: Mapped[float] = mapped_column(

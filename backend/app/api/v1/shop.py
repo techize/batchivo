@@ -2016,7 +2016,7 @@ async def get_product_reviews(
 @router.post("/products/{product_id}/reviews", response_model=ShopReviewSubmitResponse)
 @limiter.limit("10/minute")
 async def submit_product_review(
-    http_request: Request,
+    request: Request,
     product_id: str,
     review: ShopReviewCreate,
     db: AsyncSession = Depends(get_db),
