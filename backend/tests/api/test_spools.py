@@ -773,3 +773,41 @@ class TestSpoolProperties:
         assert response.status_code == 201
         data = response.json()
         assert data["remaining_percentage"] == 0.0
+
+
+class TestFKConstraintErrors:
+    """Regression tests for MYS-475: FK constraint violations return 400, not 500."""
+
+    async def test_create_spool_invalid_material_type_returns_400(
+        self,
+        client: AsyncClient,
+    ):
+        """Regression test: POSTing with a non-existent material_type_id returns 400."""
+        nonexistent_id = str(uuid4())
+        response = await client.post(
+            "/api/v1/spools",
+            json={
+                "spool_id": "FK-TEST-001",
+                "material_type_id": nonexistent_id,
+                "brand": "FK Test Brand",
+                "color": "Red",
+                "initial_weight": 1000.0,
+                "current_weight": 1000.0,
+            },
+        )
+        assert response.status_code == 400
+
+    async def test_update_spool_invalid_material_type_returns_400(
+        self,
+        client: AsyncClient,
+        test_spool: Spool,
+    ):
+        """Regression test: PUTting a non-existent material_type_id returns 400."""
+        nonexistent_id = str(uuid4())
+        response = await client.put(
+            f"/api/v1/spools/{test_spool.id}",
+            json={
+                "material_type_id": nonexistent_id,
+            },
+        )
+        assert response.status_code == 400

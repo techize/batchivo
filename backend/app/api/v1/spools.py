@@ -10,6 +10,7 @@ import yaml
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentTenant, CurrentUser
@@ -54,7 +55,14 @@ async def create_spool(
     )
 
     db.add(spool)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid foreign key reference â check material_type_id exists.",
+        )
     await db.refresh(spool)
 
     return SpoolResponse(**spool_to_response(spool))
@@ -295,7 +303,14 @@ async def update_spool(
     for field, value in update_data.items():
         setattr(spool, field, value)
 
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid foreign key reference â check material_type_id exists.",
+        )
     await db.refresh(spool)
 
     return SpoolResponse(**spool_to_response(spool))
