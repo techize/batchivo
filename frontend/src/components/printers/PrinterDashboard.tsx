@@ -76,7 +76,7 @@ export function PrinterDashboard() {
   }, [modelList])
 
   // Use WS state when connected; convert REST printers to live state shape as fallback
-  const restPrinters = restData?.printers ?? []
+  const restPrinters = useMemo(() => restData?.printers ?? [], [restData?.printers])
   const liveStates: PrinterLiveState[] = useMemo(() => {
     if (wsPrinters.length > 0) return wsPrinters
     // Fallback: construct minimal live state from REST data
