@@ -12,7 +12,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -44,8 +44,7 @@ class ProductVariance(BaseModel):
     min_variance_percent: float
     max_variance_percent: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RunVariance(BaseModel):
@@ -59,8 +58,7 @@ class RunVariance(BaseModel):
     variance_grams: float
     variance_percent: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class VarianceTrend(BaseModel):
@@ -96,8 +94,7 @@ class ProductionHistoryItem(BaseModel):
     actual_cost: Optional[float] = None
     variance_percent: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductProductionHistoryResponse(BaseModel):
@@ -126,8 +123,7 @@ class SpoolUsageItem(BaseModel):
     variance_percent: float
     products_printed: list[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SpoolUsageResponse(BaseModel):

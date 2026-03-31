@@ -430,7 +430,7 @@ async def export_spools(
     user: CurrentUser,
     tenant: CurrentTenant,
     db: AsyncSession = Depends(get_db),
-    format: str = Query("csv", regex="^(csv|json|yaml)$", description="Export format"),
+    format: str = Query("csv", pattern="^(csv|json|yaml)$", description="Export format"),
 ) -> StreamingResponse:
     """
     Export all spools for current tenant.

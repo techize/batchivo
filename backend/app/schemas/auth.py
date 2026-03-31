@@ -1,6 +1,6 @@
 """Pydantic schemas for authentication."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from uuid import UUID
 
 
@@ -57,8 +57,7 @@ class UserResponse(BaseModel):
     currency_symbol: str = "£"
     is_platform_admin: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PasswordResetRequest(BaseModel):

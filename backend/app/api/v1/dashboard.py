@@ -15,7 +15,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, func, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -57,8 +57,7 @@ class ActiveProductionRun(BaseModel):
     total_quantity: int = Field(description="Total quantity of items")
     products_summary: str = Field(description="Brief summary of what's being printed")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LowStockSpool(BaseModel):
@@ -75,8 +74,7 @@ class LowStockSpool(BaseModel):
     percent_remaining: float
     is_critical: bool = Field(description="True if below 5%")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecentActivityItem(BaseModel):
@@ -92,8 +90,7 @@ class RecentActivityItem(BaseModel):
     production_run_id: Optional[UUID] = None
     run_number: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SuccessRateTrend(BaseModel):

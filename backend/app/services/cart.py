@@ -10,7 +10,7 @@ from uuid import uuid4
 from decimal import Decimal
 
 import redis.asyncio as redis
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 from app.config import get_settings
 
@@ -27,8 +27,9 @@ class CartItem(BaseModel):
     total_price: Decimal
     image_url: Optional[str] = None
 
-    class Config:
-        json_encoders = {Decimal: lambda v: str(v)}
+    @field_serializer("unit_price", "total_price")
+    def serialize_decimal(self, v: Decimal) -> str:
+        return str(v)
 
 
 class Cart(BaseModel):
@@ -39,8 +40,9 @@ class Cart(BaseModel):
     subtotal: Decimal = Decimal("0")
     item_count: int = 0
 
-    class Config:
-        json_encoders = {Decimal: lambda v: str(v)}
+    @field_serializer("subtotal")
+    def serialize_decimal(self, v: Decimal) -> str:
+        return str(v)
 
 
 class CartService:

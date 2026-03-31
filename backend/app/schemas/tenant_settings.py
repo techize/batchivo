@@ -637,8 +637,7 @@ class TenantMemberResponse(BaseModel):
     is_active: bool = Field(..., description="Whether the user is active")
     joined_at: datetime = Field(..., description="When the user joined the tenant")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TenantMemberInvite(BaseModel):

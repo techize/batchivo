@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Tenant schemas
@@ -19,8 +19,7 @@ class TenantResponse(BaseModel):
     created_at: datetime
     settings: dict[str, Any] | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TenantDetailResponse(TenantResponse):
@@ -52,8 +51,7 @@ class UserResponse(BaseModel):
     is_platform_admin: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedUsersResponse(BaseModel):
@@ -85,8 +83,7 @@ class PlatformSettingResponse(BaseModel):
     updated_at: datetime
     updated_by: UUID | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PlatformSettingUpdate(BaseModel):
@@ -115,8 +112,7 @@ class AuditLogResponse(BaseModel):
     ip_address: str | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedAuditLogsResponse(BaseModel):

@@ -11,7 +11,7 @@ from uuid import uuid4
 from decimal import Decimal
 
 import redis.asyncio as redis
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 from app.config import get_settings
 
@@ -31,8 +31,9 @@ class CheckoutSessionData(BaseModel):
     total: Decimal
     created_at: str  # ISO timestamp
 
-    class Config:
-        json_encoders = {Decimal: lambda v: str(v)}
+    @field_serializer("subtotal", "shipping_cost", "discount_amount", "total")
+    def serialize_decimal(self, v: Decimal) -> str:
+        return str(v)
 
 
 class CheckoutSessionService:
