@@ -3,7 +3,7 @@
 import logging
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -302,7 +302,7 @@ class ModelFileService:
             version=version,
             is_primary=is_primary,
             notes=notes,
-            uploaded_at=datetime.utcnow(),
+            uploaded_at=datetime.now(UTC),
             uploaded_by_user_id=self.user.id if self.user else None,
         )
 
@@ -387,7 +387,7 @@ class ModelFileService:
             version=version,
             is_primary=is_primary,
             notes=notes,
-            uploaded_at=datetime.utcnow(),
+            uploaded_at=datetime.now(UTC),
             uploaded_by_user_id=self.user.id if self.user else None,
         )
 

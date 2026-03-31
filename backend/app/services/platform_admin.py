@@ -1,6 +1,6 @@
 """Platform admin service for cross-tenant operations."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -280,7 +280,7 @@ class PlatformAdminService:
             old_value = setting.value
             setting.value = value
             setting.updated_by = self.admin_user.id
-            setting.updated_at = datetime.utcnow()
+            setting.updated_at = datetime.now(UTC)
             if description is not None:
                 setting.description = description
         else:
