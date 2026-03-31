@@ -51,7 +51,7 @@ spec:
       containers:
       # GitHub Actions Runner
       - name: runner
-        image: myoung34/github-runner:latest
+        image: registry.techize.co.uk/dockerhub-cache/myoung34/github-runner:latest
         imagePullPolicy: Always
         envFrom:
           - configMapRef:
@@ -79,7 +79,7 @@ spec:
       # Docker-in-Docker (DinD) sidecar
       # Using regular dind as rootless has permission issues in k3s
       - name: dind
-        image: docker:24-dind
+        image: registry.techize.co.uk/dockerhub-cache/docker:24-dind
         securityContext:
           privileged: true
         env:
