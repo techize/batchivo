@@ -1,7 +1,7 @@
 """Inventory Transaction service for managing inventory audit trail."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
@@ -85,7 +85,7 @@ class InventoryTransactionService:
             description=description,
             notes=notes,
             metadata=metadata,
-            transaction_at=transaction_at or datetime.utcnow(),
+            transaction_at=transaction_at or datetime.now(UTC),
             reversal_of_id=reversal_of_id,
             is_reversal=is_reversal,
         )

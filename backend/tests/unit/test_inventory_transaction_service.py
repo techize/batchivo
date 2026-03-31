@@ -2,7 +2,7 @@
 Tests for inventory transaction service.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -290,7 +290,7 @@ class TestInventoryTransactionService:
         """Test filtering transactions by date range."""
         service = InventoryTransactionService(db_session, test_tenant, test_user)
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         yesterday = now - timedelta(days=1)
         tomorrow = now + timedelta(days=1)
 
