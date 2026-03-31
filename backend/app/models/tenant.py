@@ -4,8 +4,9 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.webhook import JSONBType
 
 from app.database import Base
 from app.models.base import TimestampMixin, UUIDMixin
@@ -78,7 +79,7 @@ class Tenant(Base, UUIDMixin, TimestampMixin):
 
     # Configuration
     settings: Mapped[dict] = mapped_column(
-        JSONB,
+        JSONBType,
         default=dict,
         nullable=False,
         comment="Tenant-specific settings (branding, preferences, etc.)",
