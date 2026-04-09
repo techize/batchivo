@@ -7,13 +7,14 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
+import { useParams, useNavigate } from '@tanstack/react-router'
 import { QRCodeSVG } from 'qrcode.react'
-import { Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { spoolsApi } from '@/lib/api/spools'
 
 export function SpoolLabelPage() {
   const { spoolId } = useParams({ strict: false })
+  const navigate = useNavigate()
 
   const { data: spool, isLoading, error } = useQuery({
     queryKey: ['spool', spoolId],
@@ -45,6 +46,15 @@ export function SpoolLabelPage() {
 
   return (
     <div className="min-h-screen bg-white text-black p-4">
+      {/* Back button - hidden when printing */}
+      <button
+        onClick={() => navigate({ to: '/filaments' })}
+        className="print:hidden flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Inventory
+      </button>
+
       {/* Label container - optimized for 54mm width thermal printer */}
       <div className="max-w-[54mm] mx-auto space-y-3">
         {/* QR Code - centered, prominent */}

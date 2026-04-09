@@ -9,6 +9,7 @@ import { getSafeRedirectUrl } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
@@ -17,6 +18,7 @@ import { login as loginApi } from '@/lib/auth'
 export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
@@ -32,7 +34,7 @@ export function Login() {
     setIsLoading(true)
 
     try {
-      await loginApi({ email, password })
+      await loginApi({ email, password }, rememberMe)
       await refreshUser()
       // Redirect to the validated URL (defaults to /dashboard if invalid)
       navigate({ to: redirectUrl })
@@ -87,6 +89,17 @@ export function Login() {
                 autoComplete="current-password"
                 disabled={isLoading}
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember-me"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                disabled={isLoading}
+              />
+              <Label htmlFor="remember-me" className="text-sm font-normal cursor-pointer">
+                Remember me
+              </Label>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

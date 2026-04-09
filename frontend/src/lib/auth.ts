@@ -7,6 +7,7 @@ import { config } from "./config";
 const API_BASE_URL = config.apiUrl;
 const API_V1_PREFIX = '/api/v1'
 const TOKEN_STORAGE_KEY = 'batchivo_auth_tokens'
+const REMEMBER_ME_KEY = 'batchivo_remember_me'
 const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000 // 5 minutes
 
 export interface User {
@@ -71,7 +72,7 @@ export async function register(data: RegisterData): Promise<AuthTokens> {
 /**
  * Login with email and password
  */
-export async function login(credentials: LoginCredentials): Promise<AuthTokens> {
+export async function login(credentials: LoginCredentials, rememberMe = true): Promise<AuthTokens> {
   const response = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/auth/login`, {
     method: 'POST',
     headers: {
@@ -87,7 +88,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthTokens> 
 
   const tokens = await response.json()
   const authTokens = normalizeTokens(tokens)
-  setAuthTokens(authTokens)
+  setAuthTokens(authTokens, rememberMe)
   return authTokens
 }
 
@@ -173,27 +174,28 @@ function normalizeTokens(tokens: TokenApiResponse): AuthTokens {
 }
 
 /**
- * Store auth tokens in sessionStorage (survives page refresh, cleared on tab close)
+ * Store auth tokens. Uses localStorage when rememberMe=true (persists across browser restarts),
+ * sessionStorage otherwise (cleared on tab close).
  */
-export function setAuthTokens(tokens: AuthTokens): void {
+export function setAuthTokens(tokens: AuthTokens, rememberMe = true): void {
   try {
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens))
+    const storage = rememberMe ? localStorage : sessionStorage
+    storage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens))
+    // Store the preference so we know which storage to read/clear later
+    localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? '1' : '0')
   } catch (error) {
     console.error('Failed to store auth tokens:', error)
   }
 }
 
 /**
- * Get auth tokens from sessionStorage
- * Note: This is synchronous. Token refresh happens in axios interceptor.
+ * Get auth tokens. Checks localStorage first (remember me), then sessionStorage.
  */
 export function getAuthTokens(): AuthTokens | null {
   try {
-    const stored = sessionStorage.getItem(TOKEN_STORAGE_KEY)
+    const stored = localStorage.getItem(TOKEN_STORAGE_KEY) ?? sessionStorage.getItem(TOKEN_STORAGE_KEY)
     if (!stored) return null
-
-    const tokens: AuthTokens = JSON.parse(stored)
-    return tokens
+    return JSON.parse(stored) as AuthTokens
   } catch (error) {
     console.error('Failed to retrieve auth tokens:', error)
     return null
@@ -201,10 +203,12 @@ export function getAuthTokens(): AuthTokens | null {
 }
 
 /**
- * Clear auth tokens from sessionStorage
+ * Clear auth tokens from both storages.
  */
 export function clearAuthTokens(): void {
   try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+    localStorage.removeItem(REMEMBER_ME_KEY)
     sessionStorage.removeItem(TOKEN_STORAGE_KEY)
   } catch (error) {
     console.error('Failed to clear auth tokens:', error)
