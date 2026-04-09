@@ -147,7 +147,9 @@ class ProductBase(BaseModel):
     description: Optional[str] = Field(None, description="Product description")
     designer_id: Optional[UUID] = Field(None, description="Designer who created this product")
     units_in_stock: int = Field(0, ge=0, description="Number of packaged units in inventory")
-    low_stock_threshold: int = Field(5, ge=0, description="Units-in-stock level at or below which a low-stock alert is raised")
+    low_stock_threshold: int = Field(
+        5, ge=0, description="Units-in-stock level at or below which a low-stock alert is raised"
+    )
     packaging_cost: Decimal = Field(
         Decimal("0"), ge=0, description="Manual packaging cost (used if no consumable linked)"
     )
