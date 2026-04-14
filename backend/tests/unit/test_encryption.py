@@ -5,6 +5,7 @@ import pytest
 from app.core.encryption import (
     decrypt_value,
     encrypt_value,
+    is_encrypted,
     mask_credential,
     safe_decrypt,
 )
@@ -75,6 +76,30 @@ class TestMaskCredential:
         """Empty string should return empty string."""
         result = mask_credential("", visible_chars=4)
         assert result == ""
+
+
+class TestIsEncrypted:
+    """Tests for is_encrypted function."""
+
+    def test_encrypted_value_returns_true(self):
+        encrypted = encrypt_value("my-api-key")
+        assert is_encrypted(encrypted) is True
+
+    def test_plain_text_returns_false(self):
+        assert is_encrypted("my-plain-api-key") is False
+
+    def test_empty_string_returns_false(self):
+        assert is_encrypted("") is False
+
+    def test_starts_with_gaaaaa_returns_true(self):
+        # Fernet tokens begin with gAAAAA
+        assert is_encrypted("gAAAAAbcdxyz123") is True
+
+    def test_partial_prefix_returns_false(self):
+        assert is_encrypted("gAAA") is False
+
+    def test_random_base64_string_returns_false(self):
+        assert is_encrypted("aGVsbG8gd29ybGQ=") is False  # "hello world" base64
 
 
 class TestSafeDecrypt:
