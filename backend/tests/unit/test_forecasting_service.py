@@ -1,6 +1,5 @@
 """Unit tests for ForecastingService pure logic methods."""
 
-import math
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock
 
