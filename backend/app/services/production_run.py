@@ -492,15 +492,20 @@ class ProductionRunService:
             span.set_attribute("production_run.materials_count", len(production_run.materials))
 
             try:
+                # Batch-fetch all spools for this run's materials in one query
+                spool_ids = [m.spool_id for m in production_run.materials]
+                if spool_ids:
+                    spools_result = await self.db.execute(
+                        select(Spool).where(Spool.id.in_(spool_ids))
+                    )
+                    spools_by_id = {s.id: s for s in spools_result.scalars().all()}
+                else:
+                    spools_by_id = {}
+
                 # Validate sufficient spool weight for all materials
                 for material in production_run.materials:
                     actual_weight = float(material.actual_total_weight)
-
-                    # Get current spool weight
-                    spool_result = await self.db.execute(
-                        select(Spool).where(Spool.id == material.spool_id)
-                    )
-                    spool = spool_result.scalar_one()
+                    spool = spools_by_id[material.spool_id]
 
                     if float(spool.current_weight) < actual_weight:
                         error_msg = (
@@ -518,12 +523,7 @@ class ProductionRunService:
 
                 for material in production_run.materials:
                     actual_weight = material.actual_total_weight  # Keep as Decimal
-
-                    # Get current spool for before weight
-                    spool_result = await self.db.execute(
-                        select(Spool).where(Spool.id == material.spool_id)
-                    )
-                    spool = spool_result.scalar_one()
+                    spool = spools_by_id[material.spool_id]
                     weight_before = Decimal(str(spool.current_weight))
 
                     # Calculate variance percentage
@@ -697,14 +697,19 @@ class ProductionRunService:
                 materials_count = len(production_run.materials)
                 span.set_attribute("production_run.materials_count", materials_count)
 
+                # Batch-fetch all spools for this run's materials in one query
+                spool_ids = [m.spool_id for m in production_run.materials]
+                if spool_ids:
+                    spools_result = await self.db.execute(
+                        select(Spool).where(Spool.id.in_(spool_ids))
+                    )
+                    spools_by_id = {s.id: s for s in spools_result.scalars().all()}
+                else:
+                    spools_by_id = {}
+
                 for material in production_run.materials:
                     actual_weight = material.actual_total_weight  # Keep as Decimal
-
-                    # Get current spool for before weight
-                    spool_result = await self.db.execute(
-                        select(Spool).where(Spool.id == material.spool_id)
-                    )
-                    spool = spool_result.scalar_one()
+                    spool = spools_by_id[material.spool_id]
                     weight_before = Decimal(str(spool.current_weight))
 
                     # Update spool weight atomically
