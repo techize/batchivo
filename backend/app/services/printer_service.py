@@ -212,7 +212,7 @@ class PrinterService:
         result = await self.db.execute(
             select(Printer)
             .where(Printer.tenant_id == self.tenant.id)
-            .where(Printer.is_active.is_(True))  # noqa: E712
+            .where(Printer.is_active.is_(True))
             .order_by(Printer.name)
         )
         return list(result.scalars().all())

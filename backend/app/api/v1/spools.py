@@ -156,7 +156,7 @@ async def list_material_types(
     """
     result = await db.execute(
         select(MaterialType)
-        .where(MaterialType.is_active.is_(True))  # noqa: E712
+        .where(MaterialType.is_active.is_(True))
         .order_by(MaterialType.code)
     )
     materials = result.scalars().all()
