@@ -2,7 +2,7 @@
 # Using Alpine for smaller image size and faster security updates
 
 # Stage 1: Builder
-FROM python:3.12-alpine AS builder
+FROM registry.techize.co.uk/dockerhub-cache/python:3.12-alpine AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN poetry config virtualenvs.in-project true && \
     poetry install --only main --no-root --no-interaction --no-ansi
 
 # Stage 2: Runtime
-FROM python:3.12-alpine
+FROM registry.techize.co.uk/dockerhub-cache/python:3.12-alpine
 
 WORKDIR /app
 

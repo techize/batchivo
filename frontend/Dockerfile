@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for React frontend with Vite
 
 # Stage 1: Builder
-FROM node:20-alpine AS builder
+FROM registry.techize.co.uk/dockerhub-cache/node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime with nginx
-FROM nginx:stable-alpine
+FROM registry.techize.co.uk/dockerhub-cache/nginx:stable-alpine
 
 # Upgrade packages and install envsubst (from gettext)
 # --ignore alpine-baselayout: 3.7.2+
