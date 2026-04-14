@@ -1,7 +1,7 @@
 """TenantModule service for managing per-tenant module access control."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 # Default modules enabled per tenant type
-DEFAULT_MODULES_BY_TYPE: Dict[str, List[str]] = {
+DEFAULT_MODULES_BY_TYPE: dict[str, list[str]] = {
     TenantType.THREE_D_PRINT.value: [
         "spools",
         "models",
@@ -80,7 +80,7 @@ class TenantModuleService:
         self.tenant = tenant
         self.user = user
 
-    async def get_tenant_modules(self, tenant_id: UUID) -> List[TenantModule]:
+    async def get_tenant_modules(self, tenant_id: UUID) -> list[TenantModule]:
         """
         Get all module configurations for a tenant.
 
@@ -97,7 +97,7 @@ class TenantModuleService:
         )
         return list(result.scalars().all())
 
-    async def get_enabled_modules(self, tenant_id: UUID) -> List[str]:
+    async def get_enabled_modules(self, tenant_id: UUID) -> list[str]:
         """
         Get list of enabled module names for a tenant.
 
@@ -189,7 +189,7 @@ class TenantModuleService:
         )
         return tenant_module
 
-    async def reset_to_defaults(self, tenant_id: UUID) -> List[TenantModule]:
+    async def reset_to_defaults(self, tenant_id: UUID) -> list[TenantModule]:
         """
         Reset a tenant's module configuration to defaults based on tenant type.
 
@@ -243,7 +243,7 @@ class TenantModuleService:
         )
         return new_modules
 
-    async def initialize_tenant_modules(self, tenant_id: UUID) -> List[TenantModule]:
+    async def initialize_tenant_modules(self, tenant_id: UUID) -> list[TenantModule]:
         """
         Initialize module configuration for a new tenant.
 
@@ -267,7 +267,7 @@ class TenantModuleService:
     async def get_module_status(
         self,
         tenant_id: UUID,
-    ) -> Dict[str, Dict]:
+    ) -> dict[str, dict]:
         """
         Get full module status for a tenant including metadata.
 

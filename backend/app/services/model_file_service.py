@@ -6,7 +6,7 @@ import zipfile
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional
 from uuid import UUID
 
 import boto3
@@ -52,7 +52,7 @@ class ModelFileStorageError(Exception):
     pass
 
 
-def extract_3mf_thumbnail(file_content: bytes) -> Optional[Tuple[bytes, str]]:
+def extract_3mf_thumbnail(file_content: bytes) -> Optional[tuple[bytes, str]]:
     """
     Extract embedded thumbnail from a 3MF file.
 
@@ -606,7 +606,7 @@ class ModelFileService:
         self,
         model_id: UUID,
         file_type: Optional[ModelFileType] = None,
-    ) -> List[ModelFile]:
+    ) -> list[ModelFile]:
         """
         List all files for a model.
 

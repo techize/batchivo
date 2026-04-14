@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, UTC
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select, update
@@ -139,7 +139,7 @@ class InventoryTransactionService:
         end_date: Optional[datetime] = None,
         page: int = 1,
         page_size: int = 50,
-    ) -> tuple[List[InventoryTransaction], int]:
+    ) -> tuple[list[InventoryTransaction], int]:
         """
         List transactions with filtering.
 
@@ -193,7 +193,7 @@ class InventoryTransactionService:
     async def get_transactions_for_run(
         self,
         production_run_id: UUID,
-    ) -> List[InventoryTransaction]:
+    ) -> list[InventoryTransaction]:
         """
         Get all transactions associated with a production run.
 
@@ -373,8 +373,8 @@ class InventoryTransactionService:
 
     async def validate_sufficient_inventory(
         self,
-        materials: List[ProductionRunMaterial],
-    ) -> tuple[bool, List[str]]:
+        materials: list[ProductionRunMaterial],
+    ) -> tuple[bool, list[str]]:
         """
         Validate that all spools have sufficient weight for the materials.
 

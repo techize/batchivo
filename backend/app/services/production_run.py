@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from opentelemetry import trace
@@ -51,8 +51,8 @@ class ProductionRunService:
     async def create_production_run(
         self,
         data: ProductionRunCreate,
-        items: Optional[List[ProductionRunItemCreate]] = None,
-        materials: Optional[List[ProductionRunMaterialCreate]] = None,
+        items: Optional[list[ProductionRunItemCreate]] = None,
+        materials: Optional[list[ProductionRunMaterialCreate]] = None,
     ) -> ProductionRun:
         """
         Create a new production run with optional items and materials.
@@ -178,7 +178,7 @@ class ProductionRunService:
         started_after: Optional[datetime] = None,
         started_before: Optional[datetime] = None,
         search: Optional[str] = None,
-    ) -> tuple[List[ProductionRun], int]:
+    ) -> tuple[list[ProductionRun], int]:
         """
         List production runs with pagination and filtering.
 

@@ -368,8 +368,8 @@ class PrintQueueService:
             # No specific model - return first available printer
             return available_printers[0] if available_printers else None
 
-        # Get model with printer configs
-        model = await self._get_model_with_configs(job.model_id)
+        # Use model already loaded eagerly in _get_pending_jobs
+        model = job.model
         if not model:
             return available_printers[0] if available_printers else None
 
@@ -583,7 +583,10 @@ class PrintQueueService:
             .where(PrintJob.tenant_id == self.tenant.id)
             .where(PrintJob.status == JobStatus.PENDING)
             .order_by(PrintJob.priority.desc(), PrintJob.created_at.asc())
-            .options(selectinload(PrintJob.model))
+            .options(
+                selectinload(PrintJob.model).selectinload(Model.printer_configs),
+                selectinload(PrintJob.model).selectinload(Model.materials),
+            )
         )
         return list(result.scalars().all())
 
