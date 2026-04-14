@@ -1,0 +1,173 @@
+# Woodpecker CI — Test + Security Pipeline
+#
+# Purpose: Validate correctness and security. Runs concurrently with build.yml.
+#          Does NOT gate deployments — runs independently and reports results.
+#
+# Architecture:
+#   scan-deps-backend  ──> backend-unit  ─────────────────────────────────────┐
+#                      └─> backend-integration ────────────────────────────────┤──> scan-image-backend
+#   scan-deps-frontend ──> frontend ─────────────────────────────────────────── ──> scan-image-frontend
+#
+# Timeline (wall clock):
+#   ~3-5 min  — backend-unit + frontend complete (fast signal)
+#   ~10-15 min — backend-integration completes (full backend coverage)
+#   ~12-17 min — image scans complete (images built long before tests finish)
+#
+# Triggered by: same conditions as build.yml — both pipelines run on every push
+
+when:
+  - event: push
+    branch: main
+    path:
+      exclude:
+        - 'infrastructure/k8s/**'
+
+variables:
+  - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
+  - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
+  - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+
+services:
+  postgres:
+    image: registry.techize.co.uk/dockerhub-cache/postgres:15
+    ports:
+      - 5432
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_batchivo
+
+steps:
+  # ============================================
+  # Dependency Vulnerability Scanning (parallel)
+  # Checks declared deps for known CVEs before running tests against them.
+  # ============================================
+  scan-deps-backend:
+    image: *trivy_image
+    commands:
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln backend/
+      - echo "Backend dependency scan complete"
+
+  scan-deps-frontend:
+    image: *trivy_image
+    commands:
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln frontend/
+      - echo "Frontend dependency scan complete"
+
+  # ============================================
+  # Backend: Unit Tests + Lint (fast signal, ~3-5 min)
+  # Runs tests/unit/ only — pure logic, minimal DB required.
+  # Completes early so you get signal before integration tests finish.
+  # ============================================
+  backend-unit:
+    image: *ci_python_image
+    depends_on:
+      - scan-deps-backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
+      SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
+      PGPASSWORD: test
+    commands:
+      - cd backend
+      - command -v poetry || pip install --quiet --no-cache-dir poetry
+      - poetry install --no-interaction --quiet --extras dev --no-root
+      - echo "=== Lint ==="
+      - poetry run ruff check .
+      - poetry run ruff format --check .
+      - echo "=== Unit tests ==="
+      - poetry run pytest tests/unit/ --tb=short -q
+
+  # ============================================
+  # Backend: Integration + API Tests (~8-12 min)
+  # Runs everything outside tests/unit/ with 4 parallel workers.
+  # Includes tests/integration/, tests/api/, and root-level test files.
+  # ============================================
+  backend-integration:
+    image: *ci_python_image
+    depends_on:
+      - scan-deps-backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
+      SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
+      PGPASSWORD: test
+    commands:
+      - cd backend
+      - command -v poetry || pip install --quiet --no-cache-dir poetry
+      - poetry install --no-interaction --quiet --extras dev --no-root
+      - echo "=== Waiting for postgres ==="
+      - until pg_isready -h postgres -U test -q 2>/dev/null; do sleep 1; done
+      - echo "Postgres ready"
+      - echo "=== Creating worker databases ==="
+      - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i" || true; done
+      - echo "=== Integration + API tests (4 workers) ==="
+      - poetry run pytest tests/ --ignore=tests/unit/ -n 4 --dist worksteal --tb=short -q
+
+  # ============================================
+  # Frontend: Lint + Type Check + Unit Tests (~3-5 min)
+  # ============================================
+  frontend:
+    image: *node_image
+    depends_on:
+      - scan-deps-frontend
+    commands:
+      - cd frontend
+      - npm ci --silent
+      - npm run lint
+      - npm run typecheck
+      - npm run test:ci
+
+  # ============================================
+  # Image Security Scans (runs after tests complete)
+  # By the time tests finish (~10-15 min), builds are long done (~4-7 min).
+  # Scans the pushed images for HIGH/CRITICAL CVEs and generates SBOMs.
+  # These are parallel — both scan simultaneously once their test gates pass.
+  # ============================================
+  scan-image-backend:
+    image: *trivy_image
+    depends_on:
+      - backend-unit
+      - backend-integration
+    environment:
+      TRIVY_USERNAME:
+        from_secret: docker_username
+      TRIVY_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
+      - trivy image --format spdx-json --output /tmp/sbom-backend.json registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
+      - echo "Backend image scan passed"
+
+  scan-image-frontend:
+    image: *trivy_image
+    depends_on:
+      - frontend
+    environment:
+      TRIVY_USERNAME:
+        from_secret: docker_username
+      TRIVY_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
+      - trivy image --format spdx-json --output /tmp/sbom-frontend.json registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
+      - echo "Frontend image scan passed"
+
+  # ============================================
+  # Frontend: E2E Tests (Playwright — disabled until staging DNS is live)
+  # Uncomment and set PLAYWRIGHT_BASE_URL to enable.
+  # ============================================
+  # frontend-e2e:
+  #   image: registry.techize.co.uk/dockerhub-cache/mcr.microsoft.com/playwright:v1.49.0-noble
+  #   depends_on:
+  #     - frontend
+  #   environment:
+  #     PLAYWRIGHT_BASE_URL: https://staging.batchivo.com
+  #   commands:
+  #     - cd frontend
+  #     - npm ci --silent
+  #     - npm run test:e2e
+
+# Notes:
+# - backend-unit, backend-integration, and frontend all run in parallel
+# - Image scans run last — code is already live in production by the time they finish
+#   If a scan fails, the fix goes out in the next commit (same as any other test failure)
+# - volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
