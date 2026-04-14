@@ -1,0 +1,69 @@
+# Woodpecker CI — Fast Test Pipeline (no database)
+#
+# Purpose: Fast signal on correctness — lint, unit tests, frontend checks.
+#          No postgres service needed. Completes in ~3-5 min.
+#
+# Architecture:
+#   scan-deps-backend  ──> backend-unit ────┐
+#   scan-deps-frontend ──> frontend ────────┘
+#
+# Triggered by: same conditions as build.yml
+
+when:
+  - event: push
+    branch: main
+    path:
+      exclude:
+        - 'infrastructure/k8s/**'
+
+variables:
+  - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
+  - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
+  - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+
+steps:
+  scan-deps-backend:
+    image: *trivy_image
+    commands:
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln backend/
+      - echo "Backend dependency scan complete"
+
+  scan-deps-frontend:
+    image: *trivy_image
+    commands:
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln frontend/
+      - echo "Frontend dependency scan complete"
+
+  # ============================================
+  # Backend: Lint + Unit Tests (~3-5 min)
+  # Pure logic tests — no database required.
+  # ============================================
+  backend-unit:
+    image: *ci_python_image
+    depends_on:
+      - scan-deps-backend
+    environment:
+      SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
+    commands:
+      - cd backend
+      - command -v poetry || pip install --quiet --no-cache-dir poetry
+      - poetry install --no-interaction --quiet --extras dev --no-root
+      - echo "=== Lint ==="
+      - poetry run ruff check .
+      - poetry run ruff format --check .
+      - echo "=== Unit tests ==="
+      - poetry run pytest tests/unit/ --tb=short -q
+
+  # ============================================
+  # Frontend: Lint + Type Check + Unit Tests (~3-5 min)
+  # ============================================
+  frontend:
+    image: *node_image
+    depends_on:
+      - scan-deps-frontend
+    commands:
+      - cd frontend
+      - npm ci --silent
+      - npm run lint
+      - npm run typecheck
+      - npm run test:ci

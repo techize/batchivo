@@ -133,8 +133,8 @@ steps:
       - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-frontend:.*|image: registry.techize.co.uk/batchivo/batchivo-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml'
       - 'sed -i "/name: BUILD_SHA/{n;s|value:.*|value: \"$CI_COMMIT_SHA\"|}" infrastructure/k8s/backend/deployment.yaml'
       - 'sed -i "/name: BUILD_DATE/{n;s|value:.*|value: \"$BUILD_DATE\"|}" infrastructure/k8s/backend/deployment.yaml'
-      - 'sed -i "s|VITE_BUILD_SHA:.*|VITE_BUILD_SHA: \"$CI_COMMIT_SHA\"|" infrastructure/k8s/frontend/deployment.yaml'
-      - 'sed -i "s|VITE_BUILD_DATE:.*|VITE_BUILD_DATE: \"$BUILD_DATE\"|" infrastructure/k8s/frontend/deployment.yaml'
+      - 'sed -i "/name: VITE_BUILD_SHA/{n;s|value:.*|value: \"$CI_COMMIT_SHA\"|}" infrastructure/k8s/frontend/deployment.yaml'
+      - 'sed -i "/name: VITE_BUILD_DATE/{n;s|value:.*|value: \"$BUILD_DATE\"|}" infrastructure/k8s/frontend/deployment.yaml'
       - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
       - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
       - git add infrastructure/k8s/backend/deployment.yaml infrastructure/k8s/frontend/deployment.yaml

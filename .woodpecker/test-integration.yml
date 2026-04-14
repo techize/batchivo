@@ -1,0 +1,97 @@
+# Woodpecker CI — Integration Test Pipeline (requires postgres)
+#
+# Purpose: Full backend coverage with real database.
+#          Runs concurrently with build.yml and test-fast.yml.
+#          Slower (~10-15 min) — does not gate deployments.
+#
+# Architecture:
+#   scan-deps-backend ──> backend-integration ──> scan-image-backend
+#                                                  scan-image-frontend
+#
+# Triggered by: same conditions as build.yml
+
+when:
+  - event: push
+    branch: main
+    path:
+      exclude:
+        - 'infrastructure/k8s/**'
+
+variables:
+  - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
+  - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+
+services:
+  postgres:
+    image: registry.techize.co.uk/dockerhub-cache/postgres:15
+    ports:
+      - 5432
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_batchivo
+
+steps:
+  scan-deps-backend:
+    image: *trivy_image
+    commands:
+      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln backend/
+      - echo "Backend dependency scan complete"
+
+  # ============================================
+  # Backend: Integration + API Tests (~8-12 min)
+  # Runs everything outside tests/unit/ with 4 parallel workers.
+  # ============================================
+  backend-integration:
+    image: *ci_python_image
+    depends_on:
+      - scan-deps-backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
+      SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
+      PGPASSWORD: test
+    commands:
+      - cd backend
+      - command -v poetry || pip install --quiet --no-cache-dir poetry
+      - poetry install --no-interaction --quiet --extras dev --no-root
+      - echo "=== Waiting for postgres ==="
+      - until pg_isready -h postgres -U test -q 2>/dev/null; do sleep 1; done
+      - echo "Postgres ready"
+      - echo "=== Creating worker databases ==="
+      - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i" || true; done
+      - echo "=== Integration + API tests (4 workers) ==="
+      - poetry run pytest tests/ --ignore=tests/unit/ -n 4 --dist worksteal --tb=short -q
+
+  # ============================================
+  # Image Security Scans (after integration tests + builds are done)
+  # ============================================
+  scan-image-backend:
+    image: *trivy_image
+    depends_on:
+      - backend-integration
+    environment:
+      TRIVY_USERNAME:
+        from_secret: docker_username
+      TRIVY_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
+      - trivy image --format spdx-json --output /tmp/sbom-backend.json registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
+      - echo "Backend image scan passed"
+
+  scan-image-frontend:
+    image: *trivy_image
+    environment:
+      TRIVY_USERNAME:
+        from_secret: docker_username
+      TRIVY_PASSWORD:
+        from_secret: docker_password
+    commands:
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
+      - trivy image --format spdx-json --output /tmp/sbom-frontend.json registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
+      - echo "Frontend image scan passed"
+
+# Notes:
+# - postgres service only starts for this pipeline — test-fast.yml has no database dependency
+# - Image scans run after integration tests — builds are long done by that point
+# - E2E tests (Playwright) remain commented out until staging DNS is live

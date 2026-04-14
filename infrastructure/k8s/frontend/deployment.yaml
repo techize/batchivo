@@ -5,8 +5,6 @@ metadata:
   namespace: batchivo
 data:
   VITE_API_URL: "https://api.batchivo.com"
-  VITE_BUILD_SHA: "64dc8871778c31602cf4cd22c294117b645f3d84"
-  VITE_BUILD_DATE: "2026-04-14T15:32:23Z"
 ---
 apiVersion: v1
 kind: Service
@@ -50,6 +48,11 @@ spec:
         envFrom:
         - configMapRef:
             name: frontend-config
+        env:
+        - name: VITE_BUILD_SHA
+          value: "unknown"
+        - name: VITE_BUILD_DATE
+          value: "unknown"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
