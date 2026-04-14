@@ -59,20 +59,25 @@ class OrderFulfillmentService:
         Returns:
             FulfillmentResult with validation status
         """
+        items_with_product = [item for item in order.items if item.product_id]
+        product_ids = [item.product_id for item in items_with_product]
+
+        products_by_id: dict[UUID, Product] = {}
+        if product_ids:
+            result = await self.db.execute(
+                select(Product)
+                .where(Product.id.in_(product_ids))
+                .where(Product.tenant_id == self.tenant.id)
+            )
+            products_by_id = {p.id: p for p in result.scalars().all()}
+
         insufficient_items = []
 
         for item in order.items:
             if not item.product_id:
-                # Product was deleted, skip validation
                 continue
 
-            # Load product with current stock
-            result = await self.db.execute(
-                select(Product)
-                .where(Product.id == item.product_id)
-                .where(Product.tenant_id == self.tenant.id)
-            )
-            product = result.scalar_one_or_none()
+            product = products_by_id.get(item.product_id)
 
             if not product:
                 insufficient_items.append(
@@ -126,6 +131,20 @@ class OrderFulfillmentService:
         insufficient_items = []
         deducted_items = []
 
+        # Batch-lock all products for this order in one query
+        items_with_product = [item for item in order.items if item.product_id]
+        product_ids = [item.product_id for item in items_with_product]
+
+        products_by_id: dict[UUID, Product] = {}
+        if product_ids:
+            result = await self.db.execute(
+                select(Product)
+                .where(Product.id.in_(product_ids))
+                .where(Product.tenant_id == self.tenant.id)
+                .with_for_update()
+            )
+            products_by_id = {p.id: p for p in result.scalars().all()}
+
         for item in order.items:
             if not item.product_id:
                 # Product was deleted, skip
@@ -135,14 +154,7 @@ class OrderFulfillmentService:
                 )
                 continue
 
-            # Load product with row-level lock
-            result = await self.db.execute(
-                select(Product)
-                .where(Product.id == item.product_id)
-                .where(Product.tenant_id == self.tenant.id)
-                .with_for_update()
-            )
-            product = result.scalar_one_or_none()
+            product = products_by_id.get(item.product_id)
 
             if not product:
                 insufficient_items.append(
@@ -224,19 +236,25 @@ class OrderFulfillmentService:
 
         reverted_count = 0
 
-        for item in order.items:
-            if not item.product_id:
-                # Product was deleted, skip
-                continue
+        # Batch-lock all products for this order in one query
+        items_with_product = [item for item in order.items if item.product_id]
+        product_ids = [item.product_id for item in items_with_product]
 
-            # Load product with row-level lock
+        products_by_id: dict[UUID, Product] = {}
+        if product_ids:
             result = await self.db.execute(
                 select(Product)
-                .where(Product.id == item.product_id)
+                .where(Product.id.in_(product_ids))
                 .where(Product.tenant_id == self.tenant.id)
                 .with_for_update()
             )
-            product = result.scalar_one_or_none()
+            products_by_id = {p.id: p for p in result.scalars().all()}
+
+        for item in order.items:
+            if not item.product_id:
+                continue
+
+            product = products_by_id.get(item.product_id)
 
             if not product:
                 logger.warning(
@@ -281,17 +299,22 @@ class OrderFulfillmentService:
         """
         low_stock_alerts = []
 
+        product_ids = [item.product_id for item in order.items if item.product_id]
+        if not product_ids:
+            return low_stock_alerts
+
+        result = await self.db.execute(
+            select(Product)
+            .where(Product.id.in_(product_ids))
+            .where(Product.tenant_id == self.tenant.id)
+        )
+        products_by_id = {p.id: p for p in result.scalars().all()}
+
         for item in order.items:
             if not item.product_id:
                 continue
 
-            result = await self.db.execute(
-                select(Product)
-                .where(Product.id == item.product_id)
-                .where(Product.tenant_id == self.tenant.id)
-            )
-            product = result.scalar_one_or_none()
-
+            product = products_by_id.get(item.product_id)
             if not product:
                 continue
 
