@@ -535,7 +535,7 @@ class ModelFileService:
             .where(ModelFile.model_id == model_id)
             .where(ModelFile.tenant_id == self.tenant.id)
             .where(ModelFile.file_type == file_type.value)
-            .where(ModelFile.is_primary == True)  # noqa: E712
+            .where(ModelFile.is_primary.is_(True))
         )
         for file in result.scalars().all():
             file.is_primary = False
@@ -650,7 +650,7 @@ class ModelFileService:
             select(ModelFile)
             .where(ModelFile.model_id == model_id)
             .where(ModelFile.tenant_id == self.tenant.id)
-            .where(ModelFile.is_primary == True)  # noqa: E712
+            .where(ModelFile.is_primary.is_(True))
         )
 
         if file_type:

@@ -1571,7 +1571,7 @@ async def set_primary_image(
     await db.execute(
         ProductImage.__table__.update()
         .where(ProductImage.product_id == product_id)
-        .where(ProductImage.is_primary == True)  # noqa: E712 - SQLAlchemy requires == not 'is'
+        .where(ProductImage.is_primary.is_(True))
         .values(is_primary=False)
     )
 
