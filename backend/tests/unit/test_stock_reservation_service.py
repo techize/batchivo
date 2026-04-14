@@ -181,7 +181,8 @@ class TestStockReservationService:
     async def test_reserve_stock_success(self, reservation_service, mock_redis):
         """Test successful stock reservation."""
         session_id = "test-session-123"
-        product_id = str(uuid4())
+        product_uuid = uuid4()
+        product_id = str(product_uuid)
 
         items = [
             ReservationItem(
@@ -195,13 +196,14 @@ class TestStockReservationService:
         # Mock database session and product
         mock_db = AsyncMock()
         mock_product = MagicMock()
+        mock_product.id = product_uuid
         mock_product.units_in_stock = 10
         mock_product.name = "Test Product"
         mock_product.sku = "TEST-001"
         mock_product.print_to_order = False
 
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_product
+        mock_result.scalars.return_value.all.return_value = [mock_product]
         mock_db.execute.return_value = mock_result
 
         result = await reservation_service.reserve_stock(session_id, items, mock_db)
@@ -217,7 +219,8 @@ class TestStockReservationService:
     async def test_reserve_stock_insufficient_inventory(self, reservation_service):
         """Test reservation fails when insufficient stock."""
         session_id = "test-session-456"
-        product_id = str(uuid4())
+        product_uuid = uuid4()
+        product_id = str(product_uuid)
 
         items = [
             ReservationItem(
@@ -231,13 +234,14 @@ class TestStockReservationService:
         # Mock database session and product with low stock
         mock_db = AsyncMock()
         mock_product = MagicMock()
+        mock_product.id = product_uuid
         mock_product.units_in_stock = 5
         mock_product.name = "Test Product"
         mock_product.sku = "TEST-001"
         mock_product.print_to_order = False
 
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_product
+        mock_result.scalars.return_value.all.return_value = [mock_product]
         mock_db.execute.return_value = mock_result
 
         result = await reservation_service.reserve_stock(session_id, items, mock_db)
@@ -253,7 +257,8 @@ class TestStockReservationService:
     async def test_reserve_stock_print_to_order_always_succeeds(self, reservation_service):
         """Test print-to-order products can always be reserved."""
         session_id = "test-session-789"
-        product_id = str(uuid4())
+        product_uuid = uuid4()
+        product_id = str(product_uuid)
 
         items = [
             ReservationItem(
@@ -267,13 +272,14 @@ class TestStockReservationService:
         # Mock database session and print-to-order product
         mock_db = AsyncMock()
         mock_product = MagicMock()
+        mock_product.id = product_uuid
         mock_product.units_in_stock = 0  # No stock
         mock_product.name = "Print to Order Product"
         mock_product.sku = "PTO-001"
         mock_product.print_to_order = True
 
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_product
+        mock_result.scalars.return_value.all.return_value = [mock_product]
         mock_db.execute.return_value = mock_result
 
         result = await reservation_service.reserve_stock(session_id, items, mock_db)
@@ -297,7 +303,7 @@ class TestStockReservationService:
         # Mock database session with no product
         mock_db = AsyncMock()
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
+        mock_result.scalars.return_value.all.return_value = []
         mock_db.execute.return_value = mock_result
 
         result = await reservation_service.reserve_stock(session_id, items, mock_db)
@@ -470,7 +476,8 @@ class TestStockReservationService:
     async def test_reserve_replaces_existing_reservation(self, reservation_service, mock_redis):
         """Test that new reservation replaces existing one for same session."""
         session_id = "test-session-replace"
-        product_id = str(uuid4())
+        product_uuid = uuid4()
+        product_id = str(product_uuid)
 
         # Set up existing reservation
         session_key = f"reservation:{session_id}"
@@ -488,13 +495,14 @@ class TestStockReservationService:
         # Mock database
         mock_db = AsyncMock()
         mock_product = MagicMock()
+        mock_product.id = product_uuid
         mock_product.units_in_stock = 10
         mock_product.name = "New Product"
         mock_product.sku = "NEW-001"
         mock_product.print_to_order = False
 
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_product
+        mock_result.scalars.return_value.all.return_value = [mock_product]
         mock_db.execute.return_value = mock_result
 
         result = await reservation_service.reserve_stock(session_id, items, mock_db)
@@ -507,35 +515,35 @@ class TestStockReservationService:
     async def test_all_or_nothing_reservation(self, reservation_service):
         """Test that if one item fails, no items are reserved."""
         session_id = "test-session-allornone"
-        product_id_1 = str(uuid4())
-        product_id_2 = str(uuid4())
+        product_uuid_1 = uuid4()
+        product_uuid_2 = uuid4()
+        product_id_1 = str(product_uuid_1)
+        product_id_2 = str(product_uuid_2)
 
         items = [
             ReservationItem(product_id=product_id_1, quantity=2),  # Will succeed
             ReservationItem(product_id=product_id_2, quantity=100),  # Will fail
         ]
 
-        # Mock database
+        # Mock database — batch query returns both products at once
         mock_db = AsyncMock()
+        product_1 = MagicMock()
+        product_1.id = product_uuid_1
+        product_1.units_in_stock = 10
+        product_1.name = "Product One"
+        product_1.sku = "P-001"
+        product_1.print_to_order = False
 
-        def mock_execute(query):
-            result = MagicMock()
-            product = MagicMock()
-            product.name = "Test Product"
-            product.sku = "TEST"
-            product.print_to_order = False
+        product_2 = MagicMock()
+        product_2.id = product_uuid_2
+        product_2.units_in_stock = 5  # Not enough for 100
+        product_2.name = "Product Two"
+        product_2.sku = "P-002"
+        product_2.print_to_order = False
 
-            # Check which product is being queried
-            query_str = str(query)
-            if product_id_1 in query_str:
-                product.units_in_stock = 10
-            else:
-                product.units_in_stock = 5  # Not enough for 100
-
-            result.scalar_one_or_none.return_value = product
-            return result
-
-        mock_db.execute = AsyncMock(side_effect=mock_execute)
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [product_1, product_2]
+        mock_db.execute.return_value = mock_result
 
         result = await reservation_service.reserve_stock(session_id, items, mock_db)
 
