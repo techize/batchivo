@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -109,7 +109,7 @@ class ModelFileResponse(BaseModel):
 class ModelFileListResponse(BaseModel):
     """Response for listing model files."""
 
-    files: List[ModelFileResponse] = Field(..., description="List of files")
+    files: list[ModelFileResponse] = Field(..., description="List of files")
     total: int = Field(..., description="Total number of files")
 
 

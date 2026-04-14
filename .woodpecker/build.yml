@@ -1,22 +1,17 @@
-# Woodpecker CI Pipeline for Batchivo - Hybrid Optimized
-# Uses Kaniko for Docker builds (no DinD required, works on k8s)
+# Woodpecker CI — Build + Deploy Pipeline
 #
-# Hybrid Optimization Strategy:
-# - Single backend test step with 4 parallel workers (avoids 3x poetry install overhead)
-# - Docker builds start immediately after dep scan (don't wait for tests)
-# - Security scans gate deployment (require both builds AND tests)
+# Purpose: Get code live as fast as possible.
+#          This pipeline does ONE thing: build images and update manifests.
+#          Tests, dep scans, and image scans all run concurrently in test.yml.
 #
 # Architecture:
-# scan-deps-backend ──┬──> backend (lint + tests, 4 workers) ─────────┐
-#                     └──> build-backend ─────────────────────────────┼──> scan-backend ──┐
-#                                                                     │                   │
-# scan-deps-frontend ─┬──> frontend ──────────────────────────────────┤                   ├──> deploy
-#                     └──> build-frontend ────────────────────────────┴──> scan-frontend ─┘
+#   build-backend  ──┐
+#   build-frontend ──┴──> deploy-staging ──> deploy-production
 #
-# Expected time: ~25-28 min
-# Note: pipeline timeout is set to 120min via Woodpecker SQLite repos.timeout —
-# the top-level 'timeout' key is not supported in Woodpecker v3.x schema.
+# Expected time: ~4-7 min on warm Kaniko cache (code-only change)
+#                ~8-12 min on cold cache (dep change)
 #
+# Triggered by: push to main (excluding k8s-only changes — ArgoCD handles those directly)
 
 when:
   - event: push
@@ -25,100 +20,16 @@ when:
       exclude:
         - 'infrastructure/k8s/**'
 
-variables:
-  - &proxy_cache registry.techize.co.uk/dockerhub-cache
-  - &python_image registry.techize.co.uk/dockerhub-cache/python:3.12-slim
-  - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
-  - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
-  - &registry registry.techize.co.uk
-  - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
-
-services:
-  postgres:
-    image: registry.techize.co.uk/dockerhub-cache/postgres:15
-    ports:
-      - 5432
-    environment:
-      POSTGRES_USER: test
-      POSTGRES_PASSWORD: test
-      POSTGRES_DB: test_batchivo
-
 steps:
   # ============================================
-  # Dependency Vulnerability Scanning (parallel)
-  # ============================================
-  scan-deps-backend:
-    image: *trivy_image
-    commands:
-      # Gate: fails build if fixable HIGH/CRITICAL dep vulnerability is found.
-      # --ignore-unfixed skips vulns with no upstream patch available.
-      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln backend/
-      - trivy fs --severity HIGH,CRITICAL --exit-code 0 --scanners vuln backend/
-      - echo "Backend dependencies scan complete"
-
-  scan-deps-frontend:
-    image: *trivy_image
-    commands:
-      - trivy fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --scanners vuln frontend/
-      - trivy fs --severity HIGH,CRITICAL --exit-code 0 --scanners vuln frontend/
-      - echo "Frontend dependencies scan complete"
-
-  # ============================================
-  # Backend: Lint + Test (single step, 4 workers)
-  # ============================================
-  backend:
-    image: *ci_python_image
-    depends_on:
-      - scan-deps-backend
-    # volumes disabled: Woodpecker agent next-bef0abaa4a has a DNS name bug for
-    # hostPath volumes (/ prefix → leading hyphen = invalid). Re-enable once patched.
-    environment:
-      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
-      SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
-      PGPASSWORD: test
-    commands:
-      - cd backend
-      - echo "=== Ensuring poetry is available ==="
-      - command -v poetry || pip install --quiet --no-cache-dir poetry
-      - echo "=== Installing dependencies (fast path — deps pre-installed in CI image) ==="
-      - poetry install --no-interaction --quiet --extras dev --no-root
-      - echo "=== Waiting for postgres to be ready ==="
-      - until pg_isready -h postgres -U test -q 2>/dev/null; do echo "postgres not ready, retrying..."; sleep 1; done
-      - echo "Postgres is ready"
-      - echo "=== Creating worker databases for parallel tests ==="
-      - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i" || true; done
-      - echo "=== Running linters ==="
-      - poetry run ruff check .
-      - poetry run ruff format --check .
-      - echo "=== Running tests (4 parallel workers) ==="
-      - poetry run pytest tests/ -n 4 --dist worksteal --tb=short -q
-
-  # ============================================
-  # Frontend: Lint + Test
-  # ============================================
-  frontend:
-    image: *node_image
-    depends_on:
-      - scan-deps-frontend
-    # volumes disabled: same Woodpecker agent DNS name bug as backend step above
-    commands:
-      - cd frontend
-      - echo "=== Installing dependencies ==="
-      - npm ci --silent
-      - echo "=== Running linters ==="
-      - npm run lint
-      - npm run typecheck
-      - echo "=== Running tests ==="
-      - npm test -- --run
-
-  # ============================================
-  # Build Docker Images (start early, parallel with tests)
-  # Don't wait for tests - security scans gate deployment
+  # Build Docker Images (parallel)
+  #
+  # Kaniko layer cache lives in the registry. With correct layer ordering
+  # (deps copied before source), a code-only change only rebuilds the final
+  # COPY + CMD layers — the heavy poetry install / npm ci layers are cached.
   # ============================================
   build-backend:
     image: plugins/kaniko
-    depends_on:
-      - scan-deps-backend
     settings:
       repo: registry.techize.co.uk/batchivo/batchivo-backend
       dockerfile: backend/Dockerfile
@@ -136,8 +47,6 @@ steps:
 
   build-frontend:
     image: plugins/kaniko
-    depends_on:
-      - scan-deps-frontend
     settings:
       repo: registry.techize.co.uk/batchivo/batchivo-frontend
       dockerfile: frontend/Dockerfile
@@ -156,47 +65,14 @@ steps:
       cache_repo: registry.techize.co.uk/batchivo/batchivo-frontend-cache
 
   # ============================================
-  # Security Scanning (gates deployment)
-  # Requires both builds AND tests to pass
-  # ============================================
-  scan-backend:
-    image: *trivy_image
-    depends_on:
-      - build-backend
-      - backend
-    environment:
-      TRIVY_USERNAME:
-        from_secret: docker_username
-      TRIVY_PASSWORD:
-        from_secret: docker_password
-    commands:
-      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
-      - trivy image --format spdx-json --output /tmp/sbom-backend.json registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
-      - echo "Backend security scan passed"
-
-  scan-frontend:
-    image: *trivy_image
-    depends_on:
-      - build-frontend
-      - frontend
-    environment:
-      TRIVY_USERNAME:
-        from_secret: docker_username
-      TRIVY_PASSWORD:
-        from_secret: docker_password
-    commands:
-      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
-      - trivy image --format spdx-json --output /tmp/sbom-frontend.json registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}
-      - echo "Frontend security scan passed"
-
-  # ============================================
   # Deploy to Staging
+  # Updates k8s manifest → ArgoCD auto-syncs the rest
   # ============================================
   deploy-staging:
     image: registry.techize.co.uk/dockerhub-cache/alpine/git:latest
     depends_on:
-      - scan-backend
-      - scan-frontend
+      - build-backend
+      - build-frontend
     environment:
       GIT_AUTHOR_NAME: woodpecker-ci[bot]
       GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@batchivo
@@ -207,11 +83,10 @@ steps:
     commands:
       - apk add --no-cache sed curl
       - cd /woodpecker/src/github.com/techize/batchivo
-      - 'echo "=== Deploying to STAGING ==="'
-      - 'echo "Updating staging manifests with $CI_COMMIT_SHA..."'
+      - echo "=== Deploying to STAGING ==="
       - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/staging/deployment.yaml'
       - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
-      - 'git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git'
+      - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
       - git add infrastructure/k8s/staging/deployment.yaml
       - |
         for i in 1 2 3; do
@@ -229,36 +104,13 @@ steps:
         exit 1
 
   # ============================================
-  # Staging Health Check (soft fail - DNS may not be configured)
-  # TODO: Make this blocking once staging.batchivo.com DNS is configured
-  # ============================================
-  health-check-staging:
-    image: registry.techize.co.uk/dockerhub-cache/alpine:latest
-    depends_on:
-      - deploy-staging
-    commands:
-      - apk add --no-cache curl
-      - echo "Polling staging health (up to 60s, every 5s)..."
-      - |
-        for i in $(seq 1 12); do
-          if curl -sf https://staging.batchivo.com/health | grep -q '"status":"healthy"'; then
-            echo "Staging health check passed on attempt $i!"
-            exit 0
-          fi
-          echo "Attempt $i/12 - not ready yet, waiting 5s..."
-          sleep 5
-        done
-        echo "WARNING: Staging health check failed after 60s - DNS may not be configured yet"
-        echo "Proceeding to production deployment anyway..."
-        exit 0
-
-  # ============================================
   # Deploy to Production
+  # Updates both backend + frontend manifests → ArgoCD syncs
   # ============================================
   deploy-production:
     image: registry.techize.co.uk/dockerhub-cache/alpine/git:latest
     depends_on:
-      - health-check-staging
+      - deploy-staging
     environment:
       GIT_AUTHOR_NAME: woodpecker-ci[bot]
       GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@batchivo
@@ -269,12 +121,11 @@ steps:
     commands:
       - apk add --no-cache sed
       - cd /woodpecker/src/github.com/techize/batchivo
-      - 'echo "=== Deploying to PRODUCTION ==="'
-      - 'echo "Updating production manifests with $CI_COMMIT_SHA..."'
+      - echo "=== Deploying to PRODUCTION ==="
       - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/backend/deployment.yaml'
       - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-frontend:.*|image: registry.techize.co.uk/batchivo/batchivo-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml'
       - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
-      - 'git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git'
+      - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
       - git add infrastructure/k8s/backend/deployment.yaml infrastructure/k8s/frontend/deployment.yaml
       - |
         for i in 1 2 3; do
@@ -290,5 +141,10 @@ steps:
         done
         echo "Failed after 3 attempts"
         exit 1
-# Note: volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
-# Note: 2026-03-22 — if all pipelines fail fast with "cannot ack workflow" errors, restart woodpecker-server pod (SQLite queue state corruption after 5+ days uptime)
+
+# Notes:
+# - Staging health check removed — staging.batchivo.com DNS not yet configured, was wasting 60s per run.
+#   Re-add once staging is live: poll https://staging.batchivo.com/health between the two deploy steps.
+# - Image security scans (Trivy) run in test.yml after tests complete — not a deploy gate here.
+# - volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
+# - 2026-03-22 — if pipelines fail with "cannot ack workflow", restart woodpecker-server pod (SQLite queue corruption after 5+ days uptime)

@@ -6,7 +6,7 @@ import zipfile
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional
 from uuid import UUID
 
 import boto3
@@ -52,7 +52,7 @@ class ModelFileStorageError(Exception):
     pass
 
 
-def extract_3mf_thumbnail(file_content: bytes) -> Optional[Tuple[bytes, str]]:
+def extract_3mf_thumbnail(file_content: bytes) -> Optional[tuple[bytes, str]]:
     """
     Extract embedded thumbnail from a 3MF file.
 
@@ -535,7 +535,7 @@ class ModelFileService:
             .where(ModelFile.model_id == model_id)
             .where(ModelFile.tenant_id == self.tenant.id)
             .where(ModelFile.file_type == file_type.value)
-            .where(ModelFile.is_primary == True)  # noqa: E712
+            .where(ModelFile.is_primary.is_(True))
         )
         for file in result.scalars().all():
             file.is_primary = False
@@ -606,7 +606,7 @@ class ModelFileService:
         self,
         model_id: UUID,
         file_type: Optional[ModelFileType] = None,
-    ) -> List[ModelFile]:
+    ) -> list[ModelFile]:
         """
         List all files for a model.
 
@@ -650,7 +650,7 @@ class ModelFileService:
             select(ModelFile)
             .where(ModelFile.model_id == model_id)
             .where(ModelFile.tenant_id == self.tenant.id)
-            .where(ModelFile.is_primary == True)  # noqa: E712
+            .where(ModelFile.is_primary.is_(True))
         )
 
         if file_type:

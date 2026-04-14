@@ -104,7 +104,6 @@ api.interceptors.response.use(
       // Handle specific status codes
       if (error.response.status === 401) {
         // Unauthorized - clear tokens and redirect to login
-        console.log("Unauthorized - redirecting to login");
         clearAuthTokens();
         window.location.href = '/login';
       }

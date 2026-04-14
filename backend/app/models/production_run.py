@@ -139,7 +139,7 @@ class ProductionRun(Base):
 
     # Reprint tracking
     original_run_id = Column(
-        UUID(as_uuid=True), ForeignKey("production_runs.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("production_runs.id", ondelete="SET NULL"), nullable=True, index=True
     )
     is_reprint = Column(Boolean, nullable=False, default=False)
 

@@ -4,7 +4,7 @@ import csv
 import io
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -170,7 +170,7 @@ def format_date(dt: Optional[datetime]) -> str:
     return dt.strftime("%d/%m/%Y")
 
 
-def parse_csv_file(csv_content: str) -> List[ProductCSVRow]:
+def parse_csv_file(csv_content: str) -> list[ProductCSVRow]:
     """
     Parse CSV content into validated product rows.
 
@@ -256,7 +256,7 @@ def parse_csv_file(csv_content: str) -> List[ProductCSVRow]:
     return rows
 
 
-def generate_csv_export(products: List[Dict[str, Any]]) -> str:
+def generate_csv_export(products: list[dict[str, Any]]) -> str:
     """
     Generate CSV export from product data.
 

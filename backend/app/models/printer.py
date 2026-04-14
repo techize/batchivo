@@ -127,7 +127,7 @@ class Printer(Base, UUIDMixin, TimestampMixin):
     )
 
     current_job_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("print_jobs.id", ondelete="SET NULL"),
+        ForeignKey("print_jobs.id", ondelete="SET NULL", use_alter=True, name="fk_printers_current_job_id"),
         nullable=True,
         comment="Currently printing job (if any)",
     )

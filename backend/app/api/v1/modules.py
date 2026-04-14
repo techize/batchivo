@@ -1,6 +1,6 @@
 """Module discovery and information API endpoints."""
 
-from typing import Annotated, List, Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
@@ -41,7 +41,7 @@ class ModuleInfoResponse(BaseModel):
     icon: str = Field(..., description="Icon identifier for UI")
     status: ModuleStatus = Field(..., description="Module status: active, disabled, or coming_soon")
     order: int = Field(..., description="Display order in navigation")
-    routes: List[NavigationRouteResponse] = Field(
+    routes: list[NavigationRouteResponse] = Field(
         default_factory=list, description="Navigation routes for this module"
     )
 
@@ -50,7 +50,7 @@ class ModulesResponse(BaseModel):
     """Response containing available modules."""
 
     tenant_type: TenantType = Field(..., description="Current tenant type")
-    modules: List[ModuleInfoResponse] = Field(..., description="List of modules")
+    modules: list[ModuleInfoResponse] = Field(..., description="List of modules")
 
 
 # Type alias for authenticated tenant

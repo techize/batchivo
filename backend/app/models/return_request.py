@@ -7,7 +7,7 @@ import enum
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -232,7 +232,7 @@ class ReturnRequest(Base, UUIDMixin, TimestampMixin):
         "Customer",
         lazy="noload",
     )
-    items: Mapped[List["ReturnItem"]] = relationship(
+    items: Mapped[list["ReturnItem"]] = relationship(
         "ReturnItem",
         back_populates="return_request",
         cascade="all, delete-orphan",

@@ -3,7 +3,7 @@
  * Manages user authentication state and provides auth methods
  */
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import type { AuthState } from '@/lib/auth'
 import { getAuthTokens, clearAuthTokens, isTokenExpired } from '@/lib/auth'
 import { api } from '@/lib/api'
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   /**
    * Logout user and clear tokens
    */
-  async function logout() {
+  const logout = useCallback(async () => {
     try {
       // Call logout endpoint (server-side session cleanup)
       await api.post('/api/v1/auth/logout')
@@ -73,20 +73,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAuthState({ user: null, isAuthenticated: false, isLoading: false })
       window.location.href = '/login'
     }
-  }
+  }, [])
 
   /**
    * Refresh user data from backend
    */
-  async function refreshUser() {
+  const refreshUser = useCallback(async () => {
     await checkAuthStatus()
-  }
+  }, [])
 
-  const value: AuthContextType = {
-    ...authState,
-    logout,
-    refreshUser,
-  }
+  const value: AuthContextType = useMemo(
+    () => ({
+      ...authState,
+      logout,
+      refreshUser,
+    }),
+    [authState, logout, refreshUser],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

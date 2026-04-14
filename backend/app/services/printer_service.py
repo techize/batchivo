@@ -1,7 +1,7 @@
 """Printer service for managing 3D printers."""
 
 import logging
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select, func
@@ -202,7 +202,7 @@ class PrinterService:
         logger.info(f"Hard-deleted printer '{printer.name}' (id={printer_id})")
         return True
 
-    async def get_active_printers(self) -> List[Printer]:
+    async def get_active_printers(self) -> list[Printer]:
         """
         Get all active printers for the tenant.
 
@@ -212,7 +212,7 @@ class PrinterService:
         result = await self.db.execute(
             select(Printer)
             .where(Printer.tenant_id == self.tenant.id)
-            .where(Printer.is_active.is_(True))  # noqa: E712
+            .where(Printer.is_active.is_(True))
             .order_by(Printer.name)
         )
         return list(result.scalars().all())

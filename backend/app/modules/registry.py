@@ -1,7 +1,7 @@
 """Module registry for managing feature modules."""
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from fastapi import APIRouter
 
@@ -24,7 +24,7 @@ class ModuleRegistry:
     """
 
     _instance: Optional["ModuleRegistry"] = None
-    _modules: Dict[str, BaseModule]
+    _modules: dict[str, BaseModule]
 
     def __new__(cls) -> "ModuleRegistry":
         """Ensure singleton pattern."""
@@ -85,7 +85,7 @@ class ModuleRegistry:
         """
         return self._modules.get(name)
 
-    def get_all_modules(self) -> List[BaseModule]:
+    def get_all_modules(self) -> list[BaseModule]:
         """
         Get all registered modules.
 
@@ -94,7 +94,7 @@ class ModuleRegistry:
         """
         return list(self._modules.values())
 
-    def get_modules_for_tenant(self, tenant: "Tenant") -> List[BaseModule]:
+    def get_modules_for_tenant(self, tenant: "Tenant") -> list[BaseModule]:
         """
         Get modules enabled for a specific tenant.
 
@@ -108,7 +108,7 @@ class ModuleRegistry:
 
     def get_module_info_for_tenant(
         self, tenant: "Tenant", include_disabled: bool = False
-    ) -> List[ModuleInfo]:
+    ) -> list[ModuleInfo]:
         """
         Get module information for a tenant (for API response).
 

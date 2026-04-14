@@ -179,10 +179,12 @@ class StockReservationService:
         failed_items: list[dict] = []
         items_to_reserve: list[tuple[ReservationItem, Product, int]] = []
 
-        # Phase 1: Validate products and gather info from DB
+        # Phase 1: Validate products and gather info from DB (batch fetch)
+        valid_items: list[tuple[ReservationItem, UUID]] = []
         for item in items:
             try:
                 product_uuid = UUID(item.product_id)
+                valid_items.append((item, product_uuid))
             except ValueError:
                 failed_items.append(
                     {
@@ -191,11 +193,16 @@ class StockReservationService:
                         "requested": item.quantity,
                     }
                 )
-                continue
 
-            # Get current stock from database
-            result = await db.execute(select(Product).where(Product.id == product_uuid))
-            product = result.scalar_one_or_none()
+        if valid_items:
+            product_ids = [pid for _, pid in valid_items]
+            result = await db.execute(select(Product).where(Product.id.in_(product_ids)))
+            products_by_id = {p.id: p for p in result.scalars().all()}
+        else:
+            products_by_id = {}
+
+        for item, product_uuid in valid_items:
+            product = products_by_id.get(product_uuid)
 
             if not product:
                 failed_items.append(

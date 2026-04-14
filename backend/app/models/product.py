@@ -1,7 +1,7 @@
 """Product model for sellable items (composed of one or more Models)."""
 
 import uuid
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -412,7 +412,7 @@ class Product(Base, UUIDMixin, TimestampMixin):
     )
 
     # Reviews
-    reviews: Mapped[List["Review"]] = relationship(
+    reviews: Mapped[list["Review"]] = relationship(
         "Review",
         back_populates="product",
         cascade="all, delete-orphan",
@@ -420,14 +420,14 @@ class Product(Base, UUIDMixin, TimestampMixin):
     )
 
     # Print queue jobs
-    print_jobs: Mapped[List["PrintJob"]] = relationship(
+    print_jobs: Mapped[list["PrintJob"]] = relationship(
         "PrintJob",
         back_populates="product",
         lazy="select",
     )
 
     # External marketplace listings
-    external_listings: Mapped[List["ExternalListing"]] = relationship(
+    external_listings: Mapped[list["ExternalListing"]] = relationship(
         "ExternalListing",
         back_populates="product",
         cascade="all, delete-orphan",
@@ -435,7 +435,7 @@ class Product(Base, UUIDMixin, TimestampMixin):
     )
 
     # Size variants (per-size pricing, stock, and fulfilment type)
-    variants: Mapped[List["ProductVariant"]] = relationship(
+    variants: Mapped[list["ProductVariant"]] = relationship(
         "ProductVariant",
         back_populates="product",
         cascade="all, delete-orphan",

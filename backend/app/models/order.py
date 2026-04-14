@@ -1,7 +1,7 @@
 """Order model for tracking customer orders from sales channels."""
 
 import uuid
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 from datetime import datetime
 
@@ -272,7 +272,7 @@ class Order(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    items: Mapped[List["OrderItem"]] = relationship(
+    items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem",
         back_populates="order",
         cascade="all, delete-orphan",

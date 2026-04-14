@@ -129,7 +129,6 @@ export function ModelList() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      console.log('Export successful: Models have been exported to CSV')
     } catch (error) {
       console.error('Export failed:', error)
       alert(`Export failed: ${(error as Error).message}`)
@@ -146,7 +145,6 @@ export function ModelList() {
     try {
       const result = await importModels(file)
 
-      console.log('Import successful:', result)
       alert(`Import successful!\nCreated: ${result.created}\nUpdated: ${result.updated}\nSkipped: ${result.skipped}`)
 
       // Refresh model list
