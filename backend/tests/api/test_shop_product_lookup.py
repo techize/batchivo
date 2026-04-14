@@ -129,9 +129,9 @@ async def test_get_product_shop_url_uses_slug_format(
     assert response.status_code == 200
     data = response.json()["data"]
     expected = f"https://www.mystmereforge.co.uk/products/{shop_product.seo_slug}"
-    assert data["shop_url"] == expected, (
-        f"Expected /products/{{slug}} canonical format, got: {data['shop_url']}"
-    )
+    assert (
+        data["shop_url"] == expected
+    ), f"Expected /products/{{slug}} canonical format, got: {data['shop_url']}"
 
 
 @pytest.mark.anyio
@@ -147,9 +147,9 @@ async def test_list_products_includes_shop_url(
     assert matching, "Test product not found in list response"
     product = matching[0]
     expected = f"https://www.mystmereforge.co.uk/products/{shop_product.seo_slug}"
-    assert product.get("shop_url") == expected, (
-        f"List endpoint shop_url wrong. Expected {expected}, got: {product.get('shop_url')}"
-    )
+    assert (
+        product.get("shop_url") == expected
+    ), f"List endpoint shop_url wrong. Expected {expected}, got: {product.get('shop_url')}"
 
 
 @pytest.mark.anyio
