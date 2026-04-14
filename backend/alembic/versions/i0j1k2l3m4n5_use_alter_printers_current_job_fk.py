@@ -33,25 +33,18 @@ _CONSTRAINT = "fk_printers_current_job_id"
 
 
 def upgrade() -> None:
-    # Drop whatever the existing (possibly auto-named) FK is, then recreate
-    # with the explicit name so SQLAlchemy use_alter can reference it.
-    with op.batch_alter_table(_TABLE) as batch_op:
-        # Drop by column reference; Postgres may have named it automatically.
-        # If the name is already fk_printers_current_job_id this is a no-op
-        # in terms of the final state.
-        try:
-            batch_op.drop_constraint(_CONSTRAINT, type_="foreignkey")
-        except Exception:
-            # Constraint may have been auto-named differently; try common patterns
-            pass
-        batch_op.create_foreign_key(
-            _CONSTRAINT,
-            _REF_TABLE,
-            [_COLUMN],
-            ["id"],
-            ondelete="SET NULL",
-            use_alter=True,
-        )
+    # Drop the FK if it exists (name may vary), then recreate with canonical name.
+    # Use IF EXISTS to handle both fresh installs and upgrades from older schemas.
+    op.execute(f"ALTER TABLE {_TABLE} DROP CONSTRAINT IF EXISTS {_CONSTRAINT}")
+    op.create_foreign_key(
+        _CONSTRAINT,
+        _TABLE,
+        _REF_TABLE,
+        [_COLUMN],
+        ["id"],
+        ondelete="SET NULL",
+        use_alter=True,
+    )
 
 
 def downgrade() -> None:
