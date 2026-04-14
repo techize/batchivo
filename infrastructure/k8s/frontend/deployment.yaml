@@ -5,6 +5,8 @@ metadata:
   namespace: batchivo
 data:
   VITE_API_URL: "https://api.batchivo.com"
+  VITE_BUILD_SHA: "unknown"
+  VITE_BUILD_DATE: "unknown"
 ---
 apiVersion: v1
 kind: Service

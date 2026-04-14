@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/sheet'
 import { getOrderCounts } from '@/lib/api/orders'
 import { useNavigationItems } from '@/hooks/useModules'
+import { config } from '@/lib/config'
 
 // Icon mapping from backend icon names to Lucide components
 const ICON_COMPONENTS: Record<string, LucideIcon> = {
@@ -92,6 +93,17 @@ export function AppLayout({ children }: AppLayoutProps) {
     queryFn: getOrderCounts,
     staleTime: 30000, // Refresh every 30 seconds
     refetchInterval: 60000, // Auto-refresh every minute
+  })
+
+  // Fetch API build info for version display
+  const { data: apiInfo } = useQuery({
+    queryKey: ['apiInfo'],
+    queryFn: async () => {
+      const res = await fetch(`${config.apiBaseUrl}/`)
+      return res.json() as Promise<{ version: string; build: { sha: string; date: string } }>
+    },
+    staleTime: 300000, // Cache for 5 minutes
+    retry: false,
   })
 
   const pendingOrderCount = (orderCounts?.pending || 0) + (orderCounts?.processing || 0)
@@ -328,7 +340,28 @@ export function AppLayout({ children }: AppLayoutProps) {
       <footer className="border-t bg-card mt-16">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>Batchivo - Production Tracking for Makers</p>
-          <p className="mt-1 hidden sm:block">Built with FastAPI, React, and shadcn/ui</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs">
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Frontend</span>
+              <Badge variant="outline" className="font-mono text-xs px-1.5 py-0">
+                {config.buildSha === 'unknown' ? 'dev' : config.buildSha.slice(0, 7)}
+              </Badge>
+              {config.buildDate !== 'unknown' && (
+                <span className="text-muted-foreground/60">{config.buildDate}</span>
+              )}
+            </span>
+            {apiInfo && (
+              <span className="flex items-center gap-1">
+                <span className="font-medium">API</span>
+                <Badge variant="outline" className="font-mono text-xs px-1.5 py-0">
+                  {apiInfo.build?.sha === 'unknown' ? 'dev' : apiInfo.build?.sha?.slice(0, 7) ?? 'dev'}
+                </Badge>
+                {apiInfo.build?.date && apiInfo.build.date !== 'unknown' && (
+                  <span className="text-muted-foreground/60">{apiInfo.build.date}</span>
+                )}
+              </span>
+            )}
+          </div>
         </div>
       </footer>
     </div>

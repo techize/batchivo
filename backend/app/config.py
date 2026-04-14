@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
+    # Build metadata (injected by CI at deploy time)
+    build_sha: str = ""
+    build_date: str = ""
+
     # Database
     # Note: Using psycopg (not asyncpg) due to Python 3.14 compatibility
     database_url: str = "postgresql+psycopg://batchivo:batchivo@localhost:5432/batchivo"

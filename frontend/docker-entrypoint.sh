@@ -10,6 +10,8 @@ export VITE_API_BASE_URL="${VITE_API_BASE_URL:-$VITE_API_URL}"
 export VITE_OTEL_ENDPOINT="${VITE_OTEL_ENDPOINT:-/v1/traces}"
 export VITE_SERVICE_NAME="${VITE_SERVICE_NAME:-batchivo-frontend}"
 export VITE_SERVICE_VERSION="${VITE_SERVICE_VERSION:-1.0.0}"
+export VITE_BUILD_SHA="${VITE_BUILD_SHA:-unknown}"
+export VITE_BUILD_DATE="${VITE_BUILD_DATE:-unknown}"
 
 # Generate config.js from template
 envsubst < /usr/share/nginx/html/config.js.template > /usr/share/nginx/html/config.js

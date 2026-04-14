@@ -135,6 +135,10 @@ async def root():
         "version": "0.2.0",
         "environment": settings.environment,
         "docs": "/docs" if settings.is_development else "disabled",
+        "build": {
+            "sha": settings.build_sha or "unknown",
+            "date": settings.build_date or "unknown",
+        },
     }
 
 

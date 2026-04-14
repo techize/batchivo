@@ -10,6 +10,8 @@ declare global {
       VITE_SERVICE_NAME?: string;
       VITE_SERVICE_VERSION?: string;
       VITE_SENTRY_DSN?: string;
+      VITE_BUILD_SHA?: string;
+      VITE_BUILD_DATE?: string;
     };
   }
 }
@@ -31,6 +33,8 @@ export const config = {
   serviceName: getConfig('VITE_SERVICE_NAME') || 'batchivo-frontend',
   serviceVersion: getConfig('VITE_SERVICE_VERSION') || '1.0.0',
   sentryDsn: getConfig('VITE_SENTRY_DSN'),
+  buildSha: getConfig('VITE_BUILD_SHA') || 'unknown',
+  buildDate: getConfig('VITE_BUILD_DATE') || 'unknown',
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
   mode: import.meta.env.MODE,

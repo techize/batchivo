@@ -140,6 +140,10 @@ spec:
               key: POSTGRES_PASSWORD
         - name: DATABASE_URL
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+        - name: BUILD_SHA
+          value: "unknown"
+        - name: BUILD_DATE
+          value: "unknown"
         - name: STORAGE_S3_ACCESS_KEY
           valueFrom:
             secretKeyRef:
