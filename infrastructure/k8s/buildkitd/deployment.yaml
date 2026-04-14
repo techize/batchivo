@@ -7,6 +7,11 @@ metadata:
     app: buildkitd
 spec:
   replicas: 1
+  # Recreate: terminate old pod before starting new one.
+  # BuildKit holds a file lock on the PVC — two pods cannot run simultaneously.
+  # Brief downtime during updates is fine since CI just retries on connection failure.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: buildkitd
@@ -43,18 +48,22 @@ spec:
             exec:
               command:
                 - buildctl
+                - --addr
+                - tcp://localhost:1234
                 - debug
                 - workers
             initialDelaySeconds: 5
-            periodSeconds: 30
+            periodSeconds: 10
           livenessProbe:
             exec:
               command:
                 - buildctl
+                - --addr
+                - tcp://localhost:1234
                 - debug
                 - workers
             initialDelaySeconds: 10
-            periodSeconds: 60
+            periodSeconds: 30
             failureThreshold: 3
       volumes:
         - name: cache
