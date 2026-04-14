@@ -36,6 +36,28 @@ Object.defineProperty(window, 'sessionStorage', {
   writable: true,
 })
 
+// Mock localStorage (setAuthTokens defaults to rememberMe=true which uses localStorage)
+const mockLocalStorage: Record<string, string> = {}
+const localStorageMock = {
+  getItem: vi.fn((key: string) => mockLocalStorage[key] || null),
+  setItem: vi.fn((key: string, value: string) => {
+    mockLocalStorage[key] = value
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete mockLocalStorage[key]
+  }),
+  clear: vi.fn(() => {
+    Object.keys(mockLocalStorage).forEach(key => delete mockLocalStorage[key])
+  }),
+  length: 0,
+  key: vi.fn(),
+}
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+})
+
 // Mock fetch
 const mockFetch = vi.fn()
 global.fetch = mockFetch
@@ -44,6 +66,7 @@ describe('Token Management', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorageMock.clear()
+    localStorageMock.clear()
   })
 
   describe('setAuthTokens', () => {
@@ -57,7 +80,7 @@ describe('Token Management', () => {
 
       setAuthTokens(tokens)
 
-      expect(sessionStorageMock.setItem).toHaveBeenCalledWith(
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'batchivo_auth_tokens',
         JSON.stringify(tokens)
       )
@@ -72,7 +95,7 @@ describe('Token Management', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000,
       }
-      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
+      mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
 
       const result = getAuthTokens()
 
@@ -96,11 +119,11 @@ describe('Token Management', () => {
 
   describe('clearAuthTokens', () => {
     it('removes tokens from sessionStorage', () => {
-      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify({ accessToken: 'test' })
+      mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify({ accessToken: 'test' })
 
       clearAuthTokens()
 
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
     })
   })
 })
@@ -167,6 +190,7 @@ describe('getAuthHeader', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorageMock.clear()
+    localStorageMock.clear()
   })
 
   it('returns null when no tokens', () => {
@@ -180,7 +204,7 @@ describe('getAuthHeader', () => {
       tokenType: 'bearer',
       expiresAt: Date.now() + 3600000,
     }
-    mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
+    mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
 
     expect(getAuthHeader()).toBe('bearer test-access-token')
   })
@@ -190,6 +214,7 @@ describe('Authentication Functions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorageMock.clear()
+    localStorageMock.clear()
   })
 
   describe('login', () => {
@@ -215,7 +240,7 @@ describe('Authentication Functions', () => {
         })
       )
       expect(result.accessToken).toBe('new-access-token')
-      expect(sessionStorageMock.setItem).toHaveBeenCalled()
+      expect(localStorageMock.setItem).toHaveBeenCalled()
     })
 
     it('throws on login failure', async () => {
@@ -237,7 +262,7 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000,
       }
-      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
+      mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
       mockFetch.mockResolvedValueOnce({ ok: true })
 
       await logout()
@@ -249,7 +274,7 @@ describe('Authentication Functions', () => {
           headers: { 'Authorization': 'Bearer test-access-token' },
         })
       )
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
     })
 
     it('clears tokens even if logout request fails', async () => {
@@ -259,12 +284,12 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000,
       }
-      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
+      mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify(tokens)
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
       await logout()
 
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('batchivo_auth_tokens')
     })
   })
 
@@ -315,7 +340,7 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() - 1000,
       }
-      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(oldTokens)
+      mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify(oldTokens)
 
       const mockResponse = {
         access_token: 'new-access-token',
@@ -330,7 +355,7 @@ describe('Authentication Functions', () => {
       const result = await refreshAccessToken()
 
       expect(result?.accessToken).toBe('new-access-token')
-      expect(sessionStorageMock.setItem).toHaveBeenCalled()
+      expect(localStorageMock.setItem).toHaveBeenCalled()
     })
 
     it('returns null when no tokens exist', async () => {
@@ -346,14 +371,14 @@ describe('Authentication Functions', () => {
         tokenType: 'bearer',
         expiresAt: Date.now() - 1000,
       }
-      mockSessionStorage['batchivo_auth_tokens'] = JSON.stringify(oldTokens)
+      mockLocalStorage['batchivo_auth_tokens'] = JSON.stringify(oldTokens)
 
       mockFetch.mockResolvedValueOnce({ ok: false })
 
       const result = await refreshAccessToken()
 
       expect(result).toBeNull()
-      expect(sessionStorageMock.removeItem).toHaveBeenCalled()
+      expect(localStorageMock.removeItem).toHaveBeenCalled()
     })
   })
 
