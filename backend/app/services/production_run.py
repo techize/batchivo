@@ -90,13 +90,21 @@ class ProductionRunService:
 
         # Add materials if provided
         if materials:
+            # Pre-fetch all spools that need cost_per_gram lookup in one query
+            needs_cost = [m for m in materials if m.cost_per_gram == Decimal("0")]
+            if needs_cost:
+                spool_ids = [m.spool_id for m in needs_cost]
+                spools_result = await self.db.execute(
+                    select(Spool).where(Spool.id.in_(spool_ids))
+                )
+                spools_by_id = {s.id: s for s in spools_result.scalars().all()}
+            else:
+                spools_by_id = {}
+
             for material_data in materials:
                 # Get cost_per_gram from spool if not provided
-                if material_data.cost_per_gram == Decimal("0"):
-                    spool_result = await self.db.execute(
-                        select(Spool).where(Spool.id == material_data.spool_id)
-                    )
-                    spool = spool_result.scalar_one()
+                if material_data.cost_per_gram == Decimal("0") and material_data.spool_id in spools_by_id:
+                    spool = spools_by_id[material_data.spool_id]
                     # cost_per_gram is a property that returns Optional[float]
                     material_data.cost_per_gram = (
                         Decimal(str(spool.cost_per_gram)) if spool.cost_per_gram else Decimal("0")
@@ -1057,16 +1065,25 @@ class ProductionRunService:
                     if not partial_usage:
                         partial_usage = {}
 
+                    # Pre-fetch all spools that have partial usage in one query
+                    active_spool_ids = [
+                        m.spool_id for m in production_run.materials
+                        if partial_usage.get(m.spool_id, Decimal("0")) > 0
+                    ]
+                    if active_spool_ids:
+                        sp_result = await self.db.execute(
+                            select(Spool).where(Spool.id.in_(active_spool_ids))
+                        )
+                        spools_by_id = {s.id: s for s in sp_result.scalars().all()}
+                    else:
+                        spools_by_id = {}
+
                     for material in production_run.materials:
                         # Use provided partial usage or fall back to 0
                         actual_used = partial_usage.get(material.spool_id, Decimal("0"))
 
                         if actual_used > 0:
-                            # Get current spool
-                            spool_result = await self.db.execute(
-                                select(Spool).where(Spool.id == material.spool_id)
-                            )
-                            spool = spool_result.scalar_one()
+                            spool = spools_by_id[material.spool_id]
                             weight_before = Decimal(str(spool.current_weight))
 
                             # Validate sufficient weight
@@ -1193,6 +1210,19 @@ class ProductionRunService:
 
                 total_waste = Decimal("0")
 
+                # Pre-fetch all spools that have waste in one query
+                waste_spool_ids = [
+                    m.spool_id for m in production_run.materials
+                    if waste_grams.get(m.spool_id, Decimal("0")) > 0
+                ]
+                if waste_spool_ids:
+                    waste_sp_result = await self.db.execute(
+                        select(Spool).where(Spool.id.in_(waste_spool_ids))
+                    )
+                    waste_spools_by_id = {s.id: s for s in waste_sp_result.scalars().all()}
+                else:
+                    waste_spools_by_id = {}
+
                 # Process waste for each material
                 for material in production_run.materials:
                     waste_amount = waste_grams.get(material.spool_id, Decimal("0"))
@@ -1200,11 +1230,7 @@ class ProductionRunService:
                     if waste_amount > 0:
                         total_waste += waste_amount
 
-                        # Get current spool
-                        spool_result = await self.db.execute(
-                            select(Spool).where(Spool.id == material.spool_id)
-                        )
-                        spool = spool_result.scalar_one()
+                        spool = waste_spools_by_id[material.spool_id]
                         weight_before = Decimal(str(spool.current_weight))
 
                         # Validate sufficient weight

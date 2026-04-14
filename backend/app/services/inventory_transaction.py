@@ -386,12 +386,22 @@ class InventoryTransactionService:
         """
         errors = []
 
+        # Batch-fetch all spools for these materials in one query
+        spool_ids = [m.spool_id for m in materials]
+        if spool_ids:
+            spools_result = await self.db.execute(
+                select(Spool).where(Spool.id.in_(spool_ids))
+            )
+            spools_by_id = {s.id: s for s in spools_result.scalars().all()}
+        else:
+            spools_by_id = {}
+
         for material in materials:
             actual_weight = float(material.final_actual_weight)
-
-            # Get current spool weight
-            spool_result = await self.db.execute(select(Spool).where(Spool.id == material.spool_id))
-            spool = spool_result.scalar_one()
+            spool = spools_by_id.get(material.spool_id)
+            if not spool:
+                errors.append(f"Spool {material.spool_id} not found")
+                continue
 
             if float(spool.current_weight) < actual_weight:
                 errors.append(
