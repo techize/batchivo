@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildkitd
+  namespace: woodpecker
+  labels:
+    app: buildkitd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buildkitd
+  template:
+    metadata:
+      labels:
+        app: buildkitd
+    spec:
+      containers:
+        - name: buildkitd
+          image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:v0.21.0
+          args:
+            - --addr
+            - tcp://0.0.0.0:1234
+            # Disable process sandboxing — required when running as a single privileged pod
+            # (avoids nested privilege escalation inside the daemon)
+            - --oci-worker-no-process-sandbox
+          ports:
+            - containerPort: 1234
+              name: buildkitd
+          # BuildKit daemon needs privileged to manage overlay filesystems for layer caching.
+          # Privilege is isolated to this single pod — CI pipeline steps connect via TCP and
+          # do not themselves need any elevated privileges.
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: cache
+              mountPath: /var/lib/buildkit
+          readinessProbe:
+            exec:
+              command:
+                - buildctl
+                - debug
+                - workers
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          livenessProbe:
+            exec:
+              command:
+                - buildctl
+                - debug
+                - workers
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            failureThreshold: 3
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: buildkitd-cache
+      # Restart policy: if daemon crashes, restart it (don't lose the cache PVC)
+      restartPolicy: Always

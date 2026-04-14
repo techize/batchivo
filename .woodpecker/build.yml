@@ -24,12 +24,12 @@ steps:
   # ============================================
   # Build Docker Images (parallel)
   #
-  # Kaniko layer cache lives in the registry. With correct layer ordering
-  # (deps copied before source), a code-only change only rebuilds the final
-  # COPY + CMD layers — the heavy poetry install / npm ci layers are cached.
+  # Uses BuildKit via a persistent daemon (buildkitd.woodpecker.svc:1234).
+  # Layer cache is stored in the daemon's PVC — code-only changes skip the
+  # heavy dependency layers entirely (poetry install, npm ci).
   # ============================================
   build-backend:
-    image: plugins/kaniko
+    image: registry.techize.co.uk/dockerhub-cache/woodpeckerci/plugin-docker-buildx:latest
     settings:
       repo: registry.techize.co.uk/batchivo/batchivo-backend
       dockerfile: backend/Dockerfile
@@ -42,11 +42,12 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-      cache: true
-      cache_repo: registry.techize.co.uk/batchivo/batchivo-backend-cache
+      daemon_address: tcp://buildkitd.woodpecker.svc:1234
+      cache_from: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache
+      cache_to: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache,mode=max
 
   build-frontend:
-    image: plugins/kaniko
+    image: registry.techize.co.uk/dockerhub-cache/woodpeckerci/plugin-docker-buildx:latest
     settings:
       repo: registry.techize.co.uk/batchivo/batchivo-frontend
       dockerfile: frontend/Dockerfile
@@ -61,8 +62,9 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-      cache: true
-      cache_repo: registry.techize.co.uk/batchivo/batchivo-frontend-cache
+      daemon_address: tcp://buildkitd.woodpecker.svc:1234
+      cache_from: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache
+      cache_to: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache,mode=max
 
   # ============================================
   # Deploy to Staging

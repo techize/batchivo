@@ -12,7 +12,7 @@ when:
 
 steps:
   build-ci-image:
-    image: plugins/kaniko
+    image: registry.techize.co.uk/dockerhub-cache/woodpeckerci/plugin-docker-buildx:latest
     settings:
       repo: registry.techize.co.uk/batchivo/ci-python
       dockerfile: backend/Dockerfile.ci
@@ -25,3 +25,4 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
+      daemon_address: tcp://buildkitd.woodpecker.svc:1234
