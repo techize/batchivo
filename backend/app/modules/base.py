@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from fastapi import APIRouter
 
@@ -19,7 +19,7 @@ class RouteInfo:
     method: str
     description: str
     summary: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -30,7 +30,7 @@ class ModuleInfo:
     display_name: str
     description: str
     icon: str
-    routes: List[RouteInfo] = field(default_factory=list)
+    routes: list[RouteInfo] = field(default_factory=list)
     enabled: bool = True
 
 
@@ -62,10 +62,10 @@ class BaseModule(ABC):
 
     # List of tenant types this module supports
     # Empty list means available to all tenant types
-    tenant_types: List["TenantType"] = []
+    tenant_types: list["TenantType"] = []
 
     # Module dependencies (other module names that must be enabled)
-    dependencies: List[str] = []
+    dependencies: list[str] = []
 
     # Whether this module is a core module (always enabled)
     is_core: bool = False
@@ -73,7 +73,7 @@ class BaseModule(ABC):
     def __init__(self):
         """Initialize the module."""
         self._router: Optional[APIRouter] = None
-        self._routes: List[RouteInfo] = []
+        self._routes: list[RouteInfo] = []
 
     @property
     def router(self) -> APIRouter:

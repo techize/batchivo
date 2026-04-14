@@ -7,7 +7,7 @@ Each customer account is tenant-specific (per-shop).
 import secrets
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional
 
 import bcrypt
 from sqlalchemy import Boolean, ForeignKey, String, DateTime, UniqueConstraint
@@ -127,13 +127,13 @@ class Customer(Base, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    addresses: Mapped[List["CustomerAddress"]] = relationship(
+    addresses: Mapped[list["CustomerAddress"]] = relationship(
         "CustomerAddress",
         back_populates="customer",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    orders: Mapped[List["Order"]] = relationship(
+    orders: Mapped[list["Order"]] = relationship(
         "Order",
         back_populates="customer",
         lazy="noload",  # Don't auto-load orders, use explicit query

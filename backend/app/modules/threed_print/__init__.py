@@ -1,7 +1,5 @@
 """3D Printing feature modules."""
 
-from typing import List
-
 from app.modules.base import BaseModule
 from app.modules.threed_print.spools import SpoolsModule
 from app.modules.threed_print.models import ModelsModule
@@ -15,7 +13,7 @@ from app.modules.threed_print.consumables import ConsumablesModule
 from app.modules.threed_print.sales_channels import SalesChannelsModule
 
 
-def get_modules() -> List[BaseModule]:
+def get_modules() -> list[BaseModule]:
     """
     Get all 3D printing modules.
 
