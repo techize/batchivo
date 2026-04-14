@@ -24,47 +24,51 @@ steps:
   # ============================================
   # Build Docker Images (parallel)
   #
-  # Uses BuildKit via a persistent daemon (buildkitd.woodpecker.svc:1234).
-  # Layer cache is stored in the daemon's PVC — code-only changes skip the
-  # heavy dependency layers entirely (poetry install, npm ci).
+  # Uses buildctl to send builds directly to the BuildKit daemon at
+  # buildkitd.woodpecker.svc:1234. No Docker socket or privileged mode needed.
+  # Layer cache is stored in the daemon's 20Gi PVC — code-only changes skip
+  # the heavy dependency layers entirely (poetry install, npm ci).
   # ============================================
   build-backend:
-    image: registry.techize.co.uk/dockerhub-cache/woodpeckerci/plugin-docker-buildx:latest
-    settings:
-      repo: registry.techize.co.uk/batchivo/batchivo-backend
-      dockerfile: backend/Dockerfile
-      context: backend
-      tags:
-        - ${CI_COMMIT_SHA}
-        - latest
-      registry: registry.techize.co.uk
-      username:
+    image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:latest
+    environment:
+      REGISTRY_USERNAME:
         from_secret: docker_username
-      password:
+      REGISTRY_PASSWORD:
         from_secret: docker_password
-      daemon_address: tcp://buildkitd.woodpecker.svc:1234
-      cache_from: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache
-      cache_to: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache,mode=max
+    commands:
+      - mkdir -p /root/.docker
+      - printf '{"auths":{"registry.techize.co.uk":{"auth":"%s"}}}' "$(printf '%s:%s' "$REGISTRY_USERNAME" "$REGISTRY_PASSWORD" | base64 | tr -d '\n')" > /root/.docker/config.json
+      - |
+        buildctl --addr tcp://buildkitd.woodpecker.svc:1234 build \
+          --frontend=dockerfile.v0 \
+          --opt filename=Dockerfile \
+          --local context=backend \
+          --local dockerfile=backend \
+          --import-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache \
+          --export-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache,mode=max \
+          --output type=image,"name=registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA};registry.techize.co.uk/batchivo/batchivo-backend:latest",push=true
 
   build-frontend:
-    image: registry.techize.co.uk/dockerhub-cache/woodpeckerci/plugin-docker-buildx:latest
-    settings:
-      repo: registry.techize.co.uk/batchivo/batchivo-frontend
-      dockerfile: frontend/Dockerfile
-      context: frontend
-      tags:
-        - ${CI_COMMIT_SHA}
-        - latest
-      build_args:
-        - VITE_API_URL=https://api.batchivo.com
-      registry: registry.techize.co.uk
-      username:
+    image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:latest
+    environment:
+      REGISTRY_USERNAME:
         from_secret: docker_username
-      password:
+      REGISTRY_PASSWORD:
         from_secret: docker_password
-      daemon_address: tcp://buildkitd.woodpecker.svc:1234
-      cache_from: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache
-      cache_to: type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache,mode=max
+    commands:
+      - mkdir -p /root/.docker
+      - printf '{"auths":{"registry.techize.co.uk":{"auth":"%s"}}}' "$(printf '%s:%s' "$REGISTRY_USERNAME" "$REGISTRY_PASSWORD" | base64 | tr -d '\n')" > /root/.docker/config.json
+      - |
+        buildctl --addr tcp://buildkitd.woodpecker.svc:1234 build \
+          --frontend=dockerfile.v0 \
+          --opt filename=Dockerfile \
+          --opt build-arg:VITE_API_URL=https://api.batchivo.com \
+          --local context=frontend \
+          --local dockerfile=frontend \
+          --import-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache \
+          --export-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache,mode=max \
+          --output type=image,"name=registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA};registry.techize.co.uk/batchivo/batchivo-frontend:latest",push=true
 
   # ============================================
   # Deploy to Staging

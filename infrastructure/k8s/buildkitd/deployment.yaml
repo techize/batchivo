@@ -17,13 +17,10 @@ spec:
     spec:
       containers:
         - name: buildkitd
-          image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:v0.21.0
+          image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:latest
           args:
             - --addr
             - tcp://0.0.0.0:1234
-            # Disable process sandboxing — required when running as a single privileged pod
-            # (avoids nested privilege escalation inside the daemon)
-            - --oci-worker-no-process-sandbox
           ports:
             - containerPort: 1234
               name: buildkitd

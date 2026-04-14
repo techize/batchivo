@@ -12,17 +12,19 @@ when:
 
 steps:
   build-ci-image:
-    image: registry.techize.co.uk/dockerhub-cache/woodpeckerci/plugin-docker-buildx:latest
-    settings:
-      repo: registry.techize.co.uk/batchivo/ci-python
-      dockerfile: backend/Dockerfile.ci
-      context: backend
-      tags:
-        - "3.12"
-        - latest
-      registry: registry.techize.co.uk
-      username:
+    image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:latest
+    environment:
+      REGISTRY_USERNAME:
         from_secret: docker_username
-      password:
+      REGISTRY_PASSWORD:
         from_secret: docker_password
-      daemon_address: tcp://buildkitd.woodpecker.svc:1234
+    commands:
+      - mkdir -p /root/.docker
+      - printf '{"auths":{"registry.techize.co.uk":{"auth":"%s"}}}' "$(printf '%s:%s' "$REGISTRY_USERNAME" "$REGISTRY_PASSWORD" | base64 | tr -d '\n')" > /root/.docker/config.json
+      - |
+        buildctl --addr tcp://buildkitd.woodpecker.svc:1234 build \
+          --frontend=dockerfile.v0 \
+          --opt filename=Dockerfile.ci \
+          --local context=backend \
+          --local dockerfile=backend \
+          --output type=image,"name=registry.techize.co.uk/batchivo/ci-python:3.12;registry.techize.co.uk/batchivo/ci-python:latest",push=true
