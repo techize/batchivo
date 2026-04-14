@@ -172,7 +172,7 @@ class ProductionRunCreate(ProductionRunBase):
     @classmethod
     def validate_completed_at(cls, v: Optional[datetime], info) -> Optional[datetime]:
         """Ensure completed_at is after started_at if provided."""
-        if v and "started_at" in info.data:
+        if v and "started_at" in info.data and info.data["started_at"]:
             started_at = info.data["started_at"]
             if v < started_at:
                 raise ValueError("completed_at must be after started_at")
