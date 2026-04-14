@@ -100,7 +100,9 @@ class TestVerifyCname:
         mock_rdata.target.__str__ = lambda self: "custom.target.com."
 
         with patch("dns.resolver.resolve", return_value=[mock_rdata]):
-            success, error = await service.verify_cname("shop.example.com", expected_target="custom.target.com")
+            success, error = await service.verify_cname(
+                "shop.example.com", expected_target="custom.target.com"
+            )
 
         assert success is True
         assert error is None

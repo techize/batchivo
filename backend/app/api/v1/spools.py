@@ -155,9 +155,7 @@ async def list_material_types(
     Returns all active material types sorted by code.
     """
     result = await db.execute(
-        select(MaterialType)
-        .where(MaterialType.is_active.is_(True))
-        .order_by(MaterialType.code)
+        select(MaterialType).where(MaterialType.is_active.is_(True)).order_by(MaterialType.code)
     )
     materials = result.scalars().all()
 

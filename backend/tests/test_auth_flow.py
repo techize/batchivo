@@ -107,9 +107,9 @@ class TestAuthenticationFlow:
             "/api/v1/spools/material-types",
             headers=auth_headers,
         )
-        assert (
-            materials_response.status_code == 200
-        ), f"material-types failed: {materials_response.text}"
+        assert materials_response.status_code == 200, (
+            f"material-types failed: {materials_response.text}"
+        )
         materials = materials_response.json()
         assert isinstance(materials, list)
         assert len(materials) > 0  # Should have seeded materials

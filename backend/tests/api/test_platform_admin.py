@@ -280,9 +280,9 @@ class TestPlatformAdminEndpoints:
         print(f"\nResponse status: {response.status_code}")
         print(f"Response body: {response.text}")
 
-        assert (
-            response.status_code == 200
-        ), f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
         assert data["id"] == str(test_tenant.id)
         assert data["name"] == test_tenant.name

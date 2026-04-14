@@ -389,9 +389,7 @@ class InventoryTransactionService:
         # Batch-fetch all spools for these materials in one query
         spool_ids = [m.spool_id for m in materials]
         if spool_ids:
-            spools_result = await self.db.execute(
-                select(Spool).where(Spool.id.in_(spool_ids))
-            )
+            spools_result = await self.db.execute(select(Spool).where(Spool.id.in_(spool_ids)))
             spools_by_id = {s.id: s for s in spools_result.scalars().all()}
         else:
             spools_by_id = {}

@@ -94,16 +94,17 @@ class ProductionRunService:
             needs_cost = [m for m in materials if m.cost_per_gram == Decimal("0")]
             if needs_cost:
                 spool_ids = [m.spool_id for m in needs_cost]
-                spools_result = await self.db.execute(
-                    select(Spool).where(Spool.id.in_(spool_ids))
-                )
+                spools_result = await self.db.execute(select(Spool).where(Spool.id.in_(spool_ids)))
                 spools_by_id = {s.id: s for s in spools_result.scalars().all()}
             else:
                 spools_by_id = {}
 
             for material_data in materials:
                 # Get cost_per_gram from spool if not provided
-                if material_data.cost_per_gram == Decimal("0") and material_data.spool_id in spools_by_id:
+                if (
+                    material_data.cost_per_gram == Decimal("0")
+                    and material_data.spool_id in spools_by_id
+                ):
                     spool = spools_by_id[material_data.spool_id]
                     # cost_per_gram is a property that returns Optional[float]
                     material_data.cost_per_gram = (
@@ -1067,7 +1068,8 @@ class ProductionRunService:
 
                     # Pre-fetch all spools that have partial usage in one query
                     active_spool_ids = [
-                        m.spool_id for m in production_run.materials
+                        m.spool_id
+                        for m in production_run.materials
                         if partial_usage.get(m.spool_id, Decimal("0")) > 0
                     ]
                     if active_spool_ids:
@@ -1212,7 +1214,8 @@ class ProductionRunService:
 
                 # Pre-fetch all spools that have waste in one query
                 waste_spool_ids = [
-                    m.spool_id for m in production_run.materials
+                    m.spool_id
+                    for m in production_run.materials
                     if waste_grams.get(m.spool_id, Decimal("0")) > 0
                 ]
                 if waste_spool_ids:

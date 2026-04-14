@@ -220,14 +220,16 @@ class TestGenerateCsvExport:
         assert "PROD-001" in result
 
     def test_includes_material_data(self):
-        products = [{
-            "id": "p1",
-            "name": "Test",
-            "sku": "PROD-001",
-            "materials": [
-                {"spool": {"material_type": "PLA", "color": "Red"}, "weight_grams": 50}
-            ],
-        }]
+        products = [
+            {
+                "id": "p1",
+                "name": "Test",
+                "sku": "PROD-001",
+                "materials": [
+                    {"spool": {"material_type": "PLA", "color": "Red"}, "weight_grams": 50}
+                ],
+            }
+        ]
         result = generate_csv_export(products)
         assert "PLA" in result
         assert "Red" in result

@@ -112,6 +112,7 @@ class TestDecodeCustomerToken:
 
     def test_returns_customer_token_data_type(self):
         from app.auth.customer_dependencies import CustomerTokenData
+
         token = create_customer_access_token(CUSTOMER_ID, TENANT_ID, EMAIL)
         data = decode_customer_token(token)
         assert isinstance(data, CustomerTokenData)

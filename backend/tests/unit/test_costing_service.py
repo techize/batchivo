@@ -221,6 +221,7 @@ class TestCostingExceptions:
 
     def test_circular_reference_error_message(self):
         from uuid import uuid4
+
         pid = uuid4()
         visited = {uuid4(), uuid4()}
         err = CircularReferenceError(pid, visited)

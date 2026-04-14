@@ -53,7 +53,9 @@ class TestIsPrinterCompatible:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_specific_config_for_different_printer_not_matched(self, service: PrintQueueService):
+    async def test_specific_config_for_different_printer_not_matched(
+        self, service: PrintQueueService
+    ):
         printer = make_printer(printer_id=uuid4())
         other_id = uuid4()
         # Model has config for another printer, no materials restrictions
@@ -77,7 +79,9 @@ class TestIsPrinterCompatible:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_printer_missing_required_material_returns_false(self, service: PrintQueueService):
+    async def test_printer_missing_required_material_returns_false(
+        self, service: PrintQueueService
+    ):
         printer = make_printer(capabilities={"materials": ["PLA"]})
         model = make_model(materials=[make_material("ABS")])
         result = await service._is_printer_compatible(printer, model)
@@ -107,7 +111,9 @@ class TestIsPrinterCompatible:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_capabilities_without_materials_key_uses_empty_list(self, service: PrintQueueService):
+    async def test_capabilities_without_materials_key_uses_empty_list(
+        self, service: PrintQueueService
+    ):
         # capabilities exists but has no "materials" key → empty list → any material fails
         printer = make_printer(capabilities={"color": "blue"})
         model = make_model(materials=[make_material("PLA")])

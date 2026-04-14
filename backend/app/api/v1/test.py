@@ -117,9 +117,7 @@ async def list_material_types(
     No authentication required (public reference data).
     """
     result = await db.execute(
-        select(MaterialType)
-        .where(MaterialType.is_active.is_(True))
-        .order_by(MaterialType.name)
+        select(MaterialType).where(MaterialType.is_active.is_(True)).order_by(MaterialType.name)
     )
     materials = result.scalars().all()
 
