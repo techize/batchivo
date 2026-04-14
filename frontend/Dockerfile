@@ -22,7 +22,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime with nginx
-FROM registry.techize.co.uk/dockerhub-cache/nginx:1.29.5-alpine
+FROM registry.techize.co.uk/dockerhub-cache/nginx:1.29-alpine
 
 # Upgrade packages and install envsubst (from gettext)
 # --ignore alpine-baselayout: 3.7.2+
