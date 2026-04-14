@@ -27,4 +27,4 @@ steps:
           --opt filename=Dockerfile.ci \
           --local context=backend \
           --local dockerfile=backend \
-          --output type=image,"name=registry.techize.co.uk/batchivo/ci-python:3.12;registry.techize.co.uk/batchivo/ci-python:latest",push=true
+          --output type=image,name=registry.techize.co.uk/batchivo/ci-python:3.12,push=true

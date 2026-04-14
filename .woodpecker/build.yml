@@ -47,7 +47,7 @@ steps:
           --local dockerfile=backend \
           --import-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache \
           --export-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-backend-cache,mode=max \
-          --output type=image,"name=registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA};registry.techize.co.uk/batchivo/batchivo-backend:latest",push=true
+          --output type=image,name=registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA},push=true
 
   build-frontend:
     image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:latest
@@ -68,7 +68,7 @@ steps:
           --local dockerfile=frontend \
           --import-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache \
           --export-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache,mode=max \
-          --output type=image,"name=registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA};registry.techize.co.uk/batchivo/batchivo-frontend:latest",push=true
+          --output type=image,name=registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA},push=true
 
   # ============================================
   # Deploy to Staging
