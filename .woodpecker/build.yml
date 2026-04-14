@@ -84,7 +84,7 @@ steps:
       - apk add --no-cache sed curl
       - cd /woodpecker/src/github.com/techize/batchivo
       - echo "=== Deploying to STAGING ==="
-      - sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/staging/deployment.yaml
+      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/staging/deployment.yaml'
       - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
       - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
       - git add infrastructure/k8s/staging/deployment.yaml
@@ -122,8 +122,8 @@ steps:
       - apk add --no-cache sed
       - cd /woodpecker/src/github.com/techize/batchivo
       - echo "=== Deploying to PRODUCTION ==="
-      - sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/backend/deployment.yaml
-      - sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-frontend:.*|image: registry.techize.co.uk/batchivo/batchivo-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml
+      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/backend/deployment.yaml'
+      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-frontend:.*|image: registry.techize.co.uk/batchivo/batchivo-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml'
       - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
       - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
       - git add infrastructure/k8s/backend/deployment.yaml infrastructure/k8s/frontend/deployment.yaml
