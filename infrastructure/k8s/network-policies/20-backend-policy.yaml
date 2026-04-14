@@ -45,6 +45,14 @@ spec:
       ports:
         - protocol: TCP
           port: 8000
+    # Allow Prometheus scraping of OTel metrics endpoint (port 9090)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090
   egress:
     # Allow egress to PostgreSQL within namespace
     - to:
