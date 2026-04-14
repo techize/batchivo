@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from app.services.audit_service import calculate_changes
 
