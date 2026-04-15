@@ -241,6 +241,7 @@ class ApiResponse(BaseModel):
 
 @router.get("/products", response_model=ShopProductList)
 async def get_products(
+    response: Response,
     shop_context: ShopContext,
     category: Optional[str] = None,
     designer: Optional[str] = None,
@@ -463,6 +464,7 @@ async def get_products(
         )
         shop_products.append(shop_product)
 
+    response.headers["Cache-Control"] = "public, s-maxage=60, stale-while-revalidate=30"
     return ShopProductList(
         data=shop_products,
         total=total,
@@ -475,6 +477,7 @@ async def get_products(
 @router.get("/products/{product_id}")
 async def get_product(
     product_id: str,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     """Get single product details. Accepts a UUID or seo_slug (including Shopify-style slug-N suffixes)."""
@@ -571,6 +574,7 @@ async def get_product(
     ]
 
     is_print_to_order = getattr(product, "print_to_order", False)
+    response.headers["Cache-Control"] = "public, s-maxage=300, stale-while-revalidate=60"
     return {
         "data": ShopProduct(
             id=str(product.id),
