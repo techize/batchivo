@@ -43,16 +43,16 @@ spec:
       - name: harbor-creds
       containers:
       - name: frontend
-        image: registry.techize.co.uk/batchivo/batchivo-frontend:23f495e611edb15b5149db96a4d2fcd7b597a245
+        image: registry.techize.co.uk/batchivo/batchivo-frontend:947afec812169af41173f164df27693d2b2f4e2d
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: frontend-config
         env:
         - name: VITE_BUILD_SHA
-          value: "23f495e611edb15b5149db96a4d2fcd7b597a245"
+          value: "947afec812169af41173f164df27693d2b2f4e2d"
         - name: VITE_BUILD_DATE
-          value: "2026-04-15T00:19:29Z"
+          value: "2026-04-15T00:21:53Z"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
