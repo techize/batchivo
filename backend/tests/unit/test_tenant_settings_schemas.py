@@ -2,6 +2,8 @@
 Tests for tenant settings Pydantic schemas.
 """
 
+from datetime import datetime, timezone
+
 import pytest
 from pydantic import ValidationError
 

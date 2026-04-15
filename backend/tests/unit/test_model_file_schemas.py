@@ -2,6 +2,8 @@
 Tests for ModelFile Pydantic schemas (3D model files).
 """
 
+from datetime import datetime, timezone
+
 import pytest
 from pydantic import ValidationError
 
