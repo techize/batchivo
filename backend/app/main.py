@@ -68,6 +68,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs" if settings.is_development else None,  # Disable in production
     redoc_url="/redoc" if settings.is_development else None,
+    openapi_url="/openapi.json" if settings.is_development else None,  # Disable schema in production
     redirect_slashes=False,  # Don't auto-redirect trailing slashes (causes CORS issues)
 )
 
