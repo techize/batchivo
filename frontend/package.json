@@ -65,7 +65,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
-    "dompurify": "^3.3.2",
+    "dompurify": "^3.4.0",
     "framer-motion": "^12.23.24",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.3",
