@@ -3291,14 +3291,14 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "squareup"
-version = "43.2.0.20251016"
+version = "44.0.1.20260122"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 groups = ["main"]
 files = [
-    {file = "squareup-43.2.0.20251016-py3-none-any.whl", hash = "sha256:3fa9ff56fec64f7e1437e90d1be21bf990d32491e2f77fab614cdad7fdd6e539"},
-    {file = "squareup-43.2.0.20251016.tar.gz", hash = "sha256:7534e9561f7cbaeba448819ecef2c789389156c56ffa498ae6cfb956254125a0"},
+    {file = "squareup-44.0.1.20260122-py3-none-any.whl", hash = "sha256:002f6094731f87b5b9a1fcb2f56dc03c671b4b6eb07da3dd7a1699760a792e37"},
+    {file = "squareup-44.0.1.20260122.tar.gz", hash = "sha256:7c05c86ec4f50550f5f14f326131c56c758bd2ae4f146f00e25dc48acdc51212"},
 ]
 
 [package.dependencies]
@@ -3850,4 +3850,4 @@ dev = ["black", "fakeredis", "httpx", "moto", "mypy", "pygments", "pytest", "pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "983a7409aae60132510f2d404daa7c4fa9a07e9463687b663489bc1179ceb1dc"
+content-hash = "b1ebc557b3895ecf370181c291a72ea53325b8995409be80566bf8f3d612f91f"
