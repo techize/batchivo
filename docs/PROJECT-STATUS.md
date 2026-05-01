@@ -28,19 +28,18 @@ Snapshot after claiming the documentation refresh issue on 2026-05-01:
 | Metric | Count |
 |--------|-------|
 | Total issues | 384 |
-| Open | 33 |
-| In progress | 2 |
-| Closed | 347 |
-| Blocked | 11 |
+| Open | 37 |
+| In progress | 0 |
+| Closed | 344 |
+| Blocked | 15 |
 | Deferred | 2 |
 | Ready | 22 |
 
-Current in-progress work:
+Current blocked work:
 
 | ID | Summary |
 |----|---------|
-| `batchivo-1xe2` | Update stale roadmap and status documentation |
-| `batchivo-tm098` | Multi-tenant test coverage follow-up imported from Task Master |
+| `batchivo-tm098` | Multi-tenant test coverage follow-up, blocked on real knitting CRUD APIs |
 
 ---
 
@@ -101,7 +100,7 @@ Knitting/multi-craft support is not part of the near-term 3D printing MVP. The m
 | Operations | Alert rules, structured JSON logging, correlation IDs, and runbooks need completion | `batchivo-tm032`, `batchivo-tm033` |
 | Commerce automation | Abandoned cart emails and marketplace OAuth integrations remain open | `batchivo-tm061`, `batchivo-tm046` |
 | Printer automation | OctoPrint, Moonraker/Klipper, generic webhooks, and live fleet hardening remain post-MVP | `batchivo-tm038`-`batchivo-tm043` |
-| Multi-craft | Knitting API routers are incomplete or missing | `batchivo-tm098` follow-up |
+| Multi-craft | Knitting API routers are placeholders and CRUD APIs are missing | `batchivo-tm086`-`batchivo-tm089`, `batchivo-tm098` |
 
 ---
 
@@ -123,7 +122,7 @@ These numbers are a recent snapshot, not a substitute for running the gates befo
 ## Recommended Next Work
 
 1. Close this documentation refresh after review and export Beads state.
-2. Triage `batchivo-tm098`: product variant APIs appear implemented, while knitting APIs remain the real blocker.
+2. Implement the reopened knitting backend tasks `batchivo-tm086` through `batchivo-tm089`, then unblock `batchivo-tm098`.
 3. Implement or validate `batchivo-tm028` order-processing E2E tests.
 4. Resolve deployment/domain issue `batchivo-tm134`.
 5. Work through the remaining `bd ready` queue, closing stale imported issues where code already satisfies the acceptance criteria.

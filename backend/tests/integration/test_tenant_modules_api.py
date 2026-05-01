@@ -659,9 +659,6 @@ class TestUserModulesAPI:
             assert "routes" in module
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(
-        reason="Module discovery has import errors in knitting modules (yarn.py, needle.py)"
-    )
     async def test_list_modules_with_include_disabled(
         self,
         client: AsyncClient,
@@ -682,9 +679,6 @@ class TestUserModulesAPI:
         assert all(s in ["active", "disabled", "coming_soon"] for s in statuses)
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(
-        reason="Module discovery has import errors in knitting modules (yarn.py, needle.py)"
-    )
     async def test_get_specific_module(
         self,
         client: AsyncClient,

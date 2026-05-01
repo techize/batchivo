@@ -131,4 +131,4 @@ bd show <id>
 bd list --status open
 ```
 
-As of 2026-05-01 after the Task Master migration: 384 total Beads issues, 33 open, 2 in progress, 347 closed, 11 blocked, 2 deferred, and 22 ready.
+As of 2026-05-01 after the Task Master migration and first triage pass: 384 total Beads issues, 37 open, 0 in progress, 344 closed, 15 blocked, 2 deferred, and 22 ready.
