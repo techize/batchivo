@@ -64,7 +64,8 @@ The MVP is a self-hosted 3D printing business system where a tenant can:
 - [x] Square/payment configuration surfaces
 - [x] Shopify sync and webhook groundwork
 - [x] CSV/export flows
-- [ ] Full order-processing E2E coverage (`batchivo-tm028`)
+- [x] Admin order processing E2E coverage for ship/deliver workflow
+- [ ] Admin create-order/payment workflow decision or implementation (`batchivo-sc7p`)
 - [ ] Marketplace OAuth/order import for Etsy, eBay, and full Shopify automation
 - [ ] Abandoned cart email reminder system (`batchivo-tm061`)
 
@@ -131,4 +132,4 @@ bd show <id>
 bd list --status open
 ```
 
-As of 2026-05-01 after the Task Master migration and first triage pass: 384 total Beads issues, 36 open, 0 in progress, 345 closed, 15 blocked, 2 deferred, and 21 ready.
+As of 2026-05-01 after the Task Master migration and first triage pass: 385 total Beads issues, 36 open, 0 in progress, 346 closed, 15 blocked, 2 deferred, and 21 ready.

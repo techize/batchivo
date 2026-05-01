@@ -27,10 +27,10 @@ Snapshot after claiming the documentation refresh issue on 2026-05-01:
 
 | Metric | Count |
 |--------|-------|
-| Total issues | 384 |
+| Total issues | 385 |
 | Open | 36 |
 | In progress | 0 |
-| Closed | 345 |
+| Closed | 346 |
 | Blocked | 15 |
 | Deferred | 2 |
 | Ready | 21 |
@@ -49,7 +49,7 @@ Batchivo is close to an MVP for the core 3D printing workflow, but it is not yet
 
 The remaining MVP work is mainly proof and hardening:
 
-- End-to-end tests for the order/payment/fulfillment workflow (`batchivo-tm028`)
+- Admin order creation/payment UI remains missing; current E2E coverage starts from an existing paid order (`batchivo-sc7p`)
 - Clean production deployment validation, including wildcard DNS/domain routing (`batchivo-tm134`)
 - Triage of imported Beads issues whose Task Master descriptions are stale
 - Structured logging, alerting, and operational runbooks
@@ -94,7 +94,7 @@ Knitting/multi-craft support is not part of the near-term 3D printing MVP. The m
 
 | Area | Gap | Tracker |
 |------|-----|---------|
-| E2E testing | Full order processing workflow needs Playwright coverage | `batchivo-tm028` |
+| Order creation | Admin create-order/payment UI is not implemented; current order E2E covers admin processing after checkout | `batchivo-sc7p` |
 | Deployment | Wildcard DNS/domain configuration needs implementation/validation | `batchivo-tm134` |
 | Backlog hygiene | Imported Task Master items need stale/duplicate triage | Beads ready queue |
 | Operations | Alert rules, structured JSON logging, correlation IDs, and runbooks need completion | `batchivo-tm032`, `batchivo-tm033` |
@@ -123,6 +123,6 @@ These numbers are a recent snapshot, not a substitute for running the gates befo
 
 1. Close this documentation refresh after review and export Beads state.
 2. Implement the reopened knitting backend tasks `batchivo-tm086` through `batchivo-tm089`, then unblock `batchivo-tm098`.
-3. Implement or validate `batchivo-tm028` order-processing E2E tests.
+3. Decide whether `batchivo-sc7p` is required for MVP or whether order creation remains shop/checkout-only.
 4. Resolve deployment/domain issue `batchivo-tm134`.
 5. Work through the remaining `bd ready` queue, closing stale imported issues where code already satisfies the acceptance criteria.
