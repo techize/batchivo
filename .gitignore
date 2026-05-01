@@ -188,4 +188,3 @@ infrastructure/harbor/values.yaml
 # Personal workflow files (not for public repo)
 CURRENT_SESSION.md
 TESTING_SUMMARY.md
-.beads/

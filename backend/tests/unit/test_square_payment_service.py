@@ -1,9 +1,12 @@
 """Comprehensive tests for Square payment service - 100% coverage."""
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+
+from square.core.api_error import ApiError
 
 from app.schemas.payment import (
     CartItem,
@@ -78,25 +81,57 @@ def create_mock_settings():
 
 def create_mock_success_response(payment_id="payment123", status="COMPLETED", amount=2999):
     """Create a mock successful payment response."""
-    mock_response = MagicMock()
-    mock_response.is_success.return_value = True
-    mock_response.body = {
-        "payment": {
-            "id": payment_id,
-            "status": status,
-            "amount_money": {"amount": amount, "currency": "GBP"},
-            "receipt_url": f"https://squareup.com/receipt/{payment_id}",
-        }
-    }
-    return mock_response
+    return SimpleNamespace(
+        payment=SimpleNamespace(
+            id=payment_id,
+            status=status,
+            amount_money=SimpleNamespace(amount=amount, currency="GBP"),
+            receipt_url=f"https://squareup.com/receipt/{payment_id}",
+            created_at="2025-01-01T00:00:00Z",
+        )
+    )
+
+
+def create_mock_refund_response(refund_id="refund123", status="COMPLETED", amount=2999):
+    """Create a mock successful refund response."""
+    return SimpleNamespace(
+        refund=SimpleNamespace(
+            id=refund_id,
+            status=status,
+            amount_money=SimpleNamespace(amount=amount, currency="GBP"),
+        )
+    )
+
+
+def create_mock_list_response(payments):
+    """Create a mock list payments response."""
+    return SimpleNamespace(
+        payments=[
+            SimpleNamespace(
+                id=payment["id"],
+                status=payment.get("status"),
+                amount_money=SimpleNamespace(
+                    amount=payment.get("amount", 0),
+                    currency=payment.get("currency", "GBP"),
+                ),
+                created_at=payment.get("created_at"),
+            )
+            for payment in payments
+        ]
+    )
 
 
 def create_mock_error_response(error_code="PAYMENT_FAILED", detail="Error occurred"):
-    """Create a mock error payment response."""
-    mock_response = MagicMock()
-    mock_response.is_success.return_value = False
-    mock_response.errors = [{"code": error_code, "detail": detail}]
-    return mock_response
+    """Create a Square API error."""
+    return ApiError(
+        status_code=400,
+        body={"errors": [{"code": error_code, "detail": detail}]},
+    )
+
+
+def create_mock_empty_error_response():
+    """Create a Square API error with no errors."""
+    return ApiError(status_code=400, body={"errors": []})
 
 
 # ============================================
@@ -106,10 +141,6 @@ def create_mock_error_response(error_code="PAYMENT_FAILED", detail="Error occurr
 
 class TestSquarePaymentServiceInit:
     """Tests for SquarePaymentService initialization."""
-
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
 
     def test_init_creates_client_with_correct_params(self):
         """Test that initialization creates Square client with correct parameters."""
@@ -122,13 +153,12 @@ class TestSquarePaymentServiceInit:
                 service = SquarePaymentService()
 
                 mock_client.assert_called_once_with(
-                    access_token="test-token",
+                    token="test-token",
                     environment="sandbox",
                 )
                 assert service.location_id == "test-location"
                 assert service.environment == "sandbox"
-                assert service.payments_api == mock_client_instance.payments
-                assert service.refunds_api == mock_client_instance.refunds
+                assert service.client == mock_client_instance
 
     def test_init_sets_retry_configuration(self):
         """Test that initialization sets retry configuration."""
@@ -363,17 +393,13 @@ class TestRetryDelayCalculation:
 class TestProcessPaymentSuccess:
     """Tests for successful payment processing."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_process_payment_success_returns_response(self):
         """Test successful payment returns PaymentResponse."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -392,7 +418,7 @@ class TestProcessPaymentSuccess:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -406,7 +432,7 @@ class TestProcessPaymentSuccess:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response(
+                mock_payments_api.create.return_value = create_mock_success_response(
                     payment_id="abcd1234efgh5678"
                 )
                 mock_client.return_value.payments = mock_payments_api
@@ -422,14 +448,14 @@ class TestProcessPaymentSuccess:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 request = create_payment_request(phone=None)
                 service.process_payment(request)
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 assert "buyer_phone_number" not in call_body
 
     def test_process_payment_with_phone(self):
@@ -438,14 +464,14 @@ class TestProcessPaymentSuccess:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 request = create_payment_request(phone="+44123456789")
                 service.process_payment(request)
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 assert call_body["buyer_phone_number"] == "+44123456789"
 
 
@@ -457,24 +483,20 @@ class TestProcessPaymentSuccess:
 class TestProcessPaymentIdempotency:
     """Tests for payment idempotency key handling."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_uses_provided_idempotency_key(self):
         """Test that provided idempotency key is used."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 request = create_payment_request(idempotency_key="custom-key-12345")
                 service.process_payment(request)
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 assert call_body["idempotency_key"] == "custom-key-12345"
 
     def test_generates_uuid_when_no_idempotency_key(self):
@@ -483,14 +505,14 @@ class TestProcessPaymentIdempotency:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 request = create_payment_request(idempotency_key=None)
                 service.process_payment(request)
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 assert len(call_body["idempotency_key"]) == 36  # UUID format
 
 
@@ -502,23 +524,19 @@ class TestProcessPaymentIdempotency:
 class TestProcessPaymentRequestBody:
     """Tests for payment request body construction."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_request_body_includes_all_required_fields(self):
         """Test that request body includes all required fields."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 service.process_payment(create_payment_request())
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
 
                 assert call_body["source_id"] == "cnon:card-nonce-ok"
                 assert call_body["amount_money"]["amount"] == 2999
@@ -535,13 +553,13 @@ class TestProcessPaymentRequestBody:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 service.process_payment(create_payment_request())
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 shipping = call_body["shipping_address"]
 
                 assert shipping["address_line_1"] == "123 Test Street"
@@ -559,13 +577,13 @@ class TestProcessPaymentRequestBody:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 service.process_payment(create_payment_request())
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 assert call_body["reference_id"].startswith("mystmere-")
 
     def test_note_includes_item_count(self):
@@ -574,13 +592,13 @@ class TestProcessPaymentRequestBody:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_success_response()
+                mock_payments_api.create.return_value = create_mock_success_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 service.process_payment(create_payment_request())
 
-                call_body = mock_payments_api.create_payment.call_args[1]["body"]
+                call_body = mock_payments_api.create.call_args.kwargs
                 assert "1 item(s)" in call_body["note"]
 
 
@@ -592,17 +610,13 @@ class TestProcessPaymentRequestBody:
 class TestProcessPaymentFailure:
     """Tests for payment failure handling."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_payment_failure_returns_error(self):
         """Test that payment failure returns PaymentError."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_error_response(
+                mock_payments_api.create.side_effect = create_mock_error_response(
                     "CARD_DECLINED", "Card declined"
                 )
                 mock_client.return_value.payments = mock_payments_api
@@ -620,7 +634,7 @@ class TestProcessPaymentFailure:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_error_response(
+                mock_payments_api.create.side_effect = create_mock_error_response(
                     "CARD_DECLINED", "Card declined"
                 )
                 mock_client.return_value.payments = mock_payments_api
@@ -635,12 +649,8 @@ class TestProcessPaymentFailure:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = False
-                mock_response.errors = None
-
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = mock_response
+                mock_payments_api.create.side_effect = create_mock_empty_error_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -654,12 +664,8 @@ class TestProcessPaymentFailure:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = False
-                mock_response.errors = []
-
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = mock_response
+                mock_payments_api.create.side_effect = create_mock_empty_error_response()
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -674,7 +680,7 @@ class TestProcessPaymentFailure:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.side_effect = Exception("API connection failed")
+                mock_payments_api.create.side_effect = Exception("API connection failed")
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -693,10 +699,6 @@ class TestProcessPaymentFailure:
 class TestProcessPaymentRetry:
     """Tests for payment retry logic."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_retry_on_gateway_timeout_success(self):
         """Test successful retry after gateway timeout."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
@@ -704,7 +706,7 @@ class TestProcessPaymentRetry:
             with patch("app.services.square_payment.Square") as mock_client:
                 with patch("app.services.square_payment.time.sleep"):
                     mock_payments_api = MagicMock()
-                    mock_payments_api.create_payment.side_effect = [
+                    mock_payments_api.create.side_effect = [
                         create_mock_error_response("GATEWAY_TIMEOUT", "Timeout"),
                         create_mock_success_response(),
                     ]
@@ -715,7 +717,7 @@ class TestProcessPaymentRetry:
 
                     assert isinstance(result, PaymentResponse)
                     assert result.success is True
-                    assert mock_payments_api.create_payment.call_count == 2
+                    assert mock_payments_api.create.call_count == 2
 
     def test_retry_on_temporarily_unavailable(self):
         """Test retry on TEMPORARILY_UNAVAILABLE error."""
@@ -724,7 +726,7 @@ class TestProcessPaymentRetry:
             with patch("app.services.square_payment.Square") as mock_client:
                 with patch("app.services.square_payment.time.sleep"):
                     mock_payments_api = MagicMock()
-                    mock_payments_api.create_payment.side_effect = [
+                    mock_payments_api.create.side_effect = [
                         create_mock_error_response("TEMPORARILY_UNAVAILABLE", "Try again"),
                         create_mock_success_response(),
                     ]
@@ -734,7 +736,7 @@ class TestProcessPaymentRetry:
                     result = service.process_payment(create_payment_request())
 
                     assert result.success is True
-                    assert mock_payments_api.create_payment.call_count == 2
+                    assert mock_payments_api.create.call_count == 2
 
     def test_retry_on_internal_server_error(self):
         """Test retry on INTERNAL_SERVER_ERROR."""
@@ -743,7 +745,7 @@ class TestProcessPaymentRetry:
             with patch("app.services.square_payment.Square") as mock_client:
                 with patch("app.services.square_payment.time.sleep"):
                     mock_payments_api = MagicMock()
-                    mock_payments_api.create_payment.side_effect = [
+                    mock_payments_api.create.side_effect = [
                         create_mock_error_response("INTERNAL_SERVER_ERROR", "Server error"),
                         create_mock_success_response(),
                     ]
@@ -753,7 +755,7 @@ class TestProcessPaymentRetry:
                     result = service.process_payment(create_payment_request())
 
                     assert result.success is True
-                    assert mock_payments_api.create_payment.call_count == 2
+                    assert mock_payments_api.create.call_count == 2
 
     def test_retry_on_connection_exception(self):
         """Test retry on connection exception."""
@@ -762,7 +764,7 @@ class TestProcessPaymentRetry:
             with patch("app.services.square_payment.Square") as mock_client:
                 with patch("app.services.square_payment.time.sleep"):
                     mock_payments_api = MagicMock()
-                    mock_payments_api.create_payment.side_effect = [
+                    mock_payments_api.create.side_effect = [
                         Exception("Connection timeout"),
                         create_mock_success_response(),
                     ]
@@ -772,7 +774,7 @@ class TestProcessPaymentRetry:
                     result = service.process_payment(create_payment_request())
 
                     assert result.success is True
-                    assert mock_payments_api.create_payment.call_count == 2
+                    assert mock_payments_api.create.call_count == 2
 
     def test_no_retry_on_card_declined(self):
         """Test no retry on CARD_DECLINED error."""
@@ -780,7 +782,7 @@ class TestProcessPaymentRetry:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_error_response(
+                mock_payments_api.create.side_effect = create_mock_error_response(
                     "CARD_DECLINED", "Declined"
                 )
                 mock_client.return_value.payments = mock_payments_api
@@ -789,7 +791,7 @@ class TestProcessPaymentRetry:
                 result = service.process_payment(create_payment_request())
 
                 assert isinstance(result, PaymentError)
-                assert mock_payments_api.create_payment.call_count == 1
+                assert mock_payments_api.create.call_count == 1
 
     def test_no_retry_on_cvv_failure(self):
         """Test no retry on CVV_FAILURE error."""
@@ -797,7 +799,7 @@ class TestProcessPaymentRetry:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.return_value = create_mock_error_response(
+                mock_payments_api.create.side_effect = create_mock_error_response(
                     "CVV_FAILURE", "CVV mismatch"
                 )
                 mock_client.return_value.payments = mock_payments_api
@@ -806,7 +808,7 @@ class TestProcessPaymentRetry:
                 result = service.process_payment(create_payment_request())
 
                 assert isinstance(result, PaymentError)
-                assert mock_payments_api.create_payment.call_count == 1
+                assert mock_payments_api.create.call_count == 1
 
     def test_no_retry_on_non_network_exception(self):
         """Test no retry on non-network exception."""
@@ -814,14 +816,14 @@ class TestProcessPaymentRetry:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.create_payment.side_effect = Exception("Invalid JSON format")
+                mock_payments_api.create.side_effect = Exception("Invalid JSON format")
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
                 result = service.process_payment(create_payment_request())
 
                 assert isinstance(result, PaymentError)
-                assert mock_payments_api.create_payment.call_count == 1
+                assert mock_payments_api.create.call_count == 1
 
     def test_max_retries_exhausted(self):
         """Test that retries stop after MAX_RETRIES."""
@@ -830,7 +832,7 @@ class TestProcessPaymentRetry:
             with patch("app.services.square_payment.Square") as mock_client:
                 with patch("app.services.square_payment.time.sleep"):
                     mock_payments_api = MagicMock()
-                    mock_payments_api.create_payment.return_value = create_mock_error_response(
+                    mock_payments_api.create.side_effect = create_mock_error_response(
                         "GATEWAY_TIMEOUT", "Timeout"
                     )
                     mock_client.return_value.payments = mock_payments_api
@@ -839,7 +841,7 @@ class TestProcessPaymentRetry:
                     result = service.process_payment(create_payment_request())
 
                     assert isinstance(result, PaymentError)
-                    assert mock_payments_api.create_payment.call_count == service.MAX_RETRIES
+                    assert mock_payments_api.create.call_count == service.MAX_RETRIES
 
     def test_retry_calls_sleep_with_correct_delay(self):
         """Test that retry calls sleep with correct exponential delay."""
@@ -848,7 +850,7 @@ class TestProcessPaymentRetry:
             with patch("app.services.square_payment.Square") as mock_client:
                 with patch("app.services.square_payment.time.sleep") as mock_sleep:
                     mock_payments_api = MagicMock()
-                    mock_payments_api.create_payment.side_effect = [
+                    mock_payments_api.create.side_effect = [
                         create_mock_error_response("GATEWAY_TIMEOUT", "Timeout"),
                         create_mock_error_response("GATEWAY_TIMEOUT", "Timeout"),
                         create_mock_success_response(),
@@ -872,27 +874,13 @@ class TestProcessPaymentRetry:
 class TestGetPayment:
     """Tests for get_payment method."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_get_payment_success(self):
         """Test successful payment retrieval."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "payment": {
-                        "id": "payment123",
-                        "status": "COMPLETED",
-                        "amount_money": {"amount": 5000, "currency": "GBP"},
-                    }
-                }
-
                 mock_payments_api = MagicMock()
-                mock_payments_api.get_payment.return_value = mock_response
+                mock_payments_api.get.return_value = create_mock_success_response(amount=5000)
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -901,19 +889,15 @@ class TestGetPayment:
                 assert result is not None
                 assert result["id"] == "payment123"
                 assert result["status"] == "COMPLETED"
-                mock_payments_api.get_payment.assert_called_once_with(payment_id="payment123")
+                mock_payments_api.get.assert_called_once_with(payment_id="payment123")
 
     def test_get_payment_not_found(self):
         """Test payment not found returns None."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = False
-                mock_response.errors = [{"code": "NOT_FOUND"}]
-
                 mock_payments_api = MagicMock()
-                mock_payments_api.get_payment.return_value = mock_response
+                mock_payments_api.get.side_effect = create_mock_error_response("NOT_FOUND")
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -927,7 +911,7 @@ class TestGetPayment:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.get_payment.side_effect = Exception("API error")
+                mock_payments_api.get.side_effect = Exception("API error")
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -944,24 +928,12 @@ class TestGetPayment:
 class TestRefundPayment:
     """Tests for refund_payment method."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_refund_payment_success(self):
         """Test successful payment refund."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "refund": {
-                        "id": "refund123",
-                        "status": "COMPLETED",
-                        "amount_money": {"amount": 2999, "currency": "GBP"},
-                    }
-                }
+                mock_response = create_mock_refund_response(refund_id="refund123", amount=2999)
 
                 mock_refunds_api = MagicMock()
                 mock_refunds_api.refund_payment.return_value = mock_response
@@ -987,15 +959,7 @@ class TestRefundPayment:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "refund": {
-                        "id": "refund456",
-                        "status": "COMPLETED",
-                        "amount_money": {"amount": 1500, "currency": "GBP"},
-                    }
-                }
+                mock_response = create_mock_refund_response(refund_id="refund456", amount=1500)
 
                 mock_refunds_api = MagicMock()
                 mock_refunds_api.refund_payment.return_value = mock_response
@@ -1016,15 +980,7 @@ class TestRefundPayment:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "refund": {
-                        "id": "refund789",
-                        "status": "COMPLETED",
-                        "amount_money": {"amount": 1000, "currency": "GBP"},
-                    }
-                }
+                mock_response = create_mock_refund_response(refund_id="refund789", amount=1000)
 
                 mock_refunds_api = MagicMock()
                 mock_refunds_api.refund_payment.return_value = mock_response
@@ -1038,7 +994,7 @@ class TestRefundPayment:
                     reason="Defective product",
                 )
 
-                call_body = mock_refunds_api.refund_payment.call_args[1]["body"]
+                call_body = mock_refunds_api.refund_payment.call_args.kwargs
                 assert call_body["reason"] == "Defective product"
 
     def test_refund_payment_with_custom_idempotency_key(self):
@@ -1046,15 +1002,7 @@ class TestRefundPayment:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "refund": {
-                        "id": "refund101",
-                        "status": "COMPLETED",
-                        "amount_money": {"amount": 500, "currency": "GBP"},
-                    }
-                }
+                mock_response = create_mock_refund_response(refund_id="refund101", amount=500)
 
                 mock_refunds_api = MagicMock()
                 mock_refunds_api.refund_payment.return_value = mock_response
@@ -1068,7 +1016,7 @@ class TestRefundPayment:
                     idempotency_key="custom-refund-key",
                 )
 
-                call_body = mock_refunds_api.refund_payment.call_args[1]["body"]
+                call_body = mock_refunds_api.refund_payment.call_args.kwargs
                 assert call_body["idempotency_key"] == "custom-refund-key"
 
     def test_refund_payment_generates_idempotency_key(self):
@@ -1076,15 +1024,7 @@ class TestRefundPayment:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "refund": {
-                        "id": "refund202",
-                        "status": "COMPLETED",
-                        "amount_money": {"amount": 800, "currency": "GBP"},
-                    }
-                }
+                mock_response = create_mock_refund_response(refund_id="refund202", amount=800)
 
                 mock_refunds_api = MagicMock()
                 mock_refunds_api.refund_payment.return_value = mock_response
@@ -1094,7 +1034,7 @@ class TestRefundPayment:
                 service = SquarePaymentService()
                 service.refund_payment(payment_id="payment123", amount=800)
 
-                call_body = mock_refunds_api.refund_payment.call_args[1]["body"]
+                call_body = mock_refunds_api.refund_payment.call_args.kwargs
                 assert call_body["idempotency_key"].startswith("refund-payment123-")
 
     def test_refund_payment_failure(self):
@@ -1102,12 +1042,10 @@ class TestRefundPayment:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = False
-                mock_response.errors = [{"code": "INVALID_PAYMENT_ID", "detail": "Not found"}]
-
                 mock_refunds_api = MagicMock()
-                mock_refunds_api.refund_payment.return_value = mock_response
+                mock_refunds_api.refund_payment.side_effect = create_mock_error_response(
+                    "INVALID_PAYMENT_ID", "Not found"
+                )
                 mock_client.return_value.payments = MagicMock()
                 mock_client.return_value.refunds = mock_refunds_api
 
@@ -1122,12 +1060,8 @@ class TestRefundPayment:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = False
-                mock_response.errors = None
-
                 mock_refunds_api = MagicMock()
-                mock_refunds_api.refund_payment.return_value = mock_response
+                mock_refunds_api.refund_payment.side_effect = create_mock_empty_error_response()
                 mock_client.return_value.payments = MagicMock()
                 mock_client.return_value.refunds = mock_refunds_api
 
@@ -1163,26 +1097,20 @@ class TestRefundPayment:
 class TestListPayments:
     """Tests for list_payments method."""
 
-    pytestmark = pytest.mark.skip(
-        reason="Tests need updating for Square SDK v2 object model (uses .body dict but service uses attribute access)"
-    )
-
     def test_list_payments_success(self):
         """Test successful payment listing."""
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {
-                    "payments": [
+                mock_response = create_mock_list_response(
+                    [
                         {"id": "payment1", "status": "COMPLETED"},
                         {"id": "payment2", "status": "COMPLETED"},
                     ]
-                }
+                )
 
                 mock_payments_api = MagicMock()
-                mock_payments_api.list_payments.return_value = mock_response
+                mock_payments_api.list.return_value = mock_response
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -1197,12 +1125,10 @@ class TestListPayments:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = True
-                mock_response.body = {"payments": [{"id": "payment1"}]}
+                mock_response = create_mock_list_response([{"id": "payment1"}])
 
                 mock_payments_api = MagicMock()
-                mock_payments_api.list_payments.return_value = mock_response
+                mock_payments_api.list.return_value = mock_response
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -1212,7 +1138,7 @@ class TestListPayments:
                     limit=50,
                 )
 
-                mock_payments_api.list_payments.assert_called_once_with(
+                mock_payments_api.list.assert_called_once_with(
                     location_id="test-location",
                     begin_time="2025-01-01T00:00:00Z",
                     end_time="2025-01-31T23:59:59Z",
@@ -1224,12 +1150,8 @@ class TestListPayments:
         with patch("app.services.square_payment.get_settings") as mock_settings:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
-                mock_response = MagicMock()
-                mock_response.is_success.return_value = False
-                mock_response.errors = [{"code": "ERROR"}]
-
                 mock_payments_api = MagicMock()
-                mock_payments_api.list_payments.return_value = mock_response
+                mock_payments_api.list.side_effect = create_mock_error_response("ERROR")
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
@@ -1243,7 +1165,7 @@ class TestListPayments:
             mock_settings.return_value = create_mock_settings()
             with patch("app.services.square_payment.Square") as mock_client:
                 mock_payments_api = MagicMock()
-                mock_payments_api.list_payments.side_effect = Exception("API error")
+                mock_payments_api.list.side_effect = Exception("API error")
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()

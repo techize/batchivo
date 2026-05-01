@@ -1,7 +1,6 @@
 """Tests: API docs and schema endpoints are blocked in production (security)."""
 import pytest
 from httpx import ASGITransport, AsyncClient
-from unittest.mock import patch
 
 
 @pytest.mark.anyio

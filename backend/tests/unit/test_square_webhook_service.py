@@ -21,6 +21,7 @@ import pytest
 
 from app.models.order import Order, OrderStatus
 from app.models.webhook_event import (
+    WebhookDeadLetter,
     WebhookEvent,
     WebhookEventSource,
     WebhookEventStatus,
@@ -647,7 +648,8 @@ class TestDeadLetterQueue:
 
         # Verify dead letter record was created
         mock_db.add.assert_called()
-        # Note: In real code we'd check the WebhookDeadLetter type
+        call_args = mock_db.add.call_args_list
+        assert any(isinstance(c[0][0], WebhookDeadLetter) for c in call_args)
         mock_db.commit.assert_awaited()
 
 

@@ -35,6 +35,16 @@ def spool_to_response(spool: Spool) -> dict:
     }
 
 
+async def ensure_material_type_exists(db: AsyncSession, material_type_id: UUID) -> None:
+    """Validate that a material type exists before writing a spool FK."""
+    result = await db.execute(select(MaterialType.id).where(MaterialType.id == material_type_id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid foreign key reference - check material_type_id exists.",
+        )
+
+
 @router.post("", response_model=SpoolResponse, status_code=status.HTTP_201_CREATED)
 async def create_spool(
     spool_data: SpoolCreate,
@@ -48,6 +58,8 @@ async def create_spool(
     Requires authentication.
     Spool will be associated with current tenant.
     """
+    await ensure_material_type_exists(db, spool_data.material_type_id)
+
     # Create spool instance
     spool = Spool(
         tenant_id=tenant.id,
@@ -298,6 +310,9 @@ async def update_spool(
 
     # Update fields (only if provided)
     update_data = spool_data.model_dump(exclude_unset=True)
+    if "material_type_id" in update_data:
+        await ensure_material_type_exists(db, update_data["material_type_id"])
+
     for field, value in update_data.items():
         setattr(spool, field, value)
 
