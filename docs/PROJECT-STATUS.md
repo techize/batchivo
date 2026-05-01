@@ -28,12 +28,12 @@ Snapshot after claiming the documentation refresh issue on 2026-05-01:
 | Metric | Count |
 |--------|-------|
 | Total issues | 384 |
-| Open | 37 |
+| Open | 36 |
 | In progress | 0 |
-| Closed | 344 |
+| Closed | 345 |
 | Blocked | 15 |
 | Deferred | 2 |
-| Ready | 22 |
+| Ready | 21 |
 
 Current blocked work:
 
