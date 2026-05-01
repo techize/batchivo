@@ -1,17 +1,20 @@
 """Orders API endpoints for managing customer orders."""
 
 from datetime import datetime, timezone, date
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import select, desc, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.order import Order, OrderStatus
+from app.models.order import Order, OrderItem, OrderStatus
+from app.models.product import Product
+from app.models.sales_channel import SalesChannel
 from app.auth.dependencies import CurrentTenant, RequireAdmin
 
 router = APIRouter()
@@ -92,6 +95,37 @@ class UpdateOrderRequest(BaseModel):
     internal_notes: Optional[str] = None
 
 
+class CreateOrderItemRequest(BaseModel):
+    """Request item for manually creating an order."""
+
+    product_id: UUID
+    quantity: int = Field(..., ge=1)
+    unit_price: Decimal = Field(..., ge=Decimal("0.00"), decimal_places=2)
+
+
+class CreateOrderRequest(BaseModel):
+    """Request to manually create an admin order."""
+
+    customer_email: EmailStr
+    customer_name: str = Field(..., min_length=1, max_length=255)
+    customer_phone: Optional[str] = Field(None, max_length=50)
+    shipping_address_line1: str = Field(..., min_length=1, max_length=255)
+    shipping_address_line2: Optional[str] = Field(None, max_length=255)
+    shipping_city: str = Field(..., min_length=1, max_length=100)
+    shipping_county: Optional[str] = Field(None, max_length=100)
+    shipping_postcode: str = Field(..., min_length=1, max_length=20)
+    shipping_country: str = Field("United Kingdom", min_length=1, max_length=100)
+    shipping_method: str = Field(..., min_length=1, max_length=100)
+    shipping_cost: Decimal = Field(Decimal("0.00"), ge=Decimal("0.00"), decimal_places=2)
+    sales_channel_id: UUID
+    payment_provider: str = Field("manual", min_length=1, max_length=50)
+    payment_status: str = Field("completed", min_length=1, max_length=50)
+    payment_id: Optional[str] = Field(None, max_length=255)
+    customer_notes: Optional[str] = None
+    internal_notes: Optional[str] = None
+    items: list[CreateOrderItemRequest] = Field(..., min_length=1)
+
+
 class ShipOrderRequest(BaseModel):
     """Request to mark an order as shipped."""
 
@@ -114,6 +148,161 @@ class OrderCountsResponse(BaseModel):
 # ============================================
 # Endpoints
 # ============================================
+
+
+async def _generate_order_number(db: AsyncSession, tenant: CurrentTenant) -> str:
+    """Generate a tenant-scoped human-readable order number."""
+    tenant_settings = tenant.settings or {}
+    shop_settings = tenant_settings.get("shop", {})
+    order_prefix = shop_settings.get("order_prefix") or tenant.slug.upper()[:4]
+    today = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    result = await db.execute(
+        select(func.count(Order.id)).where(
+            Order.tenant_id == tenant.id,
+            Order.order_number.like(f"{order_prefix}-{today}-%"),
+        )
+    )
+    order_seq = (result.scalar() or 0) + 1
+    return f"{order_prefix}-{today}-{order_seq:03d}"
+
+
+def _order_response(order: Order) -> OrderResponse:
+    """Convert an order model into the API response shape."""
+    return OrderResponse(
+        id=str(order.id),
+        order_number=order.order_number,
+        status=order.status,
+        customer_email=order.customer_email,
+        customer_name=order.customer_name,
+        customer_phone=order.customer_phone,
+        shipping_address_line1=order.shipping_address_line1,
+        shipping_address_line2=order.shipping_address_line2,
+        shipping_city=order.shipping_city,
+        shipping_county=order.shipping_county,
+        shipping_postcode=order.shipping_postcode,
+        shipping_country=order.shipping_country,
+        shipping_method=order.shipping_method,
+        shipping_cost=float(order.shipping_cost),
+        subtotal=float(order.subtotal),
+        total=float(order.total),
+        currency=order.currency,
+        payment_provider=order.payment_provider,
+        payment_id=order.payment_id,
+        payment_status=order.payment_status,
+        tracking_number=order.tracking_number,
+        tracking_url=order.tracking_url,
+        shipped_at=order.shipped_at,
+        delivered_at=order.delivered_at,
+        fulfilled_at=order.fulfilled_at,
+        customer_notes=order.customer_notes,
+        internal_notes=order.internal_notes,
+        created_at=order.created_at,
+        updated_at=order.updated_at,
+        items=[
+            OrderItemResponse(
+                id=str(item.id),
+                product_id=str(item.product_id) if item.product_id else None,
+                product_sku=item.product_sku,
+                product_name=item.product_name,
+                quantity=item.quantity,
+                unit_price=float(item.unit_price),
+                total_price=float(item.total_price),
+            )
+            for item in order.items
+        ],
+    )
+
+
+@router.post("", response_model=OrderResponse)
+async def create_order(
+    request: CreateOrderRequest,
+    tenant: CurrentTenant,
+    _: RequireAdmin,
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a manual admin order for the current tenant."""
+    payment_statuses = {"pending", "completed"}
+    if request.payment_status not in payment_statuses:
+        raise HTTPException(status_code=400, detail="Invalid payment status")
+
+    channel_result = await db.execute(
+        select(SalesChannel).where(
+            SalesChannel.id == request.sales_channel_id,
+            SalesChannel.tenant_id == tenant.id,
+            SalesChannel.is_active.is_(True),
+        )
+    )
+    sales_channel = channel_result.scalar_one_or_none()
+    if not sales_channel:
+        raise HTTPException(status_code=404, detail="Sales channel not found")
+
+    product_ids = [item.product_id for item in request.items]
+    products_result = await db.execute(
+        select(Product).where(
+            Product.id.in_(product_ids),
+            Product.tenant_id == tenant.id,
+        )
+    )
+    products = {product.id: product for product in products_result.scalars().all()}
+    if len(products) != len(set(product_ids)):
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    subtotal = sum(item.unit_price * item.quantity for item in request.items)
+    total = subtotal + request.shipping_cost
+
+    order = Order(
+        tenant_id=tenant.id,
+        sales_channel_id=sales_channel.id,
+        order_number=await _generate_order_number(db, tenant),
+        status=OrderStatus.PENDING,
+        customer_email=str(request.customer_email),
+        customer_name=request.customer_name,
+        customer_phone=request.customer_phone,
+        shipping_address_line1=request.shipping_address_line1,
+        shipping_address_line2=request.shipping_address_line2,
+        shipping_city=request.shipping_city,
+        shipping_county=request.shipping_county,
+        shipping_postcode=request.shipping_postcode,
+        shipping_country=request.shipping_country,
+        shipping_method=request.shipping_method,
+        shipping_cost=request.shipping_cost,
+        subtotal=subtotal,
+        total=total,
+        currency="GBP",
+        payment_provider=request.payment_provider,
+        payment_id=request.payment_id,
+        payment_status=request.payment_status,
+        customer_notes=request.customer_notes,
+        internal_notes=request.internal_notes,
+    )
+    db.add(order)
+    await db.flush()
+
+    for item in request.items:
+        product = products[item.product_id]
+        db.add(
+            OrderItem(
+                tenant_id=tenant.id,
+                order_id=order.id,
+                product_id=product.id,
+                product_sku=product.sku,
+                product_name=product.name,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                total_price=item.unit_price * item.quantity,
+            )
+        )
+
+    await db.commit()
+
+    result = await db.execute(
+        select(Order)
+        .where(Order.id == order.id, Order.tenant_id == tenant.id)
+        .options(selectinload(Order.items))
+    )
+    created_order = result.scalar_one()
+    return _order_response(created_order)
 
 
 @router.get("", response_model=OrderListResponse)

@@ -22,6 +22,7 @@ import {
   Search,
   Download,
   Calendar,
+  Plus,
   X,
 } from 'lucide-react'
 
@@ -281,15 +282,23 @@ export function OrderList() {
             {data?.total || 0} orders • {statusCounts.pending} pending • {statusCounts.shipped} shipped
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportCSV}
-          disabled={!data?.data?.length}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" asChild>
+            <Link to="/orders/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Order
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            disabled={!data?.data?.length}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

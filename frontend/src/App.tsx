@@ -44,6 +44,7 @@ import { Designers } from '@/pages/Designers'
 import { Printers } from '@/pages/Printers'
 import { PrinterDashboardPage } from '@/pages/PrinterDashboardPage'
 import { Orders } from '@/pages/Orders'
+import { OrderCreatePage } from '@/pages/OrderCreatePage'
 import { OrderDetailPage } from '@/pages/OrderDetailPage'
 import { SpoolLabelPage } from '@/pages/SpoolLabelPage'
 import { SpoolQuickUpdatePage } from '@/pages/SpoolQuickUpdatePage'
@@ -400,6 +401,16 @@ const ordersRoute = new Route({
   ),
 })
 
+const orderCreateRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/orders/new',
+  component: () => (
+    <ProtectedRoute>
+      <OrderCreatePage />
+    </ProtectedRoute>
+  ),
+})
+
 const orderDetailRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/orders/$orderId',
@@ -702,6 +713,7 @@ const routeTree = rootRoute.addChildren([
   productionRunCreateRoute,  // Static route first
   productionRunDetailRoute,  // Dynamic route last
   ordersRoute,               // Orders list
+  orderCreateRoute,          // Static route first
   orderDetailRoute,          // Order detail view
   salesChannelsRoute,        // Sales channels list
   salesChannelCreateRoute,   // Static route first

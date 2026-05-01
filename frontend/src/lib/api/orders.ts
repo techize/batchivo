@@ -79,6 +79,33 @@ export interface UpdateOrderRequest {
   internal_notes?: string
 }
 
+export interface CreateOrderItemRequest {
+  product_id: string
+  quantity: number
+  unit_price: number
+}
+
+export interface CreateOrderRequest {
+  customer_email: string
+  customer_name: string
+  customer_phone?: string
+  shipping_address_line1: string
+  shipping_address_line2?: string
+  shipping_city: string
+  shipping_county?: string
+  shipping_postcode: string
+  shipping_country: string
+  shipping_method: string
+  shipping_cost: number
+  sales_channel_id: string
+  payment_provider: string
+  payment_status: 'pending' | 'completed'
+  payment_id?: string
+  customer_notes?: string
+  internal_notes?: string
+  items: CreateOrderItemRequest[]
+}
+
 /**
  * Ship order request
  */
@@ -158,6 +185,13 @@ export async function getOrderCounts(): Promise<OrderCounts> {
  */
 export async function getOrder(id: string): Promise<Order> {
   return apiClient.get<Order>(`/api/v1/orders/${id}`)
+}
+
+/**
+ * Create a manual admin order
+ */
+export async function createOrder(data: CreateOrderRequest): Promise<Order> {
+  return apiClient.post<Order>('/api/v1/orders', data)
 }
 
 /**

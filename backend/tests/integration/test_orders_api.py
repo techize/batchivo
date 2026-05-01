@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.product import Product
+from app.models.sales_channel import SalesChannel
 from app.models.tenant import Tenant
 
 
@@ -45,6 +46,24 @@ async def test_product_for_orders(db_session: AsyncSession, test_tenant: Tenant)
     await db_session.commit()
     await db_session.refresh(product)
     return product
+
+
+@pytest.fixture
+async def test_sales_channel_for_orders(
+    db_session: AsyncSession, test_tenant: Tenant
+) -> SalesChannel:
+    """Create a test sales channel for order creation tests."""
+    channel = SalesChannel(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        name="Manual Admin Orders",
+        platform_type="other",
+        is_active=True,
+    )
+    db_session.add(channel)
+    await db_session.commit()
+    await db_session.refresh(channel)
+    return channel
 
 
 @pytest.fixture
@@ -161,6 +180,143 @@ async def multiple_orders(
 # ============================================
 # GET /orders Tests
 # ============================================
+
+
+class TestCreateOrder:
+    """Tests for POST /orders endpoint."""
+
+    async def test_create_manual_order(
+        self,
+        client: AsyncClient,
+        test_product_for_orders: Product,
+        test_sales_channel_for_orders: SalesChannel,
+    ):
+        """Test admin users can create a manual order with calculated totals."""
+        response = await client.post(
+            "/api/v1/orders",
+            json={
+                "customer_email": "manual@example.com",
+                "customer_name": "Manual Customer",
+                "customer_phone": "+44 7700 900123",
+                "shipping_address_line1": "10 Manual Lane",
+                "shipping_city": "Leeds",
+                "shipping_postcode": "LS1 1AA",
+                "shipping_country": "United Kingdom",
+                "shipping_method": "Royal Mail Tracked 48",
+                "shipping_cost": 3.5,
+                "sales_channel_id": str(test_sales_channel_for_orders.id),
+                "payment_provider": "manual",
+                "payment_status": "completed",
+                "payment_id": "cash-123",
+                "internal_notes": "Paid at craft fair",
+                "items": [
+                    {
+                        "product_id": str(test_product_for_orders.id),
+                        "quantity": 2,
+                        "unit_price": 12.25,
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["order_number"].startswith("TEST-")
+        assert data["status"] == OrderStatus.PENDING
+        assert data["customer_email"] == "manual@example.com"
+        assert data["subtotal"] == 24.5
+        assert data["shipping_cost"] == 3.5
+        assert data["total"] == 28.0
+        assert data["payment_provider"] == "manual"
+        assert data["payment_status"] == "completed"
+        assert data["items"][0]["product_sku"] == test_product_for_orders.sku
+        assert data["items"][0]["total_price"] == 24.5
+
+    async def test_create_order_requires_authentication(
+        self,
+        unauthenticated_client: AsyncClient,
+        test_product_for_orders: Product,
+        test_sales_channel_for_orders: SalesChannel,
+    ):
+        """Test unauthenticated users cannot create admin orders."""
+        response = await unauthenticated_client.post(
+            "/api/v1/orders",
+            json={
+                "customer_email": "manual@example.com",
+                "customer_name": "Manual Customer",
+                "shipping_address_line1": "10 Manual Lane",
+                "shipping_city": "Leeds",
+                "shipping_postcode": "LS1 1AA",
+                "shipping_country": "United Kingdom",
+                "shipping_method": "Royal Mail Tracked 48",
+                "shipping_cost": 3.5,
+                "sales_channel_id": str(test_sales_channel_for_orders.id),
+                "payment_provider": "manual",
+                "payment_status": "completed",
+                "items": [
+                    {
+                        "product_id": str(test_product_for_orders.id),
+                        "quantity": 1,
+                        "unit_price": 12.25,
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 401
+
+    async def test_create_order_rejects_cross_tenant_product(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_sales_channel_for_orders: SalesChannel,
+    ):
+        """Test manual order creation cannot use products from another tenant."""
+        other_tenant = Tenant(
+            id=uuid4(),
+            name="Other Tenant",
+            slug="other-tenant-orders",
+            settings={},
+        )
+        db_session.add(other_tenant)
+        await db_session.flush()
+        other_product = Product(
+            id=uuid4(),
+            tenant_id=other_tenant.id,
+            sku="OTHER-ORDER-001",
+            name="Other Tenant Product",
+            units_in_stock=10,
+            is_active=True,
+        )
+        db_session.add(other_product)
+        await db_session.commit()
+
+        response = await client.post(
+            "/api/v1/orders",
+            json={
+                "customer_email": "manual@example.com",
+                "customer_name": "Manual Customer",
+                "shipping_address_line1": "10 Manual Lane",
+                "shipping_city": "Leeds",
+                "shipping_postcode": "LS1 1AA",
+                "shipping_country": "United Kingdom",
+                "shipping_method": "Royal Mail Tracked 48",
+                "shipping_cost": 3.5,
+                "sales_channel_id": str(test_sales_channel_for_orders.id),
+                "payment_provider": "manual",
+                "payment_status": "completed",
+                "items": [
+                    {
+                        "product_id": str(other_product.id),
+                        "quantity": 1,
+                        "unit_price": 12.25,
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Product not found"
 
 
 class TestListOrders:
