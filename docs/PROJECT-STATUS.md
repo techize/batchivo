@@ -1,212 +1,129 @@
-# Batchivo Project Status & Todo List
+# Batchivo Project Status
 
-**Last Updated**: 2025-12-15
-**Version**: v1.18+
-**Backend Test Coverage**: 66% (440 tests)
-**Frontend Test Coverage**: 57 tests passing
+**Last updated:** 2026-05-01
+**Version:** 0.2.0-alpha
+**Stage:** Pre-MVP hardening
+**Issue tracker:** Beads (`bd`)
 
 ---
 
-## ⚠️ IMPORTANT: Task Master is the Single Source of Truth
+## Source Of Truth
 
-**All tasks are now managed in Task Master AI.**
+Beads is now the authoritative project tracker. The old Task Master backlog was migrated on 2026-05-01 and should be treated as historical metadata only.
 
 ```bash
-task-master list                                    # View all tasks
-task-master next                                    # Get next available task
-task-master show <id>                               # View task details
-task-master set-status --id=<id> --status=done      # Mark complete
+bd ready
+bd show <id>
+bd update <id> --status in_progress
+bd close <id> --reason "Completed"
+bd export --output .beads/issues.jsonl
 ```
 
 ---
 
-## Current Project Summary
+## Beads Snapshot
 
-| Metric | Value |
+Snapshot after claiming the documentation refresh issue on 2026-05-01:
+
+| Metric | Count |
 |--------|-------|
-| Total Tasks | 50 |
-| Completed | 21 (42%) |
-| In Progress | 1 |
-| Pending | 28 |
-| High Priority Pending | 12 |
+| Total issues | 384 |
+| Open | 33 |
+| In progress | 2 |
+| Closed | 347 |
+| Blocked | 11 |
+| Deferred | 2 |
+| Ready | 22 |
+
+Current in-progress work:
+
+| ID | Summary |
+|----|---------|
+| `batchivo-1xe2` | Update stale roadmap and status documentation |
+| `batchivo-tm098` | Multi-tenant test coverage follow-up imported from Task Master |
 
 ---
 
-## Task Categories Overview
+## MVP Status
 
-### ✅ Completed (Tasks 1-18, 22-23)
-- **Auth System**: OAuth2/Authentik integration, JWT validation
-- **Production Runs**: Full CRUD, multi-plate support, analytics
-- **Frontend Core**: CreateRunWizard, CompleteRunDialog, EditRunDialog
-- **Dashboard**: Home page with analytics widgets
-- **Testing**: Frontend unit tests fixed
+Batchivo is close to an MVP for the core 3D printing workflow, but it is not yet landed. The implemented product is broader than the old roadmap suggested: production runs, product categories, images, variants, orders, shipping, public shop surfaces, analytics, exports, printer foundations, and Shopify groundwork all exist in code.
 
-### 🔄 In Progress (Task 29)
-- **OpenTelemetry Backend**: Custom metrics and spans
+The remaining MVP work is mainly proof and hardening:
 
-### 📋 Pending - High Priority
+- End-to-end tests for the order/payment/fulfillment workflow (`batchivo-tm028`)
+- Clean production deployment validation, including wildcard DNS/domain routing (`batchivo-tm134`)
+- Triage of imported Beads issues whose Task Master descriptions are stale
+- Structured logging, alerting, and operational runbooks
+- Final pass over user/developer docs for the exact MVP workflow
 
-| ID | Task | Complexity |
-|----|------|------------|
-| 38 | OctoPrint Integration | High (8) |
-| 39 | Moonraker/Klipper Integration | High (9) |
-| 40 | Bambu Lab Integration | High (8) |
-| 42 | Print Queue Management | High (9) |
-| 24 | Playwright E2E Setup | Medium |
-| 25-27 | E2E Tests (Auth, Inventory, Production) | Medium |
-| 47 | User Guide Documentation | Medium |
-| 48 | API Reference Documentation | Medium |
-
-### 📋 Pending - Medium Priority
-
-| ID | Task | Description |
-|----|------|-------------|
-| 19-21 | UI Enhancements | Recharts, Production History |
-| 30-33 | Observability | Frontend OTEL, Grafana, Alerts, Logging |
-| 34-35 | PWA & Offline | IndexedDB, QR Scanning |
-| 43 | Real-time Dashboard | Printer status WebSockets |
-| 44 | Complete COGS | Depreciation, electricity, labor |
-| 45 | AI Failure Detection | Obico integration |
-| 46 | Marketplace Integrations | Etsy, Shopify, eBay |
-| 49-50 | Documentation | Workflows, Architecture |
-
-### 📋 Pending - Low Priority
-
-| ID | Task | Description |
-|----|------|-------------|
-| 36 | PWA Install Prompts | App shell optimization |
-| 37 | Square Payment E2E | Checkout flow testing |
+Knitting/multi-craft support is not part of the near-term 3D printing MVP. The module definitions exist, but yarn and needle routers are placeholders and pattern/project APIs are missing.
 
 ---
 
-## Critical Gaps (from Competitive Analysis)
+## Implemented Surfaces
 
-Based on analysis against Spoolman, SimplyPrint, AutoFarm3D, PrintFarmHQ, and Printago:
+### Platform Foundation
 
-### Gap 1: Printer Integration (Tasks 38-41)
-**Impact**: Critical for automatic filament tracking
-- OctoPrint API integration
-- Moonraker/Klipper WebSocket support
-- Bambu Lab MQTT/Cloud API
-- Generic webhook receiver
+- FastAPI backend, React 19 frontend, TypeScript 5.9, Vite 7
+- Multi-tenant onboarding, authentication, refresh tokens, tenant membership, users, settings, and module configuration
+- Admin dashboard, audit, exports, analytics, forecasting, and platform routes
+- Docker Compose, k3s manifests, Cloudflare self-hosting assets, and observability configuration
 
-### Gap 2: Print Queue System (Tasks 42-43)
-**Impact**: Core fleet management feature
-- Job queue with priorities
-- Printer capability matching
-- Auto-assignment algorithms
-- Real-time status dashboard
+### Inventory And Catalog
 
-### Gap 3: Complete COGS (Task 44)
-**Impact**: True profitability analysis
-- Printer depreciation tracking
-- Electricity cost calculation
-- Consumables allocation
-- Labor time tracking
+- Spools, consumables, material attributes, purchase data, locations, and inventory transaction tracking
+- QR code, label printing, scan, and quick update workflows
+- Product catalog, SKUs, models, model files, BOMs, product costing, images, categories, designers, and variants
 
-### Gap 4: AI Failure Detection (Task 45)
-**Impact**: Reduce failed prints
-- Obico/Spaghetti Detective integration
-- Failure pattern tracking
-- Auto-pause on detection
+### Production
 
-### Gap 5: Marketplace Integrations (Task 46)
-**Impact**: Streamline order processing
-- Etsy OAuth2 + order sync
-- Shopify webhook integration
-- eBay API connection
+- Production run API and frontend workflows
+- Multi-plate support, material usage, run completion, variance analysis, quality ratings, reprints, and production history
+- Inventory adjustments connected to production completion
+- Printer, print queue, Bambu, and WebSocket status foundations
+
+### Commerce
+
+- Orders, customers, sales channels, discounts, returns, shipping rates, public shop, shop resolver, customer auth/account, and reviews
+- Square/payment settings surfaces
+- Shopify sync and webhook groundwork
+- Newsletter and export flows
 
 ---
 
-## Completed Milestones
+## Known Gaps
 
-### Phase 1: Foundation ✅
-- Multi-tenant architecture with RLS
-- JWT authentication
-- Core models (Spools, Products, Orders)
-
-### Phase 2: Production Runs ✅
-- Full CRUD with multi-plate support
-- CreateRunWizard 4-step form
-- Weight tracking and variance analysis
-- Analytics endpoints
-
-### Phase 3: QR Code & Scanning ✅
-- QR code generation per spool
-- Label printing (Nelko PM230)
-- PWA camera scanning
-- Quick weight update workflow
-
-### Phase 4: Infrastructure ✅
-- k3s deployment with ArgoCD
-- Cloudflare Tunnel ingress
-- CI pipeline (GitHub Actions)
-- Observability stack (partial)
+| Area | Gap | Tracker |
+|------|-----|---------|
+| E2E testing | Full order processing workflow needs Playwright coverage | `batchivo-tm028` |
+| Deployment | Wildcard DNS/domain configuration needs implementation/validation | `batchivo-tm134` |
+| Backlog hygiene | Imported Task Master items need stale/duplicate triage | Beads ready queue |
+| Operations | Alert rules, structured JSON logging, correlation IDs, and runbooks need completion | `batchivo-tm032`, `batchivo-tm033` |
+| Commerce automation | Abandoned cart emails and marketplace OAuth integrations remain open | `batchivo-tm061`, `batchivo-tm046` |
+| Printer automation | OctoPrint, Moonraker/Klipper, generic webhooks, and live fleet hardening remain post-MVP | `batchivo-tm038`-`batchivo-tm043` |
+| Multi-craft | Knitting API routers are incomplete or missing | `batchivo-tm098` follow-up |
 
 ---
 
-## Technical Debt
+## Verification Snapshot
 
-### Backend
-- [ ] Test coverage: 66% → 80% target
-- [ ] `spoolmandb_sync.py`: 19% coverage
-- [ ] `square_payment.py`: 31% coverage
-- [ ] `costing.py`: 44% coverage
-- [ ] `tracing.py`: 0% coverage
+Last verified during the Beads repair session on 2026-05-01:
 
-### Frontend
-- [ ] Component tests: 57 → 100+ target
-- [ ] E2E tests with Playwright
-- [ ] Responsive tables (mobile)
+| Gate | Result |
+|------|--------|
+| Backend tests | 3634 passed, 19 skipped |
+| Frontend unit tests | 334 passed |
+| Frontend production audit | 0 vulnerabilities |
+| Landing build | Passed |
 
-### Infrastructure
-- [ ] Branch protection rules
-- [ ] Codecov integration
-- [ ] Trivy security scanning
+These numbers are a recent snapshot, not a substitute for running the gates before landing code changes.
 
 ---
 
-## Documentation Status
+## Recommended Next Work
 
-### Existing
-- `docs/DEVELOPMENT.md` - Local setup guide
-- `docs/TESTING.md` - Testing strategy
-- `docs/ROADMAP-SPOOLMAN-FEATURES.md` - Feature roadmap
-- `docs/COMPETITIVE-ANALYSIS.md` - Competitor comparison
-- `docs/DOCUMENTATION-PLAN.md` - Documentation roadmap
-
-### Planned (Tasks 47-50)
-- User guides (filament, models, products, production runs, orders)
-- API reference (93 endpoints)
-- Workflow documentation
-- Architecture diagrams
-
----
-
-## Quick Reference
-
-### Development Commands
-```bash
-# Start dev environment
-make dev
-
-# Backend tests
-cd backend && poetry run pytest --cov=app
-
-# Frontend tests
-cd frontend && npm run test
-```
-
-### Task Master Commands
-```bash
-task-master list                    # All tasks
-task-master next                    # Next available
-task-master show <id>               # Task details
-task-master set-status --id=<id> --status=done
-task-master expand --id=<id>        # Break into subtasks
-task-master complexity-report       # View complexity analysis
-```
-
----
-
-*This document provides an overview. Task Master is the authoritative source for task details.*
+1. Close this documentation refresh after review and export Beads state.
+2. Triage `batchivo-tm098`: product variant APIs appear implemented, while knitting APIs remain the real blocker.
+3. Implement or validate `batchivo-tm028` order-processing E2E tests.
+4. Resolve deployment/domain issue `batchivo-tm134`.
+5. Work through the remaining `bd ready` queue, closing stale imported issues where code already satisfies the acceptance criteria.

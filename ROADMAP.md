@@ -1,127 +1,134 @@
 # Roadmap
 
-This document outlines the development roadmap for Batchivo. Features are organized by phase, with completed items marked.
+Batchivo is in **0.2.0-alpha** and is currently in **pre-MVP hardening**. The core 3D printing business workflow is largely implemented; the remaining MVP work is about proving the workflow end to end, validating deployment, and triaging imported backlog items now that Beads is the source of truth.
 
-## Current Status
-
-**Version:** 0.2.0-alpha
-**Stage:** Active Development
+Use `bd ready` for the live queue. This file is a phase-level map, not the issue tracker.
 
 ---
 
-## Phase 1: Foundation ✅
+## MVP Definition
 
-Core infrastructure and authentication.
+The MVP is a self-hosted 3D printing business system where a tenant can:
 
-- [x] Project structure (FastAPI + React + TypeScript)
-- [x] Multi-tenant architecture with Row-Level Security
-- [x] JWT authentication with secure refresh tokens
-- [x] Full observability stack (OpenTelemetry, Prometheus, Grafana)
-- [x] Docker Compose development environment
-- [x] Kubernetes deployment configuration
-
----
-
-## Phase 2: Inventory Management ✅
-
-Filament spool tracking and management.
-
-- [x] Spool database models and migrations
-- [x] Spool CRUD API endpoints with filtering
-- [x] Spool frontend components
-- [x] Material types, colors, brands tracking
-- [x] Weight tracking and purchase history
-- [ ] QR code generation and scanning
-- [ ] Low stock alerts
+- Onboard, authenticate, and manage tenant settings
+- Track filament, consumables, QR labels, and inventory adjustments
+- Define products with BOMs, costs, images, categories, and variants
+- Create and complete production runs with actual material usage and variance
+- Manage orders, sales channels, customers, shipping, and basic payments
+- Review dashboard, analytics, forecasting, and export data
+- Deploy the stack with documented self-hosting steps
+- Run the key happy paths through automated tests
 
 ---
 
-## Phase 3: Product Catalog ✅
+## Phase 0: Project Control - Done
 
-Product definitions and cost calculation.
-
-- [x] Product database models
-- [x] Multi-material Bill of Materials (BOM)
-- [x] Component cost tracking (magnets, inserts, etc.)
-- [x] Automatic cost calculation service
-- [x] Product CRUD frontend
-- [ ] Product images and galleries
-- [ ] Product categories and tags
+- [x] Beads initialized and documented in `AGENTS.md`
+- [x] Task Master backlog imported into Beads
+- [x] Stale Task Master source-of-truth references removed from status docs
+- [x] Quality gates repaired after Beads migration
+- [ ] Imported Beads issues fully triaged for stale descriptions and duplicate work
 
 ---
 
-## Phase 4: Production Runs 🚧
+## Phase 1: Foundation - Done
 
-Manufacturing tracking and variance analysis.
-
-- [x] Production run database models
-- [x] Batch printing support (multiple products per bed)
-- [x] Multi-color print tracking with purge/waste
-- [x] Spool weighing (before/after)
-- [x] Variance analysis (estimated vs actual)
-- [x] Quality rating and reprint tracking
-- [ ] Production run API endpoints
-- [ ] Production run frontend UI
-- [ ] Automatic inventory deduction
+- [x] FastAPI backend and React/TypeScript frontend
+- [x] Multi-tenant architecture and tenant-aware APIs
+- [x] Authentication, refresh tokens, onboarding, users, and tenant membership
+- [x] Module system and tenant settings
+- [x] Audit, exports, dashboard, analytics, and forecasting surfaces
+- [x] Docker Compose local development
+- [x] k3s/Cloudflare self-hosting assets
 
 ---
 
-## Phase 5: Pricing Engine 📋
+## Phase 2: Core 3D Print Operations - Mostly Done
 
-Multi-marketplace pricing optimization.
-
-- [ ] Marketplace fee calculators (Etsy, eBay, Shopify)
-- [ ] Break-even analysis
-- [ ] Target margin optimization
-- [ ] Bulk pricing updates
-- [ ] Price comparison across platforms
-
----
-
-## Phase 6: Marketplace Integration 📋
-
-Direct integration with selling platforms.
-
-- [ ] Etsy API integration
-- [ ] Square Online integration
-- [ ] Inventory sync across platforms
-- [ ] Order import and tracking
-- [ ] Automatic listing updates
+- [x] Spool and consumable models, APIs, and UI
+- [x] Material, brand, color, purchase, weight, location, and status tracking
+- [x] QR code and label workflows
+- [x] Product catalog with SKUs, images, categories, designers, BOMs, and costing
+- [x] Product variants and size/capability groundwork
+- [x] Production run APIs and frontend workflows
+- [x] Multi-plate production runs, completion, reprints, quality, and variance analysis
+- [x] Inventory transactions on production run completion
+- [ ] E2E tests for the full inventory -> production -> order path
 
 ---
 
-## Phase 7: Analytics & Reporting 📋
+## Phase 3: Commerce And Fulfillment - Mostly Done
 
-Business intelligence and insights.
-
-- [ ] Production analytics dashboard
-- [ ] Material usage reports
-- [ ] Profitability analysis by product
-- [ ] Trend visualization
-- [ ] Export to CSV/Excel
-
----
-
-## Future Considerations
-
-Features under consideration for future releases:
-
-- **Mobile app** - Spool scanning and quick production logging
-- **Print farm management** - Multi-printer job scheduling
-- **Supplier integration** - Auto-reorder from preferred suppliers
-- **Community marketplace** - Share product templates and BOMs
-- **AI cost optimization** - Suggest BOM improvements
+- [x] Orders, customers, sales channels, discounts, returns, and shipping rates
+- [x] Public shop, shop resolver, customer authentication, and account surfaces
+- [x] Square/payment configuration surfaces
+- [x] Shopify sync and webhook groundwork
+- [x] CSV/export flows
+- [ ] Full order-processing E2E coverage (`batchivo-tm028`)
+- [ ] Marketplace OAuth/order import for Etsy, eBay, and full Shopify automation
+- [ ] Abandoned cart email reminder system (`batchivo-tm061`)
 
 ---
 
-## Contributing
+## Phase 4: MVP Hardening - In Progress
 
-Want to help build a feature? Check out our [Contributing Guide](CONTRIBUTING.md) and look for issues labeled `good first issue` or `help wanted`.
+- [x] Backend and frontend test suites repaired after tracker migration
+- [x] Documentation status refreshed against the implemented codebase
+- [ ] Production deployment validation on a clean environment
+- [ ] Wildcard DNS/domain configuration for self-hosted tenant routing (`batchivo-tm134`)
+- [ ] Structured JSON logging and correlation IDs
+- [ ] Prometheus alert rules and notification channels
+- [ ] Final Beads triage: close stale imported tasks or split real remaining work
 
 ---
 
-## Legend
+## Phase 5: Printer Automation - Post-MVP
 
-- ✅ Phase complete
-- 🚧 In progress
-- 📋 Planned
+- [x] Printer model/API foundations
+- [x] Print queue and WebSocket status surfaces
+- [x] Bambu integration surface
+- [ ] OctoPrint integration
+- [ ] Moonraker/Klipper integration
+- [ ] Generic printer webhook processing
+- [ ] Real-time printer fleet dashboard hardening
+- [ ] AI failure detection integration
+
+---
+
+## Phase 6: Business Intelligence - Post-MVP
+
+- [x] Dashboard and analytics API foundations
+- [x] Forecasting surface
+- [x] Export/reporting groundwork
+- [ ] Complete COGS including depreciation, electricity, consumables, and labor
+- [ ] Margin optimization and marketplace fee comparison
+- [ ] Supplier/reorder automation
+- [ ] Production and profitability reporting polish
+
+---
+
+## Phase 7: Multi-Craft Modules - Post-MVP
+
+The imported backlog contains knitting tasks marked as complete in places, but the codebase does not yet have production-ready knitting APIs.
+
+- [x] Knitting module definitions for yarn, needles, patterns, and projects
+- [ ] Yarn API implementation beyond placeholder router
+- [ ] Needle API implementation beyond placeholder router
+- [ ] Pattern API router
+- [ ] Project API router
+- [ ] Tenant module integration tests for knitting routes
+- [ ] Frontend workflows for knitting tenants
+
+---
+
+## Live Backlog
+
+Use Beads for current work:
+
+```bash
+bd ready
+bd show <id>
+bd list --status open
+```
+
+As of 2026-05-01 after the Task Master migration: 384 total Beads issues, 33 open, 2 in progress, 347 closed, 11 blocked, 2 deferred, and 22 ready.
