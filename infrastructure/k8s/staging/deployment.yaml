@@ -36,7 +36,7 @@ spec:
       - name: harbor-creds
       initContainers:
       - name: run-migrations
-        image: registry.techize.co.uk/batchivo/batchivo-backend:d99161c075c631d06c51c49350b0d8a3b4d42ff8
+        image: registry.techize.co.uk/batchivo/batchivo-backend:02ae8321db5d46894be8e7cb3c8e320377419df7
         imagePullPolicy: Always
         command: ["alembic", "upgrade", "heads"]
         securityContext:
@@ -64,7 +64,7 @@ spec:
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
       containers:
       - name: backend
-        image: registry.techize.co.uk/batchivo/batchivo-backend:d99161c075c631d06c51c49350b0d8a3b4d42ff8
+        image: registry.techize.co.uk/batchivo/batchivo-backend:02ae8321db5d46894be8e7cb3c8e320377419df7
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
