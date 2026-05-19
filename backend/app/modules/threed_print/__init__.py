@@ -11,6 +11,7 @@ from app.modules.threed_print.categories import CategoriesModule
 from app.modules.threed_print.designers import DesignersModule
 from app.modules.threed_print.consumables import ConsumablesModule
 from app.modules.threed_print.sales_channels import SalesChannelsModule
+from app.modules.threed_print.filament_types import FilamentTypesModule
 
 
 def get_modules() -> list[BaseModule]:
@@ -21,6 +22,7 @@ def get_modules() -> list[BaseModule]:
         List of module instances
     """
     return [
+        FilamentTypesModule(),
         SpoolsModule(),
         ModelsModule(),
         PrintersModule(),
@@ -35,6 +37,7 @@ def get_modules() -> list[BaseModule]:
 
 
 __all__ = [
+    "FilamentTypesModule",
     "SpoolsModule",
     "ModelsModule",
     "PrintersModule",

@@ -223,6 +223,7 @@ from app.api.v1 import (
     sku,
     spoolmandb,
     spools,
+    filament_types,
     tenant_members,
     test,
     users,
@@ -239,6 +240,7 @@ app.include_router(users.router, prefix=f"{settings.api_v1_prefix}/users", tags=
 if settings.environment != "production":
     app.include_router(test.router, prefix=f"{settings.api_v1_prefix}/test", tags=["test"])
 app.include_router(spools.router, prefix=f"{settings.api_v1_prefix}/spools", tags=["spools"])
+app.include_router(filament_types.router, prefix=f"{settings.api_v1_prefix}/filament-types", tags=["filament-types"])
 app.include_router(
     consumables.router, prefix=f"{settings.api_v1_prefix}/consumables", tags=["consumables"]
 )
