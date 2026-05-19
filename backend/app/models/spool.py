@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import DateTime, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,8 +15,9 @@ class Spool(Base, UUIDMixin, TimestampMixin):
     """
     Filament spool inventory item.
 
-    Tracks individual spools of 3D printing filament with purchase info,
-    weight tracking, and material type.
+    Tracks individual physical spools of 3D printing filament with purchase info,
+    weight tracking, and a reference to the FilamentType that defines the filament
+    specifications.
     """
 
     __tablename__ = "spools"
@@ -29,12 +30,12 @@ class Spool(Base, UUIDMixin, TimestampMixin):
         comment="Tenant ID for multi-tenant isolation",
     )
 
-    # Material type (reference data)
-    material_type_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("material_types.id"),
+    # FilamentType reference (two-tier model: type definition + per-unit spool)
+    filament_type_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("filament_types.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
-        comment="Material type (PLA, PETG, etc.)",
+        comment="FilamentType this spool belongs to",
     )
 
     # Basic Info
@@ -43,83 +44,6 @@ class Spool(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
         comment="User-friendly spool ID (e.g., FIL-001, PLA-RED-001)",
-    )
-
-    brand: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        comment="Filament brand/manufacturer",
-    )
-
-    color: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        comment="Filament color",
-    )
-
-    color_hex: Mapped[Optional[str]] = mapped_column(
-        String(9),
-        nullable=True,
-        comment="Hex color code (RGB or RGBA format, e.g., FF5733 or 00FF5733)",
-    )
-
-    finish: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True,
-        comment="Finish type (matte, glossy, metallic, etc.)",
-    )
-
-    # Filament specifications
-    diameter: Mapped[float] = mapped_column(
-        Numeric(4, 2),
-        nullable=False,
-        default=1.75,
-        server_default="1.75",
-        comment="Filament diameter in mm (typically 1.75 or 2.85)",
-    )
-
-    density: Mapped[Optional[float]] = mapped_column(
-        Numeric(5, 3),
-        nullable=True,
-        comment="Filament density in g/cm³ (e.g., 1.24 for PLA)",
-    )
-
-    # Recommended print temperatures (per-filament override of material defaults)
-    extruder_temp: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        nullable=True,
-        comment="Recommended extruder temperature in °C",
-    )
-
-    bed_temp: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        nullable=True,
-        comment="Recommended bed temperature in °C",
-    )
-
-    # Special filament properties
-    translucent: Mapped[bool] = mapped_column(
-        default=False,
-        nullable=False,
-        comment="Whether filament is translucent/transparent",
-    )
-
-    glow: Mapped[bool] = mapped_column(
-        default=False,
-        nullable=False,
-        comment="Whether filament is glow-in-the-dark",
-    )
-
-    pattern: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True,
-        comment="Pattern type (marble, gradient, speckled, etc.)",
-    )
-
-    spool_type: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True,
-        comment="Spool type (cardboard, plastic, refill, etc.)",
     )
 
     # Weight Tracking (in grams)
@@ -160,34 +84,11 @@ class Spool(Base, UUIDMixin, TimestampMixin):
         comment="Supplier/vendor name",
     )
 
-    # Batch Tracking
-    purchased_quantity: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=1,
-        server_default="1",
-        comment="Number of spools purchased in this batch",
-    )
-
-    spools_remaining: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=1,
-        server_default="1",
-        comment="Number of spools remaining from this batch",
-    )
-
     # Storage & Organization
     storage_location: Mapped[Optional[str]] = mapped_column(
         String(100),
         nullable=True,
         comment="Physical storage location (e.g., Shelf A, Box 3)",
-    )
-
-    notes: Mapped[Optional[str]] = mapped_column(
-        Text,
-        nullable=True,
-        comment="Additional notes about this spool",
     )
 
     # QR Code Integration
@@ -206,9 +107,15 @@ class Spool(Base, UUIDMixin, TimestampMixin):
         comment="Whether spool is active (not empty/discarded)",
     )
 
+    is_labeled: Mapped[bool] = mapped_column(
+        default=False,
+        nullable=False,
+        comment="Whether a physical label has been printed for this spool",
+    )
+
     # Relationships
-    material_type: Mapped["MaterialType"] = relationship(
-        "MaterialType",
+    filament_type: Mapped["FilamentType"] = relationship(
+        "FilamentType",
         lazy="joined",
     )
 
@@ -219,7 +126,7 @@ class Spool(Base, UUIDMixin, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<Spool(id={self.spool_id}, material={self.material_type.code if self.material_type else 'N/A'}, color={self.color})>"
+        return f"<Spool(id={self.spool_id}, filament_type_id={self.filament_type_id})>"
 
     @property
     def remaining_weight(self) -> float:
