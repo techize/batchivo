@@ -29,7 +29,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Spool records have an is_labeled boolean field (defaults false for migrated records)
   4. All new and migrated records are tenant-scoped; RLS enforcement passes for existing test suite
   5. FilamentType and Spool REST endpoints respond correctly (CRUD operations, auth, validation)
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 01-01-PLAN.md — FilamentType model and schema hierarchy
+- [ ] 01-02-PLAN.md — Spool model/schema updates, alembic env.py, merge migration
+- [ ] 01-03-PLAN.md — Alembic data migration (create filament_types, backfill, restructure spools, RLS)
+- [ ] 01-04-PLAN.md — FilamentType CRUD API endpoints and module registration
+- [ ] 01-05-PLAN.md — Updated Spool API endpoints (TenantDB fix, remove export/import)
+- [ ] 01-06-PLAN.md — Test fixtures and schema unit tests
+- [ ] 01-07-PLAN.md — Integration tests for FilamentType API and updated Spool API tests
 
 ### Phase 2: Consolidated List View
 **Goal**: Users navigate to a single /filaments route and see spools aggregated by FilamentType with status at a glance
@@ -74,7 +82,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Model Migration | 0/TBD | Not started | - |
+| 1. Data Model Migration | 0/7 | Not started | - |
 | 2. Consolidated List View | 0/TBD | Not started | - |
 | 3. Add Workflows | 0/TBD | Not started | - |
 | 4. Detail Views | 0/TBD | Not started | - |
