@@ -373,21 +373,44 @@ async def test_material_type(db_session: AsyncSession, seed_material_types) -> M
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_spool(
+async def test_filament_type(
     db_session: AsyncSession, test_tenant: Tenant, test_material_type: MaterialType
-) -> Spool:
-    """Create a test spool."""
-    spool = Spool(
+):
+    """Create a test filament type linked to test_material_type."""
+    from app.models.filament_type import FilamentType
+
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="TEST-SPOOL-001",
         brand="Test Brand",
         color="Red",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.commit()
+    await db_session.refresh(ft)
+    return ft
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_spool(
+    db_session: AsyncSession, test_tenant: Tenant, test_filament_type
+) -> Spool:
+    """Create a test spool linked to test_filament_type."""
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=test_filament_type.id,
+        spool_id="TEST-SPOOL-001",
         initial_weight=1000.0,
         current_weight=800.0,
         purchase_price=Decimal("25.00"),
         is_active=True,
+        is_labeled=False,
     )
     db_session.add(spool)
     await db_session.commit()
