@@ -35,6 +35,7 @@ target_metadata = Base.metadata
 
 # Import all models here so they are registered with Base.metadata
 # This is required for autogenerate to detect them
+from app.models.filament_type import FilamentType  # noqa: F401
 from app.models.material import MaterialType  # noqa: F401
 from app.models.spool import Spool  # noqa: F401
 from app.models.tenant import Tenant  # noqa: F401
