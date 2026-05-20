@@ -14,7 +14,7 @@ This project refactors Batchivo's filament tracking from a flat Spool model into
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Data Model Migration** - Introduce FilamentType + Spool two-tier model and migrate existing spool data safely
-- [ ] **Phase 2: Consolidated List View** - Collapse /inventory route and deliver aggregated FilamentType list UI
+- [x] **Phase 2: Consolidated List View** - Collapse /inventory route and deliver aggregated FilamentType list UI (completed 2026-05-20)
 - [ ] **Phase 3: Add Workflows** - Bulk add and rapid mixed-batch add for creating FilamentType + Spool records
 - [ ] **Phase 4: Detail Views** - FilamentType and individual Spool detail pages with status toggles
 
@@ -86,7 +86,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 02-07-PLAN.md — Backend integration tests for aggregated endpoint + spools sub-resource
-- [ ] 02-08-PLAN.md — Frontend tests: App.test.tsx (redirect) + FilamentTypeCard.test.tsx
+- [x] 02-08-PLAN.md — Frontend tests: App.test.tsx (redirect) + FilamentTypeCard.test.tsx
 
 ### Phase 3: Add Workflows
 
@@ -126,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Model Migration | 0/7 | Not started | - |
-| 2. Consolidated List View | 8/9 | In Progress|  |
+| 2. Consolidated List View | 9/9 | Complete   | 2026-05-20 |
 | 3. Add Workflows | 0/TBD | Not started | - |
 | 4. Detail Views | 0/TBD | Not started | - |
