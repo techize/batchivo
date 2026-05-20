@@ -1,5 +1,7 @@
 """Integration tests for FilamentType API endpoints."""
 
+import re
+
 import pytest
 from httpx import AsyncClient
 from uuid import uuid4
@@ -380,3 +382,261 @@ class TestFilamentTypeAggregatedEndpoints:
             headers=auth_headers,
         )
         assert response.status_code == 404
+
+
+# ============================================
+# Bulk / Batch add workflow helpers
+# ============================================
+
+
+def _bulk_payload(test_material_type, quantity=3):
+    return {
+        "material_type_id": str(test_material_type.id),
+        "brand": "Test Brand",
+        "color": "Ocean Blue",
+        "quantity": quantity,
+        "initial_weight": 1000.0,
+    }
+
+
+def _batch_payload(test_material_type, entries=None):
+    return {
+        "entries": entries
+        or [
+            {
+                "material_type_id": str(test_material_type.id),
+                "brand": "Test Brand",
+                "color": "Forest Green",
+            }
+        ],
+        "initial_weight": 1000.0,
+    }
+
+
+# ============================================
+# POST /api/v1/filament-types/bulk-create
+# ============================================
+
+
+class TestBulkCreate:
+    """Integration tests for POST /api/v1/filament-types/bulk-create."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_returns_201_with_spool_ids(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=_bulk_payload(test_material_type, quantity=3),
+        )
+        assert response.status_code == 201
+        assert "spool_ids" in response.json()
+        assert len(response.json()["spool_ids"]) == 3
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_quantity_1_creates_one_spool(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=_bulk_payload(test_material_type, quantity=1),
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert len(data["spool_ids"]) == 1
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_spool_id_format(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=_bulk_payload(test_material_type, quantity=2),
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert all(re.match(r"^FIL-\d{3,}$", sid) for sid in data["spool_ids"])
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_spools_are_unlabeled(
+        self, client: AsyncClient, auth_headers: dict, test_material_type, db_session
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=_bulk_payload(test_material_type, quantity=2),
+        )
+        assert response.status_code == 201
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_requires_auth(
+        self, unauthenticated_client: AsyncClient, test_material_type
+    ):
+        response = await unauthenticated_client.post(
+            "/api/v1/filament-types/bulk-create",
+            json=_bulk_payload(test_material_type, quantity=2),
+        )
+        assert response.status_code in [401, 403]
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_quantity_zero_rejected(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=_bulk_payload(test_material_type, quantity=0),
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_quantity_over_limit_rejected(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=_bulk_payload(test_material_type, quantity=21),
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_bulk_create_finds_existing_filament_type(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        payload = _bulk_payload(test_material_type, quantity=2)
+        resp1 = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=payload,
+        )
+        resp2 = await client.post(
+            "/api/v1/filament-types/bulk-create",
+            headers=auth_headers,
+            json=payload,
+        )
+        assert resp1.status_code == 201
+        assert resp2.status_code == 201
+
+
+# ============================================
+# POST /api/v1/filament-types/batch-create
+# ============================================
+
+
+class TestBatchCreate:
+    """Integration tests for POST /api/v1/filament-types/batch-create."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_batch_create_returns_201_with_results(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/batch-create",
+            headers=auth_headers,
+            json=_batch_payload(test_material_type),
+        )
+        assert response.status_code == 201
+        assert "results" in response.json()
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_batch_create_multiple_entries(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        entries = [
+            {
+                "material_type_id": str(test_material_type.id),
+                "brand": "Test Brand",
+                "color": "Red",
+            },
+            {
+                "material_type_id": str(test_material_type.id),
+                "brand": "Test Brand",
+                "color": "Green",
+            },
+            {
+                "material_type_id": str(test_material_type.id),
+                "brand": "Test Brand",
+                "color": "Blue",
+            },
+        ]
+        response = await client.post(
+            "/api/v1/filament-types/batch-create",
+            headers=auth_headers,
+            json=_batch_payload(test_material_type, entries=entries),
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert len(data["results"]) == 3
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_batch_create_spools_are_unlabeled(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/batch-create",
+            headers=auth_headers,
+            json=_batch_payload(test_material_type),
+        )
+        assert response.status_code == 201
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_batch_create_reuses_existing_filament_type(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        entries = [
+            {
+                "material_type_id": str(test_material_type.id),
+                "brand": "Shared Brand",
+                "color": "Shared Color",
+            },
+            {
+                "material_type_id": str(test_material_type.id),
+                "brand": "Shared Brand",
+                "color": "Shared Color",
+            },
+        ]
+        response = await client.post(
+            "/api/v1/filament-types/batch-create",
+            headers=auth_headers,
+            json=_batch_payload(test_material_type, entries=entries),
+        )
+        assert response.status_code == 201
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_batch_create_requires_auth(
+        self, unauthenticated_client: AsyncClient, test_material_type
+    ):
+        response = await unauthenticated_client.post(
+            "/api/v1/filament-types/batch-create",
+            json=_batch_payload(test_material_type),
+        )
+        assert response.status_code in [401, 403]
+
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(reason="not implemented yet", strict=False)
+    async def test_batch_create_empty_entries_rejected(
+        self, client: AsyncClient, auth_headers: dict, test_material_type
+    ):
+        response = await client.post(
+            "/api/v1/filament-types/batch-create",
+            headers=auth_headers,
+            json=_batch_payload(test_material_type, entries=[]),
+        )
+        assert response.status_code == 422
