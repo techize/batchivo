@@ -66,8 +66,27 @@ Plans:
   3. Each row shows how many spools are labeled and whether a sample has been printed
   4. User can filter or search the list by brand, color, material type, label status, or sample status
 
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 8 plans
+Plans:
+**Wave 1** *(parallel — no file overlap)*
+
+- [ ] 02-01-PLAN.md — Route/nav surgery: /inventory redirect, sidebar nav deduplication, MODULE_NAVIGATION fix
+- [ ] 02-02-PLAN.md — Backend Pydantic schemas: FilamentTypeAggregatedResponse, FilamentTypeAggregatedListResponse, SpoolInSheetResponse
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-03-PLAN.md — Backend aggregation endpoints: GET /filament-types/aggregated + GET /{id}/spools
+- [ ] 02-04-PLAN.md — Frontend types + API client + TanStack Query hooks (useFilamentTypes, useFilamentTypeSpools, useToggleHasSample)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-05-PLAN.md — FilamentLibrary page + FilamentTypeCard (mobile) + FilamentTypeRow (desktop)
+- [ ] 02-06-PLAN.md — FilamentTypeSpoolSheet + FilamentTypeFilterSheet + wire into FilamentLibrary
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 02-07-PLAN.md — Backend integration tests for aggregated endpoint + spools sub-resource
+- [ ] 02-08-PLAN.md — Frontend tests: App.test.tsx (redirect) + FilamentTypeCard.test.tsx
 
 ### Phase 3: Add Workflows
 
@@ -107,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Model Migration | 0/7 | Not started | - |
-| 2. Consolidated List View | 0/TBD | Not started | - |
+| 2. Consolidated List View | 0/8 | Not started | - |
 | 3. Add Workflows | 0/TBD | Not started | - |
 | 4. Detail Views | 0/TBD | Not started | - |
