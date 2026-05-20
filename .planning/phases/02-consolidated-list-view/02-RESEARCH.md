@@ -541,17 +541,19 @@ export interface FilamentTypeUpdate {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the aggregated list endpoint be `/api/v1/filament-types/aggregated` (new path) or extend the existing `GET /api/v1/filament-types` with an `include_counts=true` param?**
    - What we know: The existing endpoint at `GET /api/v1/filament-types` returns `FilamentTypeListResponse` with full `FilamentTypeResponse` objects. The aggregated shape is different (counts added, spec fields removed). Same router, registered in main.py.
    - What's unclear: Whether Phase 1 code elsewhere calls `GET /api/v1/filament-types` and would break if the response shape changes.
    - Recommendation: Use a new `/aggregated` sub-path to avoid breaking any Phase 1 code that expects the existing response shape. Simpler, no conditional logic in the handler.
+   - **RESOLVED:** /aggregated sub-path chosen (per Plan 03).
 
 2. **Does Phase 1 migration need to be complete before Phase 2 can be tested?**
    - What we know: The aggregation query joins FilamentType with Spool via `filament_type_id`. Spools created before Phase 1 had `material_type_id` directly — Phase 1 migrates them to the two-tier model.
    - What's unclear: Whether Phase 1 is complete in the development environment.
    - Recommendation: Phase 2 plan should include a Wave 0 prerequisite check: verify `Spool.filament_type_id` FK is non-null for migrated spools before running aggregation tests.
+   - **RESOLVED:** Phase 1 prerequisite assumed complete. Plan 07 executor must verify `Spool.filament_type_id` FK is non-null for migrated spools before running aggregation tests.
 
 ---
 
