@@ -99,8 +99,29 @@ Plans:
   2. After a bulk add, newly created spools appear in the list with a "needs label" indicator
   3. User can enter brand and material type once, then add multiple color variants in rapid succession with those fields pre-filled; only color (and optionally finish/notes) is required per step
 
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 7 plans
+Plans:
+**Wave 0**
+
+- [ ] 03-01-PLAN.md — Test stubs: TestBulkCreate + TestBatchCreate (backend) + AddFilamentDialog.test.tsx (frontend)
+
+**Wave 1** *(parallel — no file overlap)*
+
+- [ ] 03-02-PLAN.md — Backend schemas + _next_spool_ids helper + bulk_create + batch_create endpoints
+- [ ] 03-03-PLAN.md — Frontend types + API client methods + mutation hooks
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-04-PLAN.md — AddFilamentDialog component (mode selector, bulk form, rapid batch form)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-05-PLAN.md — Wire FilamentLibrary: Add Filament button + AddFilamentDialog render
+
+**Wave 4** *(blocked on Wave 2/3 completion — parallel)*
+
+- [ ] 03-06-PLAN.md — Backend integration tests: TestBulkCreate + TestBatchCreate fully passing
+- [ ] 03-07-PLAN.md — Frontend tests: AddFilamentDialog.test.tsx fully passing
 
 ### Phase 4: Detail Views
 
@@ -127,5 +148,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Data Model Migration | 0/7 | Not started | - |
 | 2. Consolidated List View | 9/9 | Complete   | 2026-05-20 |
-| 3. Add Workflows | 0/TBD | Not started | - |
+| 3. Add Workflows | 0/7 | Not started | - |
 | 4. Detail Views | 0/TBD | Not started | - |
