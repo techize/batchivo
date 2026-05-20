@@ -244,3 +244,87 @@ class TestFilamentTypesEndpoints:
             headers=auth_headers,
         )
         assert response.status_code == 404
+
+
+# ============================================
+# Aggregated endpoints — Wave 0 stubs (Plan 07 fills in real bodies)
+# ============================================
+
+
+class TestFilamentTypeAggregatedEndpoints:
+    """Integration tests for aggregated FilamentType list and spool sub-resource endpoints.
+
+    NOTE: Stubs created in Wave 0 (Plan 00). Real test bodies filled in by Plan 07.
+    Phase 1 prerequisite: verify Spool.filament_type_id FK is non-null for migrated spools
+    before running these tests against a production-migrated database.
+    """
+
+    # ============================================
+    # GET /api/v1/filament-types/aggregated
+    # ============================================
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_aggregated_list_returns_200_with_counts(
+        self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
+    ):
+        """Aggregated list returns 200 with spool_count and labeled_count per row."""
+        ...
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_aggregated_list_labeled_count_accuracy(
+        self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
+    ):
+        """labeled_count == 0 when test_spool.is_labeled is False."""
+        ...
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_aggregated_filter_needs_labels(
+        self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
+    ):
+        """needs_labels=true filter returns only types with unlabeled spools."""
+        ...
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_aggregated_filter_needs_sample(
+        self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
+    ):
+        """needs_sample=true filter returns only types without a sample."""
+        ...
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_aggregated_requires_auth(self, unauthenticated_client: AsyncClient):
+        """Aggregated list without auth returns 401 or 403."""
+        ...
+
+    # ============================================
+    # GET /api/v1/filament-types/{id}/spools
+    # ============================================
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_spools_sub_resource_returns_child_spools(
+        self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
+    ):
+        """Spools sub-resource returns list of spools with correct fields."""
+        ...
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_spools_sub_resource_requires_auth(
+        self, unauthenticated_client: AsyncClient, test_filament_type
+    ):
+        """Spools sub-resource without auth returns 401 or 403."""
+        ...
+
+    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
+    @pytest.mark.asyncio
+    async def test_spools_sub_resource_404_for_nonexistent(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Spools sub-resource returns 404 for a random UUID not in this tenant."""
+        ...
