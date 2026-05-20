@@ -180,8 +180,8 @@ New components to create (not shadcn installs):
 | "No sample" toggle | "No sample" |
 | Empty state heading (no data at all) | "No filament types yet" |
 | Empty state body (no data) | "Add your first filament type to get started." |
-| Empty state heading (filters active) | "No results" |
-| Empty state body (filters active) | "No filament types match your filters. Try adjusting your search or clearing filters." |
+| Empty state heading (filters active) | "No matching filament types" |
+| Empty state body (filters active) | "Try adjusting your search or clearing filters." |
 | Clear filters button | "Clear filters" |
 | Error state heading | "Could not load filaments" |
 | Error state body | "There was a problem fetching your filament library. Check your connection and try again." |
