@@ -108,7 +108,7 @@ export function LowStockAlerts() {
           <CardDescription>Spools below 10% remaining</CardDescription>
         </div>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/inventory">View Inventory</Link>
+          <Link to="/filaments">View Inventory</Link>
         </Button>
       </CardHeader>
       <CardContent>
