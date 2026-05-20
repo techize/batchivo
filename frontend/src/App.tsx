@@ -215,8 +215,7 @@ const dashboardRoute = new Route({
   ),
 })
 
-// Filament Library placeholder — real component created in Plan 05
-const FilamentLibrary = () => <div>Filament Library — Phase 2 WIP</div>
+import { FilamentLibrary } from '@/pages/FilamentLibrary'
 
 // Inventory route (filament spools) — redirects to /filaments
 const inventoryRoute = new Route({
