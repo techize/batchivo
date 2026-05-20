@@ -20,12 +20,8 @@ import { useFilamentTypes, useToggleHasSample } from '@/hooks/useFilamentTypes'
 import type { FilamentTypeListParams } from '@/types/filament-type'
 import { FilamentTypeCard } from '@/components/filaments/FilamentTypeCard'
 import { FilamentTypeRow } from '@/components/filaments/FilamentTypeRow'
-
-// TODO: replace with real components from Plan 06
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const FilamentTypeSpoolSheet = (_props: any) => null
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const FilamentTypeFilterSheet = (_props: any) => null
+import { FilamentTypeSpoolSheet } from '@/components/filaments/FilamentTypeSpoolSheet'
+import { FilamentTypeFilterSheet } from '@/components/filaments/FilamentTypeFilterSheet'
 
 export function FilamentLibrary() {
   const [spoolSheetFilamentTypeId, setSpoolSheetFilamentTypeId] = useState<string | null>(null)
