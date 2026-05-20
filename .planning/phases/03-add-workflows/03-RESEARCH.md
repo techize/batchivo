@@ -621,12 +621,13 @@ export interface BatchCreateResponse {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`color_hex` prefix handling (A1)**
    - What we know: Backend `String(9)` field; RGBA is 8 chars without `#` or 9 chars with it; UI-SPEC Zod regex uses `^#[0-9a-fA-F]{6}$`
    - What's unclear: Does the backend/existing data expect `#FF5733` or `FF5733`?
    - Recommendation: Strip `#` in the API client before sending. This is backward compatible with either convention and the existing `FilamentTypeAggregatedResponse` does not include `color_hex`, so no migration concern.
+   - **RESOLVED:** Strip `#` in the API client (filament-types.ts) before POST — backward-compatible with either backend convention per Pitfall 6.
 
 ---
 
