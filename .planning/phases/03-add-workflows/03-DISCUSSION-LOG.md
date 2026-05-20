@@ -5,7 +5,7 @@
 
 **Date:** 2026-05-20
 **Phase:** 3-add-workflows
-**Areas discussed:** Entry point & container, Bulk add form structure, Rapid batch flow UX, spool_id auto-generation strategy
+**Areas discussed:** Entry point & container, Bulk add form structure, Rapid batch flow UX, spool_id auto-generation strategy, Duplicate FilamentType handling (update), Dialog back-navigation (update)
 
 ---
 
@@ -207,14 +207,70 @@
 
 ---
 
+## Update Session (2026-05-20) — Duplicate Handling & Back-Navigation
+
+### Duplicate FilamentType handling
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Always create a new FilamentType | Simpler, predictable — duplicates handled manually later | |
+| Reuse existing FilamentType, just add spools | Match on brand + color + material_type_id; reuse if found | ✓ |
+| Return 409 Conflict with existing type's ID | Surface conflict for frontend resolution | |
+
+**User's choice:** Reuse existing FilamentType and create spools against it
+
+Follow-up — optional field handling on reuse:
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Ignore incoming optional fields | Keep existing record as-is | |
+| Merge — fill null fields only | Existing non-null wins; null fields filled by incoming data | ✓ |
+| You decide | Claude picks simpler implementation | |
+
+**User's choice:** Merge in (existing non-null wins)
+
+Follow-up — applies to rapid batch too:
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Yes — same behavior for both endpoints | Each batch row checked independently | ✓ |
+| No — rapid batch always creates new | Simpler per-row, could produce duplicates | |
+
+**User's choice:** Yes — same behavior for both endpoints
+
+---
+
+### Dialog back-navigation
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Yes — back arrow at top of form | Returns to mode selector | ✓ |
+| No — close and reopen Dialog | Simpler state; low friction | |
+
+**User's choice:** Yes — back arrow
+
+Follow-up — form state on back:
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Cleared on back | Simple; consistent with post-submit reset | |
+| Preserved — state at Dialog level | Values survive mode-selector transitions | ✓ |
+
+**User's choice:** Preserved at Dialog level
+
+---
+
 ## Claude's Discretion
 
-- Material type field: Select dropdown from existing `materialTypesApi.list()` endpoint
+- Material type field: Select dropdown from `materialTypesApi.list()` (imported from `@/lib/api/spools`)
 - Error display in Dialog: shadcn/ui `Alert` with `AlertDescription` (matches `CreateRunWizard`)
 - Mode selector screen: two large clickable Cards describing each mode
+- Form validation: react-hook-form + Zod, fires on submit (not on blur)
+- "More options" section: shadcn/ui Collapsible, collapsed by default
 
 ## Deferred Ideas
 
 - Configurable spool_id prefix per tenant — YAGNI
 - FilamentType creation without any spools (quantity = 0) — separate feature if needed
 - Mixed spool weights per rapid batch entry — single weight covers the common case
+- UI for retrying a subset on submit failure — atomic guarantee means full retry only; deferred
