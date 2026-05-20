@@ -99,3 +99,41 @@ class FilamentTypeListResponse(BaseModel):
     filament_types: list[FilamentTypeResponse] = Field(..., description="List of filament types")
     page: int = Field(1, ge=1, description="Current page number")
     page_size: int = Field(20, ge=1, le=100, description="Items per page")
+
+
+class FilamentTypeAggregatedResponse(BaseModel):
+    """Slim aggregated response for list view — includes spool counts, excludes spec fields."""
+
+    id: UUID
+    brand: str
+    color: str
+    color_hex: Optional[str] = None
+    material_type_name: str
+    material_type_code: str
+    has_sample: bool
+    spool_count: int
+    labeled_count: int
+
+    model_config = ConfigDict(from_attributes=False)
+
+
+class FilamentTypeAggregatedListResponse(BaseModel):
+    """Paginated aggregated FilamentType list for the list view."""
+
+    total: int = Field(description="Total number of filament types")
+    filament_types: list[FilamentTypeAggregatedResponse] = Field(description="Aggregated list")
+    page: int = Field(1, ge=1, description="Current page number")
+    page_size: int = Field(20, ge=1, le=100, description="Items per page")
+
+
+class SpoolInSheetResponse(BaseModel):
+    """Minimal spool info for the read-only spool drill-down sheet."""
+
+    id: UUID
+    spool_id: str
+    current_weight: float
+    initial_weight: float
+    is_labeled: bool
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
