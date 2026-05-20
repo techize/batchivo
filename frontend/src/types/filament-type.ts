@@ -59,3 +59,55 @@ export interface FilamentTypeUpdate {
   glow?: boolean
   notes?: string | null
 }
+
+export interface BulkCreateRequest {
+  material_type_id: string
+  brand: string
+  color: string
+  /** Strip '#' prefix before sending to backend — backend stores without '#' */
+  color_hex?: string | null
+  finish?: string | null
+  pattern?: string | null
+  spool_type?: string | null
+  diameter?: number
+  density?: number | null
+  extruder_temp?: number | null
+  bed_temp?: number | null
+  translucent?: boolean
+  glow?: boolean
+  notes?: string | null
+  quantity: number
+  initial_weight: number
+}
+
+export interface BulkCreateResponse {
+  filament_type_id: string
+  spool_ids: string[]
+}
+
+export interface BatchEntryRequest {
+  material_type_id: string
+  brand: string
+  color: string
+  /** Strip '#' prefix before sending to backend — backend stores without '#' */
+  color_hex?: string | null
+  finish?: string | null
+  pattern?: string | null
+  spool_type?: string | null
+  diameter?: number
+  density?: number | null
+  extruder_temp?: number | null
+  bed_temp?: number | null
+  translucent?: boolean
+  glow?: boolean
+  notes?: string | null
+}
+
+export interface BatchCreateRequest {
+  entries: BatchEntryRequest[]
+  initial_weight: number
+}
+
+export interface BatchCreateResponse {
+  results: Array<{ filament_type_id: string; spool_id: string }>
+}

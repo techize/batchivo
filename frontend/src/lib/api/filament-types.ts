@@ -5,6 +5,10 @@ import type {
   FilamentTypeListItem,
   SpoolInSheet,
   FilamentTypeUpdate,
+  BulkCreateRequest,
+  BulkCreateResponse,
+  BatchCreateRequest,
+  BatchCreateResponse,
 } from '@/types/filament-type'
 
 /**
@@ -47,5 +51,19 @@ export const filamentTypesApi = {
    */
   update: async (id: string, data: FilamentTypeUpdate): Promise<FilamentTypeListItem> => {
     return apiClient.put<FilamentTypeListItem>(`/api/v1/filament-types/${id}`, data)
+  },
+
+  bulkCreate: async (data: BulkCreateRequest): Promise<BulkCreateResponse> => {
+    // Strip '#' from color_hex if present before sending to backend
+    const payload = { ...data, color_hex: data.color_hex?.replace(/^#/, '') ?? data.color_hex }
+    return apiClient.post<BulkCreateResponse>('/api/v1/filament-types/bulk-create', payload)
+  },
+  batchCreate: async (data: BatchCreateRequest): Promise<BatchCreateResponse> => {
+    // Strip '#' from color_hex in each entry
+    const payload = {
+      ...data,
+      entries: data.entries.map(e => ({ ...e, color_hex: e.color_hex?.replace(/^#/, '') ?? e.color_hex })),
+    }
+    return apiClient.post<BatchCreateResponse>('/api/v1/filament-types/batch-create', payload)
   },
 }

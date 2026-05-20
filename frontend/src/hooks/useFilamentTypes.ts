@@ -8,6 +8,8 @@ import { filamentTypesApi } from '@/lib/api/filament-types'
 import type {
   FilamentTypeAggregatedListResponse,
   FilamentTypeListParams,
+  BulkCreateRequest,
+  BatchCreateRequest,
 } from '@/types/filament-type'
 
 /**
@@ -83,6 +85,26 @@ export function useToggleHasSample(params: FilamentTypeListParams = {}) {
 
     onSettled: () => {
       // Always re-sync from the server after mutation
+      queryClient.invalidateQueries({ queryKey: ['filament-types'] })
+    },
+  })
+}
+
+export function useBulkCreateFilamentType() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: BulkCreateRequest) => filamentTypesApi.bulkCreate(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['filament-types'] })
+    },
+  })
+}
+
+export function useBatchCreateFilamentTypes() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: BatchCreateRequest) => filamentTypesApi.batchCreate(data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['filament-types'] })
     },
   })
