@@ -5,17 +5,21 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentTenant, CurrentUser, TenantDB
 from app.models.filament_type import FilamentType
+from app.models.material import MaterialType
+from app.models.spool import Spool
 from app.schemas.filament_type import (
+    FilamentTypeAggregatedListResponse,
+    FilamentTypeAggregatedResponse,
     FilamentTypeCreate,
     FilamentTypeListResponse,
     FilamentTypeResponse,
     FilamentTypeUpdate,
+    SpoolInSheetResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,6 +118,111 @@ async def list_filament_types(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/aggregated", response_model=FilamentTypeAggregatedListResponse)
+async def list_filament_types_aggregated(
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: TenantDB,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    brand: Optional[str] = Query(None),
+    color: Optional[str] = Query(None),
+    material_type_id: Optional[UUID] = Query(None),
+    needs_labels: Optional[bool] = Query(None),
+    needs_sample: Optional[bool] = Query(None),
+) -> FilamentTypeAggregatedListResponse:
+    """Aggregated FilamentType list with spool/labeled counts for the list view."""
+    query = (
+        select(
+            FilamentType.id,
+            FilamentType.brand,
+            FilamentType.color,
+            FilamentType.color_hex,
+            FilamentType.has_sample,
+            MaterialType.name.label("material_type_name"),
+            MaterialType.code.label("material_type_code"),
+            func.count(Spool.id).label("spool_count"),
+            func.count(case((Spool.is_labeled == True, Spool.id))).label("labeled_count"),  # noqa: E712
+        )
+        .outerjoin(Spool, (Spool.filament_type_id == FilamentType.id) & (Spool.tenant_id == tenant.id))
+        .outerjoin(MaterialType, MaterialType.id == FilamentType.material_type_id)
+        .where(FilamentType.tenant_id == tenant.id)
+        .group_by(
+            FilamentType.id,
+            FilamentType.brand,
+            FilamentType.color,
+            FilamentType.color_hex,
+            FilamentType.has_sample,
+            MaterialType.name,
+            MaterialType.code,
+        )
+    )
+
+    if brand:
+        query = query.where(FilamentType.brand.ilike(f"%{brand}%"))
+    if color:
+        query = query.where(FilamentType.color.ilike(f"%{color}%"))
+    if material_type_id:
+        query = query.where(FilamentType.material_type_id == material_type_id)
+    if needs_sample is True:
+        query = query.where(FilamentType.has_sample == False)  # noqa: E712
+    if needs_labels is True:
+        query = query.having(func.count(case((Spool.is_labeled == False, Spool.id))) > 0)  # noqa: E712
+
+    # Count total before pagination
+    count_query = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar_one()
+
+    # Apply pagination and ordering
+    offset = (page - 1) * page_size
+    query = query.offset(offset).limit(page_size).order_by(FilamentType.brand, FilamentType.color)
+
+    result = await db.execute(query)
+    rows = result.mappings().all()
+
+    logger.info(f"Listed {total} filament types aggregated for tenant {tenant.id}")
+    return FilamentTypeAggregatedListResponse(
+        total=total,
+        filament_types=[FilamentTypeAggregatedResponse(**dict(row)) for row in rows],
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{filament_type_id}/spools", response_model=list[SpoolInSheetResponse])
+async def list_spools_for_filament_type(
+    filament_type_id: UUID,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: TenantDB,
+) -> list[SpoolInSheetResponse]:
+    """List child spools for a FilamentType. Used by the read-only spool drill-down sheet."""
+    # Check FilamentType exists and belongs to tenant
+    ft_result = await db.execute(
+        select(FilamentType).where(
+            FilamentType.id == filament_type_id,
+            FilamentType.tenant_id == tenant.id,
+        )
+    )
+    ft = ft_result.scalar_one_or_none()
+    if not ft:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"FilamentType {filament_type_id} not found",
+        )
+
+    result = await db.execute(
+        select(Spool)
+        .where(Spool.filament_type_id == filament_type_id, Spool.tenant_id == tenant.id)
+        .order_by(Spool.spool_id)
+    )
+    spools = result.scalars().all()
+
+    logger.info(f"Listed {len(spools)} spools for FilamentType {filament_type_id}")
+    return [SpoolInSheetResponse.model_validate(s) for s in spools]
 
 
 @router.get("/{filament_type_id}", response_model=FilamentTypeResponse)
