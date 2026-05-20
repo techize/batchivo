@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-05-20T09:17:44.169Z"
+last_updated: "2026-05-20T09:21:16.298Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 16
-  completed_plans: 10
+  completed_plans: 12
   percent: 25
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 ## Current Position
 
 Phase: 01 (data-model-migration) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-05-20
 
-Progress: [██████░░░░] 63%
+Progress: [███████░░░] 69%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [██████░░░░] 63%
 *Updated after each plan completion*
 | Phase 02-consolidated-list-view P02-02 | 5m | 1 tasks | 1 files |
 | Phase 02-consolidated-list-view P01 | 300 | 2 tasks | 4 files |
+| Phase 02-consolidated-list-view P03 | 15 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,7 @@ Recent decisions affecting current work:
 - FilamentType + Spool two-tier split: separates "what it is" from "individual unit"; FilamentType holds brand/color/material/has_sample, Spool holds per-unit weight/is_labeled/is_active
 - Label session workflow deferred to v2; is_labeled on Spool is still v1 so the field is ready when the session is built
 - /inventory route to be removed in Phase 2; production must remain functional during Phase 1 migration
+- [Phase ?]: Static paths must precede dynamic to avoid FastAPI matching literal strings as UUIDs
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T09:17:39.815Z
+Last session: 2026-05-20T09:21:12.815Z
 Stopped at: Phase 2 UI-SPEC approved
 Resume file: None

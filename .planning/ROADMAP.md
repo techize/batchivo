@@ -75,8 +75,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-03-PLAN.md — Backend aggregation endpoints: GET /filament-types/aggregated + GET /{id}/spools
-- [ ] 02-04-PLAN.md — Frontend types + API client + TanStack Query hooks (useFilamentTypes, useFilamentTypeSpools, useToggleHasSample)
+- [x] 02-03-PLAN.md — Backend aggregation endpoints: GET /filament-types/aggregated + GET /{id}/spools
+- [x] 02-04-PLAN.md — Frontend types + API client + TanStack Query hooks (useFilamentTypes, useFilamentTypeSpools, useToggleHasSample)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -126,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Model Migration | 0/7 | Not started | - |
-| 2. Consolidated List View | 3/9 | In Progress|  |
+| 2. Consolidated List View | 5/9 | In Progress|  |
 | 3. Add Workflows | 0/TBD | Not started | - |
 | 4. Detail Views | 0/TBD | Not started | - |
