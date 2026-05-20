@@ -119,7 +119,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     { path: '/designers', label: 'Designers', icon: 'brush' },
     { path: '/categories', label: 'Categories', icon: 'folder-open' },
     { path: '/production-runs', label: 'Runs', icon: 'play' },
-    { path: '/inventory', label: 'Inventory', icon: 'box', exact: true },
     { path: '/dashboard/printers', label: 'Fleet', icon: 'activity' },
     { path: '/printers', label: 'Printers', icon: 'printer' },
     { path: '/consumables', label: 'Consumables', icon: 'wrench' },

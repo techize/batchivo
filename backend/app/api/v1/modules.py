@@ -76,7 +76,6 @@ MODULE_NAVIGATION: dict[str, list[dict]] = {
         {"path": "/production-runs", "label": "Runs", "icon": "play", "exact": False},
     ],
     "spools": [
-        {"path": "/inventory", "label": "Inventory", "icon": "box", "exact": True},
         {"path": "/filaments", "label": "Filaments", "icon": "box", "exact": False},
     ],
     "printers": [

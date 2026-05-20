@@ -215,27 +215,24 @@ const dashboardRoute = new Route({
   ),
 })
 
-// Inventory route (filament spools)
+// Filament Library placeholder — real component created in Plan 05
+const FilamentLibrary = () => <div>Filament Library — Phase 2 WIP</div>
+
+// Inventory route (filament spools) — redirects to /filaments
 const inventoryRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/inventory',
-  component: () => (
-    <ProtectedRoute>
-      <ModuleGuard>
-        <Dashboard />
-      </ModuleGuard>
-    </ProtectedRoute>
-  ),
+  component: () => <Navigate to="/filaments" />,
 })
 
-// Filaments route (alias for inventory - spools management)
+// Filaments route — canonical filament management page
 const filamentsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/filaments',
   component: () => (
     <ProtectedRoute>
       <ModuleGuard>
-        <Dashboard />
+        <FilamentLibrary />
       </ModuleGuard>
     </ProtectedRoute>
   ),
