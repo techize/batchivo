@@ -51,23 +51,22 @@ Source: default — aligns with existing FilamentLibrary.tsx spacing (`space-y-6
 
 ## Typography
 
-All sizes use Inter/Plus Jakarta Sans at the weights below. Matches existing page typography in FilamentLibrary.tsx.
+All sizes use Inter/Plus Jakarta Sans. Two weights only: 400 (regular) for body content, 600 (semibold) for all labels, headings, and display text. The size jump from 14px → 20px → 24px carries hierarchy signal; weight is reserved for the body/non-body distinction only.
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 (regular) | 1.5 |
-| Label | 14px | 500 (medium) | 1.4 |
 | Heading | 20px | 600 (semibold) | 1.2 |
-| Display | 24px | 700 (bold) | 1.2 |
+| Display | 24px | 600 (semibold) | 1.2 |
 
 Notes:
-- Dialog title uses Heading (20px, semibold) — rendered by `DialogTitle` which inherits `text-lg font-semibold`
-- Mode selector card titles use Heading (20px, semibold)
-- Form field labels use Label (14px, medium) — Tailwind `text-sm font-medium`
-- Table cell text uses Body (14px, regular)
-- Helper/hint text under fields uses Body (14px, regular, `text-muted-foreground`)
+- Dialog title uses Heading (20px, 600 semibold) — rendered by `DialogTitle` which maps to `text-lg font-semibold`
+- Mode selector card titles use Heading (20px, 600 semibold)
+- Form field labels use 600 semibold at 14px — Tailwind `text-sm font-semibold` (same size as Body, different weight to distinguish interactive label from content text)
+- Table cell text uses Body (14px, 400 regular)
+- Helper/hint text under fields uses Body (14px, 400 regular, `text-muted-foreground`)
 
-Source: default — matches existing `text-2xl sm:text-3xl font-bold` on page headings and `text-sm` form fields project-wide
+Source: default — matches existing `text-2xl sm:text-3xl font-bold` on page headings and `text-sm` form fields project-wide; weights collapsed per checker guidance (4 → 2)
 
 ---
 
@@ -79,11 +78,11 @@ Batchivo brand palette defined in `frontend/src/index.css` CSS variables and `fr
 |------|-------|-------|
 | Dominant (60%) | `hsl(var(--background))` — Cream #fffaf0 | Dialog backdrop, page background, form surfaces |
 | Secondary (30%) | `hsl(var(--card))` — White #ffffff + `hsl(var(--secondary))` #edf2f7 | Mode selector cards, rapid batch accumulator table rows, form card containers |
-| Accent (10%) | `hsl(var(--accent))` — Amber #d97706 | "+ Add" button (primary variant), focus rings, active filter badges |
+| Accent (10%) | `hsl(var(--accent))` — Amber #d97706 | "Add Filament" button (primary variant), focus rings, active filter badges |
 | Destructive | `hsl(var(--destructive))` — Coral #f56565 | Row remove button in rapid batch table only |
 
 Accent reserved for:
-- The "+ Add" button in FilamentLibrary page header (primary Button variant — filled amber/navy)
+- The "Add Filament" button in FilamentLibrary page header (primary Button variant — filled amber/navy)
 - Focus ring on all form inputs and interactive elements (`ring` token)
 - Active Badge on Filters button when filters are applied
 
@@ -102,7 +101,7 @@ All components already installed in `frontend/src/components/ui/`. No new instal
 |-----------|--------|-----------------|
 | `Dialog` | `@/components/ui/dialog` | Add workflow container (D-02) |
 | `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter` | shadcn/ui Dialog parts | Dialog structure |
-| `Button` | `@/components/ui/button` | "+ Add" (primary), "Filters" (outline), back arrow (ghost/icon), form submit |
+| `Button` | `@/components/ui/button` | "Add Filament" (primary), "Filters" (outline), back arrow (ghost/icon), form submit |
 | `Card`, `CardContent`, `CardHeader`, `CardTitle`, `CardDescription` | `@/components/ui/card` | Mode selector cards (D-03) |
 | `Input` | `@/components/ui/input` | Brand, color, finish, notes, weight, quantity fields |
 | `Select`, `SelectTrigger`, `SelectContent`, `SelectItem` | `@/components/ui/select` | Material type dropdown |
@@ -121,12 +120,12 @@ Source: `frontend/src/components/ui/` directory scan, CONTEXT.md canonical refs
 ### FilamentLibrary Header (modified)
 
 ```
-[Search input — flex-1] [Filters — outline] [+ Add — primary]
+[Search input — flex-1] [Filters — outline] [Add Filament — primary]
 ```
 
 - Controls row: `flex flex-col sm:flex-row gap-3` (existing pattern, extend with third button)
-- "+ Add" button: `variant="default"` (filled navy/amber) to distinguish from outline Filters button (D-01, CONTEXT specifics)
-- "+ Add" icon: `Plus` from lucide-react, `h-4 w-4` with `gap-2`
+- "Add Filament" button: `variant="default"` (filled navy/amber) to distinguish from outline Filters button (D-01, CONTEXT specifics)
+- "Add Filament" icon: `Plus` from lucide-react, `h-4 w-4` with `gap-2`
 
 ### Add Workflow Dialog
 
@@ -187,7 +186,7 @@ Source: CONTEXT.md decisions + requirement language
 
 | Element | Copy |
 |---------|------|
-| Primary CTA (header button) | + Add |
+| Primary CTA (header button) | Add Filament |
 | Mode selector heading | How would you like to add filament? |
 | Mode selector subheading | Choose a workflow to continue |
 | Bulk add card title | Batch of identical spools |
