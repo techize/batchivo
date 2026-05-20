@@ -15,14 +15,14 @@
 
 ### Routing & Navigation
 
-- [ ] **NAV-01**: `/inventory` route is removed; all filament spool content lives exclusively at `/filaments`
-- [ ] **NAV-02**: Any internal links or navigation pointing to `/inventory` are updated to `/filaments`
+- [x] **NAV-01**: `/inventory` route is removed; all filament spool content lives exclusively at `/filaments`
+- [x] **NAV-02**: Any internal links or navigation pointing to `/inventory` are updated to `/filaments`
 
 ### Filament List View
 
-- [ ] **LIST-01**: Filament list page aggregates spools by FilamentType, showing type name and spool count (e.g., "JAYO Black PETG × 3")
-- [ ] **LIST-02**: Each FilamentType row shows a status summary: how many spools are labeled, and whether a sample has been printed
-- [ ] **LIST-03**: User can filter/search by brand, color, material type, or label/sample status
+- [x] **LIST-01**: Filament list page aggregates spools by FilamentType, showing type name and spool count (e.g., "JAYO Black PETG × 3")
+- [x] **LIST-02**: Each FilamentType row shows a status summary: how many spools are labeled, and whether a sample has been printed
+- [x] **LIST-03**: User can filter/search by brand, color, material type, or label/sample status
 
 ### Add Workflow — Bulk
 
@@ -78,11 +78,11 @@
 | DATA-03 | Phase 1 | Pending |
 | DATA-04 | Phase 1 | Pending |
 | DATA-05 | Phase 1 | Pending |
-| NAV-01 | Phase 2 | Pending |
-| NAV-02 | Phase 2 | Pending |
-| LIST-01 | Phase 2 | Pending |
-| LIST-02 | Phase 2 | Pending |
-| LIST-03 | Phase 2 | Pending |
+| NAV-01 | Phase 2 | Complete |
+| NAV-02 | Phase 2 | Complete |
+| LIST-01 | Phase 2 | Complete |
+| LIST-02 | Phase 2 | Complete |
+| LIST-03 | Phase 2 | Complete |
 | ADD-01 | Phase 3 | Pending |
 | ADD-02 | Phase 3 | Pending |
 | ADD-03 | Phase 3 | Pending |
