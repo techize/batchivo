@@ -53,15 +53,17 @@ Exceptions:
 |------|------|--------|-------------|
 | Body | 14px | 400 | 1.5 |
 | Label / small text | 12px | 400 | 1.4 |
-| Subheading / card title | 16px | 600 | 1.4 |
+| Subheading / card title | 16px | 700 | 1.4 |
 | Page heading | 24px (sm: 30px) | 700 | 1.2 |
+
+Two weights only: `font-normal` (400) for body and labels; `font-bold` (700) for all emphasis — card titles, subheadings, and page heading. Weight 600 (`font-semibold`) is not used. This matches the existing `SpoolList.tsx` heading pattern (`font-bold tracking-tight`).
 
 Notes:
 - `font-mono` class on spool_id values (existing pattern from `SpoolCard.tsx` and `SpoolList.tsx`).
-- "Filament Library" page heading uses 24px mobile / 30px desktop, weight 700, tracking-tight — matches existing `SpoolList` heading pattern.
+- "Filament Library" page heading uses 24px mobile / 30px desktop, `font-bold`, `tracking-tight` — matches existing `SpoolList` heading pattern.
 - `text-muted-foreground` (`hsl(218 23% 35%)`) for secondary descriptors (brand, color text next to swatch).
 
-Source: Inferred from existing SpoolList.tsx and SpoolCard.tsx patterns + tailwind.config.js font family.
+Source: Inferred from existing `SpoolList.tsx` (`font-bold` on heading, line 261) and `SpoolCard.tsx` patterns + tailwind.config.js font family.
 
 ---
 
@@ -71,13 +73,14 @@ Source: Inferred from existing SpoolList.tsx and SpoolCard.tsx patterns + tailwi
 |------|-------|-------|
 | Dominant (60%) | `hsl(40 100% 97%)` — cream `#fffaf0` | Page background (`--background`) |
 | Secondary (30%) | `hsl(0 0% 100%)` — white | Cards (`--card`), Sheet background, Table rows, Filter panel |
-| Accent (10%) | `hsl(32 95% 44%)` — amber `#d97706` | Focus rings (`--ring`), active filter toggle buttons, `has_sample` toggle when active |
+| Accent (10%) | `hsl(32 95% 44%)` — amber `#d97706` | Focus rings (`--ring`), `has_sample` toggle when active |
 | Destructive | `hsl(0 89% 68%)` — coral `#f56565` | Destructive actions only — none in Phase 2 |
 
-Accent reserved for:
-1. Active state of filter toggle buttons ("Needs labels", "No sample") when selected — `variant="default"` (navy fill) matching existing "Low Stock Only" button pattern
-2. `has_sample` toggle button active state — amber icon / filled indicator
-3. Focus ring on inputs and interactive elements
+Accent (amber `#d97706`) reserved for:
+1. `has_sample` toggle button active state — amber icon (`text-amber-600`) / filled indicator
+2. Focus ring on inputs and interactive elements (`--ring`)
+
+Active filter toggle buttons ("Needs labels", "No sample") use `--primary` (navy), NOT the amber accent. Active state: `variant="default"` (navy fill, white text). Inactive state: `variant="outline"`. This matches the existing "Low Stock Only" button pattern in `SpoolList.tsx`.
 
 Badge color semantics for this phase:
 - Spool count badge: `variant="secondary"` (warm gray)
@@ -88,6 +91,12 @@ Badge color semantics for this phase:
 Source: `frontend/src/index.css` CSS custom properties, `SpoolCard.tsx` Badge usage patterns.
 
 Dark mode: CSS variables automatically invert via `.dark` class in `index.css`. No additional dark-mode-specific overrides needed for Phase 2 components — follow existing token usage.
+
+---
+
+## Focal Point
+
+Primary visual anchor: "Filament Library" page heading (top-left, `text-2xl sm:text-3xl font-bold tracking-tight`). Secondary focal zone: list rows — specifically the brand + color name column which anchors the eye when scanning vertically.
 
 ---
 
@@ -133,7 +142,7 @@ New components to create (not shadcn installs):
 
 ### Filter Toggle Buttons ("Needs labels" / "No sample")
 - **Pattern**: Matches existing "Low Stock Only" button in `SpoolList.tsx`
-- **Active**: `variant="default"` (navy fill, white text)
+- **Active**: `variant="default"` (navy `--primary` fill, white text)
 - **Inactive**: `variant="outline"`
 - **Placement**: Row of toggle buttons below the search box, above the Filters button
 
