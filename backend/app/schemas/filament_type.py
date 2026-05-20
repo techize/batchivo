@@ -137,3 +137,69 @@ class SpoolInSheetResponse(BaseModel):
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class BulkCreateRequest(BaseModel):
+    """Request schema for creating multiple identical spools."""
+
+    material_type_id: UUID = Field(..., description="Material type ID")
+    brand: str = Field(..., min_length=1, max_length=100)
+    color: str = Field(..., min_length=1, max_length=50)
+    color_hex: Optional[str] = Field(None, max_length=9)
+    finish: Optional[str] = Field(None, max_length=50)
+    pattern: Optional[str] = Field(None, max_length=50)
+    spool_type: Optional[str] = Field(None, max_length=50)
+    diameter: float = Field(1.75, gt=0, le=5)
+    density: Optional[float] = Field(None, gt=0, le=10)
+    extruder_temp: Optional[int] = Field(None, ge=150, le=400)
+    bed_temp: Optional[int] = Field(None, ge=0, le=150)
+    translucent: bool = Field(False)
+    glow: bool = Field(False)
+    notes: Optional[str] = None
+    quantity: int = Field(..., ge=1, le=20, description="Number of spools to auto-generate")
+    initial_weight: float = Field(1000.0, gt=0, description="Initial weight per spool in grams")
+
+
+class BulkCreateResponse(BaseModel):
+    """Response schema for bulk create operation."""
+
+    filament_type_id: UUID
+    spool_ids: list[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BatchEntryRequest(BaseModel):
+    """Single entry in a batch create request."""
+
+    material_type_id: UUID = Field(..., description="Material type ID")
+    brand: str = Field(..., min_length=1, max_length=100)
+    color: str = Field(..., min_length=1, max_length=50)
+    color_hex: Optional[str] = Field(None, max_length=9)
+    finish: Optional[str] = Field(None, max_length=50)
+    pattern: Optional[str] = Field(None, max_length=50)
+    spool_type: Optional[str] = Field(None, max_length=50)
+    diameter: float = Field(1.75, gt=0, le=5)
+    density: Optional[float] = Field(None, gt=0, le=10)
+    extruder_temp: Optional[int] = Field(None, ge=150, le=400)
+    bed_temp: Optional[int] = Field(None, ge=0, le=150)
+    translucent: bool = Field(False)
+    glow: bool = Field(False)
+    notes: Optional[str] = None
+
+
+class BatchCreateRequest(BaseModel):
+    """Request schema for creating multiple spools with different colors."""
+
+    entries: list[BatchEntryRequest] = Field(
+        ..., min_length=1, description="One entry per color variant; each creates 1 spool"
+    )
+    initial_weight: float = Field(1000.0, gt=0, description="Shared weight per spool in grams")
+
+
+class BatchCreateResponse(BaseModel):
+    """Response schema for batch create operation."""
+
+    results: list[dict]
+
+    model_config = ConfigDict(from_attributes=True)

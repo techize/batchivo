@@ -13,6 +13,10 @@ from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.spool import Spool
 from app.schemas.filament_type import (
+    BatchCreateRequest,
+    BatchCreateResponse,
+    BulkCreateRequest,
+    BulkCreateResponse,
     FilamentTypeAggregatedListResponse,
     FilamentTypeAggregatedResponse,
     FilamentTypeCreate,
@@ -34,6 +38,62 @@ def filament_type_to_response(ft: FilamentType) -> dict:
         "material_type_code": ft.material_type.code if ft.material_type else "UNKNOWN",
         "material_type_name": ft.material_type.name if ft.material_type else "Unknown",
     }
+
+
+async def _next_spool_ids(db, tenant_id: UUID, count: int) -> list[str]:
+    """Return `count` sequential FIL-NNN spool IDs. Must be called within an open transaction."""
+    max_query = select(func.max(Spool.spool_id)).where(
+        Spool.tenant_id == tenant_id,
+        Spool.spool_id.like("FIL-%"),
+    )
+    max_result = await db.execute(max_query)
+    max_spool_id = max_result.scalar_one_or_none()
+    current_num = 0
+    if max_spool_id:
+        try:
+            current_num = int(max_spool_id.split("-")[1])
+        except (ValueError, IndexError):
+            current_num = 0
+    return [f"FIL-{current_num + i + 1:03d}" for i in range(count)]
+
+
+async def _find_or_create_filament_type(db, tenant_id: UUID, data) -> FilamentType:
+    """Find existing FilamentType by (tenant_id, brand, color, material_type_id) or create new one."""
+    stmt = select(FilamentType).where(
+        FilamentType.tenant_id == tenant_id,
+        FilamentType.brand == data.brand,
+        FilamentType.color == data.color,
+        FilamentType.material_type_id == data.material_type_id,
+    )
+    result = await db.execute(stmt)
+    existing = result.scalar_one_or_none()
+    if existing:
+        optional_fields = [
+            "color_hex",
+            "finish",
+            "pattern",
+            "spool_type",
+            "notes",
+            "density",
+            "extruder_temp",
+            "bed_temp",
+        ]
+        for field in optional_fields:
+            incoming_value = getattr(data, field, None)
+            if getattr(existing, field) is None and incoming_value is not None:
+                setattr(existing, field, incoming_value)
+                db.add(existing)
+        return existing
+    exclude_fields = {"quantity", "initial_weight"}
+    ft = FilamentType(
+        tenant_id=tenant_id,
+        has_sample=False,
+        **data.model_dump(exclude=exclude_fields),
+    )
+    db.add(ft)
+    await db.flush()
+    await db.refresh(ft)
+    return ft
 
 
 @router.post("", response_model=FilamentTypeResponse, status_code=status.HTTP_201_CREATED)
@@ -190,6 +250,123 @@ async def list_filament_types_aggregated(
         page=page,
         page_size=page_size,
     )
+
+
+@router.post("/bulk-create", response_model=BulkCreateResponse, status_code=status.HTTP_201_CREATED)
+async def bulk_create(
+    data: BulkCreateRequest,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: TenantDB,
+) -> BulkCreateResponse:
+    """Create multiple identical spools, auto-generating sequential FIL-NNN IDs."""
+    ft = await _find_or_create_filament_type(db, tenant.id, data)
+    spool_ids = await _next_spool_ids(db, tenant.id, data.quantity)
+    spools = [
+        Spool(
+            tenant_id=tenant.id,
+            spool_id=sid,
+            filament_type_id=ft.id,
+            initial_weight=data.initial_weight,
+            current_weight=data.initial_weight,
+            is_active=True,
+            is_labeled=False,
+        )
+        for sid in spool_ids
+    ]
+    db.add_all(spools)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        ft = await _find_or_create_filament_type(db, tenant.id, data)
+        spool_ids = await _next_spool_ids(db, tenant.id, data.quantity)
+        spools = [
+            Spool(
+                tenant_id=tenant.id,
+                spool_id=sid,
+                filament_type_id=ft.id,
+                initial_weight=data.initial_weight,
+                current_weight=data.initial_weight,
+                is_active=True,
+                is_labeled=False,
+            )
+            for sid in spool_ids
+        ]
+        db.add_all(spools)
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Spool ID collision — please retry.",
+            )
+    logger.info(
+        "bulk_create: created %d spools for FilamentType %s (tenant %s)",
+        data.quantity,
+        ft.id,
+        tenant.id,
+    )
+    return BulkCreateResponse(filament_type_id=ft.id, spool_ids=spool_ids)
+
+
+@router.post(
+    "/batch-create", response_model=BatchCreateResponse, status_code=status.HTTP_201_CREATED
+)
+async def batch_create(
+    data: BatchCreateRequest,
+    user: CurrentUser,
+    tenant: CurrentTenant,
+    db: TenantDB,
+) -> BatchCreateResponse:
+    """Create one spool per entry, supporting multiple color variants in one call."""
+    all_spool_ids = await _next_spool_ids(db, tenant.id, len(data.entries))
+    results = []
+    for i, entry in enumerate(data.entries):
+        ft = await _find_or_create_filament_type(db, tenant.id, entry)
+        db.add(
+            Spool(
+                tenant_id=tenant.id,
+                spool_id=all_spool_ids[i],
+                filament_type_id=ft.id,
+                initial_weight=data.initial_weight,
+                current_weight=data.initial_weight,
+                is_active=True,
+                is_labeled=False,
+            )
+        )
+        results.append({"filament_type_id": str(ft.id), "spool_id": all_spool_ids[i]})
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        all_spool_ids = await _next_spool_ids(db, tenant.id, len(data.entries))
+        results = []
+        for i, entry in enumerate(data.entries):
+            ft = await _find_or_create_filament_type(db, tenant.id, entry)
+            db.add(
+                Spool(
+                    tenant_id=tenant.id,
+                    spool_id=all_spool_ids[i],
+                    filament_type_id=ft.id,
+                    initial_weight=data.initial_weight,
+                    current_weight=data.initial_weight,
+                    is_active=True,
+                    is_labeled=False,
+                )
+            )
+            results.append({"filament_type_id": str(ft.id), "spool_id": all_spool_ids[i]})
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Spool ID collision — please retry.",
+            )
+    logger.info("batch_create: created %d spools for tenant %s", len(data.entries), tenant.id)
+    return BatchCreateResponse(results=results)
 
 
 @router.get("/{filament_type_id}/spools", response_model=list[SpoolInSheetResponse])
