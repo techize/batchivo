@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: verifying
 stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-05-20T09:28:30.834Z"
+last_updated: "2026-05-20T09:29:07.043Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
   percent: 25
 ---
 
@@ -30,7 +30,7 @@ Plan: 7 of 7
 Status: Phase complete — ready for verification
 Last activity: 2026-05-20
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [█████████░] 88%
 | Phase 02-consolidated-list-view P04 | 10 | 2 tasks | 3 files |
 | Phase 02-consolidated-list-view P05 | 8m | 2 tasks | 4 files |
 | Phase 02-consolidated-list-view P07 | 10m | 1 tasks | 1 files |
+| Phase 02-consolidated-list-view P06 | 525599min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - Label session workflow deferred to v2; is_labeled on Spool is still v1 so the field is ready when the session is built
 - /inventory route to be removed in Phase 2; production must remain functional during Phase 1 migration
 - [Phase ?]: Static paths must precede dynamic to avoid FastAPI matching literal strings as UUIDs
+- [Phase ?]: SpoolSheet is read-only (no edit/delete/weight update) per D-09 constraint
+- [Phase ?]: FilterSheet uses local draft state; filters apply on explicit Apply filters click
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T09:28:30.829Z
+Last session: 2026-05-20T09:28:58.767Z
 Stopped at: Phase 2 UI-SPEC approved
 Resume file: None
