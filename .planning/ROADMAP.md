@@ -148,5 +148,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Data Model Migration | 0/7 | Not started | - |
 | 2. Consolidated List View | 9/9 | Complete   | 2026-05-20 |
-| 3. Add Workflows | 0/7 | Not started | - |
+| 3. Add Workflows | 0/7 | Planned    |  |
 | 4. Detail Views | 0/TBD | Not started | - |
