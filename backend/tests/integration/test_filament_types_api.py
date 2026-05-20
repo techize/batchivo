@@ -263,68 +263,120 @@ class TestFilamentTypeAggregatedEndpoints:
     # GET /api/v1/filament-types/aggregated
     # ============================================
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_aggregated_list_returns_200_with_counts(
         self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
     ):
         """Aggregated list returns 200 with spool_count and labeled_count per row."""
-        ...
+        response = await client.get("/api/v1/filament-types/aggregated", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "total" in data
+        assert "filament_types" in data
+        assert data["total"] >= 1
+        rows = data["filament_types"]
+        row = next((r for r in rows if r["id"] == str(test_filament_type.id)), None)
+        assert row is not None
+        assert "spool_count" in row
+        assert row["spool_count"] >= 1
+        assert "labeled_count" in row
+        assert "material_type_name" in row
+        assert "material_type_code" in row
+        assert "has_sample" in row
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_aggregated_list_labeled_count_accuracy(
         self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
     ):
         """labeled_count == 0 when test_spool.is_labeled is False."""
-        ...
+        # test_spool.is_labeled is False per conftest fixture
+        response = await client.get("/api/v1/filament-types/aggregated", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        row = next((r for r in data["filament_types"] if r["id"] == str(test_filament_type.id)), None)
+        assert row is not None
+        assert row["labeled_count"] == 0  # test_spool is unlabeled
+        assert row["spool_count"] == 1    # only one spool linked to this type
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_aggregated_filter_needs_labels(
         self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
     ):
         """needs_labels=true filter returns only types with unlabeled spools."""
-        ...
+        response = await client.get(
+            "/api/v1/filament-types/aggregated?needs_labels=true", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        ids = [r["id"] for r in data["filament_types"]]
+        assert str(test_filament_type.id) in ids  # test spool is unlabeled so type shows up
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_aggregated_filter_needs_sample(
         self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
     ):
         """needs_sample=true filter returns only types without a sample."""
-        ...
+        # test_filament_type.has_sample is False per conftest fixture
+        response = await client.get(
+            "/api/v1/filament-types/aggregated?needs_sample=true", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # All returned rows should have has_sample == False
+        for row in data["filament_types"]:
+            assert row["has_sample"] is False
+        ids = [r["id"] for r in data["filament_types"]]
+        assert str(test_filament_type.id) in ids  # has_sample=False means it needs a sample
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_aggregated_requires_auth(self, unauthenticated_client: AsyncClient):
         """Aggregated list without auth returns 401 or 403."""
-        ...
+        response = await unauthenticated_client.get("/api/v1/filament-types/aggregated")
+        assert response.status_code in [401, 403]
 
     # ============================================
     # GET /api/v1/filament-types/{id}/spools
     # ============================================
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_spools_sub_resource_returns_child_spools(
         self, client: AsyncClient, auth_headers: dict, test_filament_type, test_spool
     ):
         """Spools sub-resource returns list of spools with correct fields."""
-        ...
+        response = await client.get(
+            f"/api/v1/filament-types/{test_filament_type.id}/spools", headers=auth_headers
+        )
+        assert response.status_code == 200
+        spools = response.json()
+        assert isinstance(spools, list)
+        assert len(spools) >= 1
+        spool = spools[0]
+        assert "id" in spool
+        assert "spool_id" in spool
+        assert "current_weight" in spool
+        assert "initial_weight" in spool
+        assert "is_labeled" in spool
+        assert "is_active" in spool
+        assert spool["spool_id"] == "TEST-SPOOL-001"
+        assert spool["is_labeled"] is False
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_spools_sub_resource_requires_auth(
         self, unauthenticated_client: AsyncClient, test_filament_type
     ):
         """Spools sub-resource without auth returns 401 or 403."""
-        ...
+        response = await unauthenticated_client.get(
+            f"/api/v1/filament-types/{test_filament_type.id}/spools"
+        )
+        assert response.status_code in [401, 403]
 
-    @pytest.mark.skip(reason="Wave 0 stub — filled in by Plan 07")
     @pytest.mark.asyncio
     async def test_spools_sub_resource_404_for_nonexistent(
         self, client: AsyncClient, auth_headers: dict
     ):
         """Spools sub-resource returns 404 for a random UUID not in this tenant."""
-        ...
+        response = await client.get(
+            "/api/v1/filament-types/00000000-0000-0000-0000-000000000000/spools",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
