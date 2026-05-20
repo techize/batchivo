@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react'
-import { Search, Filter } from 'lucide-react'
+import { Search, Filter, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +22,7 @@ import { FilamentTypeCard } from '@/components/filaments/FilamentTypeCard'
 import { FilamentTypeRow } from '@/components/filaments/FilamentTypeRow'
 import { FilamentTypeSpoolSheet } from '@/components/filaments/FilamentTypeSpoolSheet'
 import { FilamentTypeFilterSheet } from '@/components/filaments/FilamentTypeFilterSheet'
+import { AddFilamentDialog } from '@/components/filaments/AddFilamentDialog'
 
 export function FilamentLibrary() {
   const [spoolSheetFilamentTypeId, setSpoolSheetFilamentTypeId] = useState<string | null>(null)
@@ -29,6 +30,7 @@ export function FilamentLibrary() {
     string | undefined
   >(undefined)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [params, setParams] = useState<FilamentTypeListParams>({ page: 1, page_size: 20 })
 
   const { data, isLoading, isError, error, refetch } = useFilamentTypes(params)
@@ -101,6 +103,10 @@ export function FilamentLibrary() {
               {activeFilterCount}
             </Badge>
           )}
+        </Button>
+        <Button variant="default" onClick={() => setAddDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Filament
         </Button>
       </div>
 
@@ -249,6 +255,7 @@ export function FilamentLibrary() {
         params={params}
         onParamsChange={(newParams: FilamentTypeListParams) => setParams(newParams)}
       />
+      <AddFilamentDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   )
 }
