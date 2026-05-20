@@ -85,7 +85,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-07-PLAN.md — Backend integration tests for aggregated endpoint + spools sub-resource
+- [x] 02-07-PLAN.md — Backend integration tests for aggregated endpoint + spools sub-resource
 - [ ] 02-08-PLAN.md — Frontend tests: App.test.tsx (redirect) + FilamentTypeCard.test.tsx
 
 ### Phase 3: Add Workflows
@@ -126,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Model Migration | 0/7 | Not started | - |
-| 2. Consolidated List View | 6/9 | In Progress|  |
+| 2. Consolidated List View | 7/9 | In Progress|  |
 | 3. Add Workflows | 0/TBD | Not started | - |
 | 4. Detail Views | 0/TBD | Not started | - |
