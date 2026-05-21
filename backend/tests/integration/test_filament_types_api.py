@@ -295,10 +295,12 @@ class TestFilamentTypeAggregatedEndpoints:
         response = await client.get("/api/v1/filament-types/aggregated", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        row = next((r for r in data["filament_types"] if r["id"] == str(test_filament_type.id)), None)
+        row = next(
+            (r for r in data["filament_types"] if r["id"] == str(test_filament_type.id)), None
+        )
         assert row is not None
         assert row["labeled_count"] == 0  # test_spool is unlabeled
-        assert row["spool_count"] == 1    # only one spool linked to this type
+        assert row["spool_count"] == 1  # only one spool linked to this type
 
     @pytest.mark.asyncio
     async def test_aggregated_filter_needs_labels(
@@ -603,8 +605,16 @@ class TestBatchCreate:
         payload = _batch_payload(
             test_material_type,
             entries=[
-                {"material_type_id": str(test_material_type.id), "brand": "JAYO", "color": "Purple"},
-                {"material_type_id": str(test_material_type.id), "brand": "JAYO", "color": "Yellow"},
+                {
+                    "material_type_id": str(test_material_type.id),
+                    "brand": "JAYO",
+                    "color": "Purple",
+                },
+                {
+                    "material_type_id": str(test_material_type.id),
+                    "brand": "JAYO",
+                    "color": "Yellow",
+                },
             ],
         )
         response = await client.post(

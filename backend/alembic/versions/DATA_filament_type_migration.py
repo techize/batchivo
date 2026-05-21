@@ -50,9 +50,7 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     # Step 1: FAIL FAST — abort if any spool has NULL brand or NULL color
     # ------------------------------------------------------------------
-    result = conn.execute(
-        sa.text("SELECT id FROM spools WHERE brand IS NULL OR color IS NULL")
-    )
+    result = conn.execute(sa.text("SELECT id FROM spools WHERE brand IS NULL OR color IS NULL"))
     bad_rows = result.fetchall()
     if bad_rows:
         bad_ids = [str(row[0]) for row in bad_rows]
@@ -392,18 +390,10 @@ def downgrade() -> None:
     # ------------------------------------------------------------------
     # Step 3: Drop RLS policies from filament_types before dropping table
     # ------------------------------------------------------------------
-    op.execute(
-        sa.text("DROP POLICY IF EXISTS tenant_isolation_select ON filament_types")
-    )
-    op.execute(
-        sa.text("DROP POLICY IF EXISTS tenant_isolation_insert ON filament_types")
-    )
-    op.execute(
-        sa.text("DROP POLICY IF EXISTS tenant_isolation_update ON filament_types")
-    )
-    op.execute(
-        sa.text("DROP POLICY IF EXISTS tenant_isolation_delete ON filament_types")
-    )
+    op.execute(sa.text("DROP POLICY IF EXISTS tenant_isolation_select ON filament_types"))
+    op.execute(sa.text("DROP POLICY IF EXISTS tenant_isolation_insert ON filament_types"))
+    op.execute(sa.text("DROP POLICY IF EXISTS tenant_isolation_update ON filament_types"))
+    op.execute(sa.text("DROP POLICY IF EXISTS tenant_isolation_delete ON filament_types"))
 
     # ------------------------------------------------------------------
     # Step 4: Drop indexes and filament_types table

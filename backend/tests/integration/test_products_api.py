@@ -354,8 +354,8 @@ class TestProductListDetailConsistency:
             "shop_visible",
         ]
         for field in fields:
-            assert (
-                listed[field] == detail[field]
-            ), f"Field '{field}' differs: list={listed[field]!r}, detail={detail[field]!r}"
+            assert listed[field] == detail[field], (
+                f"Field '{field}' differs: list={listed[field]!r}, detail={detail[field]!r}"
+            )
 
         await client.delete(f"/api/v1/products/{product_id}", headers=auth_headers)

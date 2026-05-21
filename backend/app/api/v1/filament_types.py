@@ -151,8 +151,7 @@ async def list_filament_types(
 
     if search:
         query = query.where(
-            FilamentType.brand.ilike(f"%{search}%")
-            | FilamentType.color.ilike(f"%{search}%")
+            FilamentType.brand.ilike(f"%{search}%") | FilamentType.color.ilike(f"%{search}%")
         )
 
     if material_type_id:
@@ -206,7 +205,9 @@ async def list_filament_types_aggregated(
             func.count(Spool.id).label("spool_count"),
             func.count(case((Spool.is_labeled == True, Spool.id))).label("labeled_count"),  # noqa: E712
         )
-        .outerjoin(Spool, (Spool.filament_type_id == FilamentType.id) & (Spool.tenant_id == tenant.id))
+        .outerjoin(
+            Spool, (Spool.filament_type_id == FilamentType.id) & (Spool.tenant_id == tenant.id)
+        )
         .outerjoin(MaterialType, MaterialType.id == FilamentType.material_type_id)
         .where(FilamentType.tenant_id == tenant.id)
         .group_by(

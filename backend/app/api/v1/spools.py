@@ -41,9 +41,7 @@ async def ensure_material_type_exists(db: AsyncSession, material_type_id: UUID) 
 
 async def ensure_filament_type_exists(db: AsyncSession, filament_type_id: UUID) -> None:
     """Validate that a filament type exists before writing a spool FK."""
-    result = await db.execute(
-        select(FilamentType.id).where(FilamentType.id == filament_type_id)
-    )
+    result = await db.execute(select(FilamentType.id).where(FilamentType.id == filament_type_id))
     if result.scalar_one_or_none() is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

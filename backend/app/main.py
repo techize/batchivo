@@ -68,7 +68,9 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs" if settings.is_development else None,  # Disable in production
     redoc_url="/redoc" if settings.is_development else None,
-    openapi_url="/openapi.json" if settings.is_development else None,  # Disable schema in production
+    openapi_url="/openapi.json"
+    if settings.is_development
+    else None,  # Disable schema in production
     redirect_slashes=False,  # Don't auto-redirect trailing slashes (causes CORS issues)
 )
 
@@ -240,7 +242,11 @@ app.include_router(users.router, prefix=f"{settings.api_v1_prefix}/users", tags=
 if settings.environment != "production":
     app.include_router(test.router, prefix=f"{settings.api_v1_prefix}/test", tags=["test"])
 app.include_router(spools.router, prefix=f"{settings.api_v1_prefix}/spools", tags=["spools"])
-app.include_router(filament_types.router, prefix=f"{settings.api_v1_prefix}/filament-types", tags=["filament-types"])
+app.include_router(
+    filament_types.router,
+    prefix=f"{settings.api_v1_prefix}/filament-types",
+    tags=["filament-types"],
+)
 app.include_router(
     consumables.router, prefix=f"{settings.api_v1_prefix}/consumables", tags=["consumables"]
 )

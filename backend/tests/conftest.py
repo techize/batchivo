@@ -397,9 +397,7 @@ async def test_filament_type(
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_spool(
-    db_session: AsyncSession, test_tenant: Tenant, test_filament_type
-) -> Spool:
+async def test_spool(db_session: AsyncSession, test_tenant: Tenant, test_filament_type) -> Spool:
     """Create a test spool linked to test_filament_type."""
     spool = Spool(
         id=uuid4(),
