@@ -439,6 +439,7 @@ class TestApplicationLevelIsolation:
             return tenant_a
 
         app.dependency_overrides[get_db] = override_get_db
+        app.dependency_overrides[get_tenant_db] = override_get_db
         app.dependency_overrides[get_current_user] = override_get_current_user
         app.dependency_overrides[get_current_tenant] = override_get_current_tenant
 
@@ -498,6 +499,7 @@ class TestApplicationLevelIsolation:
             return tenant_a
 
         app.dependency_overrides[get_db] = override_get_db
+        app.dependency_overrides[get_tenant_db] = override_get_db
         app.dependency_overrides[get_current_user] = override_get_current_user
         app.dependency_overrides[get_current_tenant] = override_get_current_tenant
 
