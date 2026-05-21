@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-if TYPE_CHECKING:
-    from app.schemas.filament_type import FilamentTypeResponse
+from app.schemas.filament_type import FilamentTypeResponse
 
 
 # Base schema with common fields
@@ -83,7 +82,7 @@ class SpoolResponse(SpoolBase):
     remaining_percentage: float = Field(..., description="Remaining percentage")
 
     # FilamentType info (nested)
-    filament_type: Optional["FilamentTypeResponse"] = None
+    filament_type: Optional[FilamentTypeResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 
