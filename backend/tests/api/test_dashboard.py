@@ -8,6 +8,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.production_run import ProductionRun
 from app.models.spool import Spool
@@ -93,14 +94,25 @@ async def low_stock_spool(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create a low stock spool."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
-        spool_id="SPL-LOW-001",
+        material_type_id=test_material_type.id,
         brand="TestBrand",
         color="Red",
         color_hex="#FF0000",
-        material_type_id=test_material_type.id,
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="SPL-LOW-001",
         initial_weight=1000.0,
         current_weight=50.0,  # 5% remaining
         is_active=True,

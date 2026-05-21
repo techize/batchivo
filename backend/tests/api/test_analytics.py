@@ -8,6 +8,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.model import Model
 from app.models.product import Product
@@ -68,14 +69,25 @@ async def analytics_spool(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create a test spool for analytics."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
-        spool_id="SPL-ANALYTICS-001",
+        material_type_id=test_material_type.id,
         brand="TestBrand",
         color="Blue",
         color_hex="#0000FF",
-        material_type_id=test_material_type.id,
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="SPL-ANALYTICS-001",
         initial_weight=1000.0,
         current_weight=800.0,
         is_active=True,

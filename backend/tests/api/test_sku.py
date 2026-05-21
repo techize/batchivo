@@ -8,6 +8,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.consumable import ConsumableType
+from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.model import Model
 from app.models.product import Product
@@ -86,13 +87,24 @@ class TestSKUEndpoints:
         test_material_type: MaterialType,
     ) -> Spool:
         """Create a spool with specific SKU."""
-        spool = Spool(
+        ft = FilamentType(
             id=uuid4(),
             tenant_id=test_tenant.id,
             material_type_id=test_material_type.id,
-            spool_id="FIL-022",
             brand="Test Brand",
             color="Red",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft)
+        await db_session.flush()
+        spool = Spool(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            filament_type_id=ft.id,
+            spool_id="FIL-022",
             initial_weight=1000.0,
             current_weight=1000.0,
             is_active=True,

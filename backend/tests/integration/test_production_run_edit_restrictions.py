@@ -15,8 +15,10 @@ Scenarios Covered:
 import pytest
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
+from uuid import uuid4
 from httpx import AsyncClient
 
+from app.models.filament_type import FilamentType
 from app.models.production_run import ProductionRun, ProductionRunItem, ProductionRunMaterial
 from app.models.spool import Spool
 
@@ -297,17 +299,25 @@ class TestProductionRunEditRestrictions:
     ):
         """Test that materials cannot be updated on completed production runs."""
         # Create spool using test_material_type fixture
-        spool = Spool(
+        ft = FilamentType(
+            id=uuid4(),
             tenant_id=test_tenant.id,
-            spool_id="FIL-002",
             material_type_id=test_material_type.id,
             brand="eSun",
             color="Red",
             diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft)
+        await db_session.flush()
+        spool = Spool(
+            tenant_id=test_tenant.id,
+            filament_type_id=ft.id,
+            spool_id="FIL-002",
             initial_weight=1000,
             current_weight=600,
-            purchased_quantity=1,
-            purchase_date=datetime.now(timezone.utc).date(),
             purchase_price=Decimal("25.00"),
             is_active=True,
         )
@@ -395,17 +405,25 @@ class TestProductionRunEditRestrictions:
     ):
         """Test that materials CAN be updated on in_progress production runs."""
         # Create spool using test_material_type fixture
-        spool = Spool(
+        ft = FilamentType(
+            id=uuid4(),
             tenant_id=test_tenant.id,
-            spool_id="FIL-003",
             material_type_id=test_material_type.id,
             brand="eSun",
             color="Green",
             diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft)
+        await db_session.flush()
+        spool = Spool(
+            tenant_id=test_tenant.id,
+            filament_type_id=ft.id,
+            spool_id="FIL-003",
             initial_weight=1000,
             current_weight=700,
-            purchased_quantity=1,
-            purchase_date=datetime.now(timezone.utc).date(),
             purchase_price=Decimal("25.00"),
             is_active=True,
         )

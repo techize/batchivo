@@ -9,6 +9,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.inventory_transaction import TransactionType
 from app.models.spool import Spool
 from app.models.tenant import Tenant
@@ -208,13 +209,24 @@ class TestInventoryTransactionService:
         service = InventoryTransactionService(db_session, test_tenant, test_user)
 
         # Create another spool
-        other_spool = Spool(
+        ft_other = FilamentType(
             id=uuid4(),
             tenant_id=test_tenant.id,
             material_type_id=test_material_type.id,
-            spool_id="OTHER-SPOOL-001",
             brand="Other Brand",
             color="Blue",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft_other)
+        await db_session.flush()
+        other_spool = Spool(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            filament_type_id=ft_other.id,
+            spool_id="OTHER-SPOOL-001",
             initial_weight=1000.0,
             current_weight=900.0,
             is_active=True,

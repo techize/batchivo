@@ -18,6 +18,15 @@ from app.schemas.spool import SpoolCreate, SpoolListResponse, SpoolResponse, Spo
 router = APIRouter()
 
 
+def _filament_type_dict(ft: FilamentType) -> dict:
+    """Build a serialisable dict for FilamentType, including computed material fields."""
+    return {
+        **ft.__dict__,
+        "material_type_code": ft.material_type.code if ft.material_type else "UNKNOWN",
+        "material_type_name": ft.material_type.name if ft.material_type else "Unknown",
+    }
+
+
 # Helper function to convert Spool model to response schema
 def spool_to_response(spool: Spool) -> dict:
     """Convert Spool model to response dict."""
@@ -25,7 +34,7 @@ def spool_to_response(spool: Spool) -> dict:
         **spool.__dict__,
         "remaining_weight": spool.remaining_weight,
         "remaining_percentage": spool.remaining_percentage,
-        "filament_type": spool.filament_type,
+        "filament_type": _filament_type_dict(spool.filament_type) if spool.filament_type else None,
     }
 
 

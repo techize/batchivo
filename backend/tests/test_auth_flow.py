@@ -13,6 +13,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.spool import Spool
 from app.models.tenant import Tenant
@@ -210,14 +211,25 @@ class TestAuthenticationFlow:
         # Pick PLA material
         pla_material = next(m for m in materials if m["code"] == "PLA")
 
-        # Create spool with PLA
+        # First create a FilamentType for the spool
+        ft_response = await client.post(
+            "/api/v1/filament-types",
+            headers=auth_headers,
+            json={
+                "material_type_id": pla_material["id"],
+                "brand": "Test Brand",
+                "color": "Red",
+                "finish": "matte",
+                "diameter": 1.75,
+            },
+        )
+        assert ft_response.status_code == 201, f"Failed to create filament type: {ft_response.text}"
+        filament_type = ft_response.json()
+
+        # Create spool with the filament type
         spool_data = {
             "spool_id": "TEST-001",
-            "brand": "Test Brand",
-            "material_type_id": pla_material["id"],
-            "color": "Red",
-            "finish": "matte",
-            "diameter": 1.75,
+            "filament_type_id": filament_type["id"],
             "initial_weight": 1000.0,
             "current_weight": 1000.0,
         }
@@ -230,9 +242,9 @@ class TestAuthenticationFlow:
         assert create_response.status_code == 201, f"Failed to create spool: {create_response.text}"
         created_spool = create_response.json()
 
-        # Verify spool has correct material type
-        assert created_spool["material_type_code"] == "PLA"
-        assert created_spool["material_type_name"] == pla_material["name"]
+        # Verify spool has correct material type (now via nested filament_type)
+        assert created_spool["filament_type"]["material_type_code"] == "PLA"
+        assert created_spool["filament_type"]["material_type_name"] == pla_material["name"]
         assert created_spool["spool_id"] == "TEST-001"
 
     @pytest.mark.asyncio
@@ -357,15 +369,40 @@ class TestAuthenticationFlow:
         result = await db.execute(select(MaterialType).limit(1))
         material_type = result.scalar_one()
 
-        # Create spool for tenant 1
-        spool1 = Spool(
+        # Create FilamentTypes for each tenant before creating spools
+        from uuid import uuid4 as _uuid4
+        ft1 = FilamentType(
+            id=_uuid4(),
             tenant_id=tenant1.id,
-            spool_id="T1-SPOOL-001",
-            brand="Brand 1",
             material_type_id=material_type.id,
+            brand="Brand 1",
             color="Blue",
             finish="matte",
             diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        ft2 = FilamentType(
+            id=_uuid4(),
+            tenant_id=tenant2.id,
+            material_type_id=material_type.id,
+            brand="Brand 2",
+            color="Green",
+            finish="matte",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db.add_all([ft1, ft2])
+        await db.flush()
+
+        # Create spool for tenant 1
+        spool1 = Spool(
+            tenant_id=tenant1.id,
+            filament_type_id=ft1.id,
+            spool_id="T1-SPOOL-001",
             initial_weight=1000.0,
             current_weight=1000.0,
         )
@@ -374,12 +411,8 @@ class TestAuthenticationFlow:
         # Create spool for tenant 2
         spool2 = Spool(
             tenant_id=tenant2.id,
+            filament_type_id=ft2.id,
             spool_id="T2-SPOOL-001",
-            brand="Brand 2",
-            material_type_id=material_type.id,
-            color="Green",
-            finish="matte",
-            diameter=1.75,
             initial_weight=1000.0,
             current_weight=1000.0,
         )

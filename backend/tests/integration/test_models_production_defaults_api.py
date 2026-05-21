@@ -8,6 +8,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.model import Model
 from app.models.model_material import ModelMaterial
 from app.models.spool import Spool
@@ -69,14 +70,37 @@ async def test_model_with_multi_material_bom(
     await db_session.flush()
 
     # Create multiple spools
-    spool_blue = Spool(
+    ft_blue = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="TEST-BLUE-001",
         brand="eSun",
         color="Blue",
         color_hex="#0000FF",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    ft_red = FilamentType(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        material_type_id=test_material_type.id,
+        brand="eSun",
+        color="Red",
+        color_hex="#FF0000",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add_all([ft_blue, ft_red])
+    await db_session.flush()
+    spool_blue = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft_blue.id,
+        spool_id="TEST-BLUE-001",
         initial_weight=Decimal("1000.0"),
         current_weight=Decimal("800.0"),
         purchase_price=Decimal("25.00"),
@@ -85,11 +109,8 @@ async def test_model_with_multi_material_bom(
     spool_red = Spool(
         id=uuid4(),
         tenant_id=test_tenant.id,
-        material_type_id=test_material_type.id,
+        filament_type_id=ft_red.id,
         spool_id="TEST-RED-001",
-        brand="eSun",
-        color="Red",
-        color_hex="#FF0000",
         initial_weight=Decimal("1000.0"),
         current_weight=Decimal("600.0"),
         purchase_price=Decimal("25.00"),
@@ -142,14 +163,25 @@ async def test_model_with_inactive_spool_bom(
     await db_session.flush()
 
     # Create inactive spool (empty/depleted)
-    spool_inactive = Spool(
+    ft_inactive = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="TEST-INACTIVE-001",
         brand="Generic",
         color="Black",
         color_hex="#000000",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft_inactive)
+    await db_session.flush()
+    spool_inactive = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft_inactive.id,
+        spool_id="TEST-INACTIVE-001",
         initial_weight=Decimal("1000.0"),
         current_weight=Decimal("0.0"),  # Empty
         purchase_price=Decimal("20.00"),
@@ -609,14 +641,37 @@ class TestModelsProductionDefaultsEndpoint:
         await db_session.flush()
 
         # Create multiple spools
-        spool_primary = Spool(
+        ft_primary = FilamentType(
             id=uuid4(),
             tenant_id=test_tenant.id,
             material_type_id=test_material_type.id,
-            spool_id="PRIMARY-001",
             brand="eSun",
             color="Black",
             color_hex="#000000",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        ft_support = FilamentType(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            material_type_id=test_material_type.id,
+            brand="Generic",
+            color="White",
+            color_hex="#FFFFFF",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add_all([ft_primary, ft_support])
+        await db_session.flush()
+        spool_primary = Spool(
+            id=uuid4(),
+            tenant_id=test_tenant.id,
+            filament_type_id=ft_primary.id,
+            spool_id="PRIMARY-001",
             initial_weight=Decimal("1000.0"),
             current_weight=Decimal("900.0"),
             purchase_price=Decimal("25.00"),
@@ -625,11 +680,8 @@ class TestModelsProductionDefaultsEndpoint:
         spool_support = Spool(
             id=uuid4(),
             tenant_id=test_tenant.id,
-            material_type_id=test_material_type.id,
+            filament_type_id=ft_support.id,
             spool_id="SUPPORT-001",
-            brand="Generic",
-            color="White",
-            color_hex="#FFFFFF",
             initial_weight=Decimal("1000.0"),
             current_weight=Decimal("800.0"),
             purchase_price=Decimal("20.00"),

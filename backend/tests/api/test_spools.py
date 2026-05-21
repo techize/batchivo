@@ -6,6 +6,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.spool import Spool
 from app.models.tenant import Tenant
@@ -23,14 +24,25 @@ async def second_spool(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create a second test spool."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="FIL-002",
         brand="Second Brand",
         color="Blue",
         color_hex="#0000FF",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="FIL-002",
         initial_weight=1000.0,
         current_weight=500.0,
         is_active=True,
@@ -48,13 +60,24 @@ async def inactive_spool(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create an inactive spool."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="FIL-003",
         brand="Inactive Brand",
         color="Green",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="FIL-003",
         initial_weight=1000.0,
         current_weight=0.0,
         is_active=False,
@@ -72,13 +95,24 @@ async def low_stock_spool(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create a low stock spool (<20% remaining)."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="FIL-004",
         brand="Low Stock Brand",
         color="Yellow",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="FIL-004",
         initial_weight=1000.0,
         current_weight=100.0,  # 10% remaining
         is_active=True,
@@ -112,16 +146,14 @@ class TestCreateSpool:
     async def test_create_spool(
         self,
         client: AsyncClient,
-        test_material_type: MaterialType,
+        test_filament_type,
     ):
         """Test creating a new spool."""
         response = await client.post(
             "/api/v1/spools",
             json={
                 "spool_id": "NEW-SPOOL-001",
-                "material_type_id": str(test_material_type.id),
-                "brand": "New Brand",
-                "color": "Purple",
+                "filament_type_id": str(test_filament_type.id),
                 "initial_weight": 1000.0,
                 "current_weight": 1000.0,
             },
@@ -129,52 +161,34 @@ class TestCreateSpool:
         assert response.status_code == 201
         data = response.json()
         assert data["spool_id"] == "NEW-SPOOL-001"
-        assert data["brand"] == "New Brand"
-        assert data["color"] == "Purple"
+        assert data["filament_type"]["brand"] == "Test Brand"
+        assert data["filament_type"]["color"] == "Red"
         assert data["initial_weight"] == 1000.0
         assert data["current_weight"] == 1000.0
-        assert data["material_type_code"] == "PLA"
+        assert data["filament_type"]["material_type_code"] == "PLA"
 
     async def test_create_spool_with_all_fields(
         self,
         client: AsyncClient,
-        test_material_type: MaterialType,
+        test_filament_type,
     ):
         """Test creating spool with all optional fields."""
         response = await client.post(
             "/api/v1/spools",
             json={
                 "spool_id": "FULL-SPOOL-001",
-                "material_type_id": str(test_material_type.id),
-                "brand": "Full Brand",
-                "color": "Orange",
-                "color_hex": "#FF5500",
-                "finish": "matte",
-                "diameter": 1.75,
-                "density": 1.24,
-                "extruder_temp": 210,
-                "bed_temp": 60,
-                "translucent": False,
-                "glow": False,
-                "pattern": None,
-                "spool_type": "cardboard",
+                "filament_type_id": str(test_filament_type.id),
                 "initial_weight": 1000.0,
                 "current_weight": 1000.0,
                 "empty_spool_weight": 150.0,
                 "purchase_price": 25.99,
                 "supplier": "Amazon",
-                "purchased_quantity": 1,
-                "spools_remaining": 1,
                 "storage_location": "Shelf A",
-                "notes": "Test spool",
                 "is_active": True,
             },
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["finish"] == "matte"
-        assert data["extruder_temp"] == 210
-        assert data["bed_temp"] == 60
         assert data["supplier"] == "Amazon"
         assert data["storage_location"] == "Shelf A"
 
@@ -196,12 +210,12 @@ class TestCreateSpool:
         unauthenticated_client: AsyncClient,
     ):
         """Test that unauthenticated requests are rejected."""
+        from uuid import uuid4 as _uuid4
         response = await unauthenticated_client.post(
             "/api/v1/spools",
             json={
                 "spool_id": "TEST",
-                "brand": "Test",
-                "color": "Red",
+                "filament_type_id": str(_uuid4()),
                 "initial_weight": 1000,
                 "current_weight": 1000,
             },
@@ -261,7 +275,7 @@ class TestListSpools:
         response = await client.get("/api/v1/spools?search=Second")
         assert response.status_code == 200
         data = response.json()
-        assert all("Second" in s["brand"] for s in data["spools"])
+        assert all("Second" in s["filament_type"]["brand"] for s in data["spools"])
 
     async def test_list_spools_search_by_color(
         self,
@@ -273,7 +287,7 @@ class TestListSpools:
         response = await client.get("/api/v1/spools?search=Blue")
         assert response.status_code == 200
         data = response.json()
-        assert all("Blue" in s["color"] for s in data["spools"])
+        assert all("Blue" in s["filament_type"]["color"] for s in data["spools"])
 
     async def test_list_spools_filter_by_material_type(
         self,
@@ -285,7 +299,7 @@ class TestListSpools:
         response = await client.get(f"/api/v1/spools?material_type_id={test_material_type.id}")
         assert response.status_code == 200
         data = response.json()
-        assert all(s["material_type_code"] == "PLA" for s in data["spools"])
+        assert all(s["filament_type"]["material_type_code"] == "PLA" for s in data["spools"])
 
     async def test_list_spools_filter_active_only(
         self,
@@ -334,8 +348,8 @@ class TestGetSpool:
         data = response.json()
         assert data["id"] == str(test_spool.id)
         assert data["spool_id"] == test_spool.spool_id
-        assert data["brand"] == test_spool.brand
-        assert data["color"] == test_spool.color
+        assert data["filament_type"]["brand"] == test_spool.filament_type.brand
+        assert data["filament_type"]["color"] == test_spool.filament_type.color
 
     async def test_get_spool_includes_computed_fields(
         self,
@@ -348,8 +362,8 @@ class TestGetSpool:
         data = response.json()
         assert "remaining_weight" in data
         assert "remaining_percentage" in data
-        assert "material_type_code" in data
-        assert "material_type_name" in data
+        assert "material_type_code" in data["filament_type"]
+        assert "material_type_name" in data["filament_type"]
         assert data["remaining_percentage"] == 80.0  # 800/1000 * 100
 
     async def test_get_spool_not_found(
@@ -383,14 +397,14 @@ class TestUpdateSpool:
         response = await client.put(
             f"/api/v1/spools/{test_spool.id}",
             json={
-                "brand": "Updated Brand",
-                "color": "Updated Color",
+                "storage_location": "Updated Location",
+                "supplier": "Updated Supplier",
             },
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["brand"] == "Updated Brand"
-        assert data["color"] == "Updated Color"
+        assert data["storage_location"] == "Updated Location"
+        assert data["supplier"] == "Updated Supplier"
 
     async def test_update_spool_current_weight(
         self,
@@ -433,7 +447,7 @@ class TestUpdateSpool:
         fake_id = uuid4()
         response = await client.put(
             f"/api/v1/spools/{fake_id}",
-            json={"brand": "New Brand"},
+            json={"supplier": "New Supplier"},
         )
         assert response.status_code == 404
 
@@ -445,7 +459,7 @@ class TestUpdateSpool:
         """Test that unauthenticated requests are rejected."""
         response = await unauthenticated_client.put(
             f"/api/v1/spools/{test_spool.id}",
-            json={"brand": "Updated"},
+            json={"supplier": "Updated"},
         )
         assert response.status_code == 401
 
@@ -492,13 +506,24 @@ async def spool_with_fil_prefix(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create a spool with FIL- prefix for ID generation tests."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="FIL-005",
         brand="FIL Brand",
         color="Pink",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="FIL-005",
         initial_weight=1000.0,
         current_weight=1000.0,
         is_active=True,
@@ -516,13 +541,24 @@ async def spool_with_invalid_fil_suffix(
     test_material_type: MaterialType,
 ) -> Spool:
     """Create a spool with invalid FIL- suffix for edge case testing."""
-    spool = Spool(
+    ft = FilamentType(
         id=uuid4(),
         tenant_id=test_tenant.id,
         material_type_id=test_material_type.id,
-        spool_id="FIL-ABC",  # Non-numeric suffix
         brand="Invalid Brand",
         color="White",
+        diameter=1.75,
+        has_sample=False,
+        translucent=False,
+        glow=False,
+    )
+    db_session.add(ft)
+    await db_session.flush()
+    spool = Spool(
+        id=uuid4(),
+        tenant_id=test_tenant.id,
+        filament_type_id=ft.id,
+        spool_id="FIL-ABC",  # Non-numeric suffix
         initial_weight=1000.0,
         current_weight=1000.0,
         is_active=True,
@@ -550,10 +586,10 @@ class TestDuplicateSpool:
         assert data["id"] != str(test_spool.id)
         assert data["spool_id"] != test_spool.spool_id
 
-        # Should preserve other attributes
-        assert data["brand"] == test_spool.brand
-        assert data["color"] == test_spool.color
-        assert data["material_type_code"] == "PLA"
+        # Should preserve other attributes (filament_type is shared)
+        assert data["filament_type"]["brand"] == test_spool.filament_type.brand
+        assert data["filament_type"]["color"] == test_spool.filament_type.color
+        assert data["filament_type"]["material_type_code"] == "PLA"
 
         # Duplicated spool should have full weight
         assert data["current_weight"] == float(test_spool.initial_weight)
@@ -734,7 +770,7 @@ class TestSpoolProperties:
     async def test_spool_zero_initial_weight(
         self,
         client: AsyncClient,
-        test_material_type: MaterialType,
+        test_filament_type,
     ):
         """Test spool with edge case initial weight."""
         # Create spool with very small initial weight
@@ -742,9 +778,7 @@ class TestSpoolProperties:
             "/api/v1/spools",
             json={
                 "spool_id": "SMALL-SPOOL",
-                "material_type_id": str(test_material_type.id),
-                "brand": "Small Brand",
-                "color": "Mini",
+                "filament_type_id": str(test_filament_type.id),
                 "initial_weight": 100.0,
                 "current_weight": 50.0,
             },
@@ -756,16 +790,14 @@ class TestSpoolProperties:
     async def test_spool_fully_used(
         self,
         client: AsyncClient,
-        test_material_type: MaterialType,
+        test_filament_type,
     ):
         """Test spool with zero current weight."""
         response = await client.post(
             "/api/v1/spools",
             json={
                 "spool_id": "EMPTY-SPOOL",
-                "material_type_id": str(test_material_type.id),
-                "brand": "Empty Brand",
-                "color": "Clear",
+                "filament_type_id": str(test_filament_type.id),
                 "initial_weight": 1000.0,
                 "current_weight": 0.0,
             },
@@ -778,36 +810,34 @@ class TestSpoolProperties:
 class TestFKConstraintErrors:
     """Regression tests for MYS-475: FK constraint violations return 400, not 500."""
 
-    async def test_create_spool_invalid_material_type_returns_400(
+    async def test_create_spool_invalid_filament_type_returns_400(
         self,
         client: AsyncClient,
     ):
-        """Regression test: POSTing with a non-existent material_type_id returns 400."""
+        """Regression test: POSTing with a non-existent filament_type_id returns 400."""
         nonexistent_id = str(uuid4())
         response = await client.post(
             "/api/v1/spools",
             json={
                 "spool_id": "FK-TEST-001",
-                "material_type_id": nonexistent_id,
-                "brand": "FK Test Brand",
-                "color": "Red",
+                "filament_type_id": nonexistent_id,
                 "initial_weight": 1000.0,
                 "current_weight": 1000.0,
             },
         )
         assert response.status_code == 400
 
-    async def test_update_spool_invalid_material_type_returns_400(
+    async def test_update_spool_invalid_filament_type_returns_400(
         self,
         client: AsyncClient,
         test_spool: Spool,
     ):
-        """Regression test: PUTting a non-existent material_type_id returns 400."""
+        """Regression test: PUTting a non-existent filament_type_id returns 400."""
         nonexistent_id = str(uuid4())
         response = await client.put(
             f"/api/v1/spools/{test_spool.id}",
             json={
-                "material_type_id": nonexistent_id,
+                "filament_type_id": nonexistent_id,
             },
         )
         assert response.status_code == 400

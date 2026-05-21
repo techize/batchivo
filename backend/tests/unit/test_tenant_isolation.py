@@ -13,6 +13,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.filament_type import FilamentType
 from app.models.tenant import Tenant, TenantType
 from app.models.user import User, UserTenant, UserRole
 from app.models.product import Product
@@ -314,13 +315,24 @@ class TestSpoolTenantIsolation:
     ):
         """Test that spool queries are filtered by tenant."""
         # Create a spool for second tenant
-        spool_b = Spool(
+        ft_b = FilamentType(
             id=uuid4(),
             tenant_id=second_tenant.id,
             material_type_id=test_material_type.id,
-            spool_id="SPOOL-B-001",
             brand="Brand B",
             color="Blue",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft_b)
+        await db_session.flush()
+        spool_b = Spool(
+            id=uuid4(),
+            tenant_id=second_tenant.id,
+            filament_type_id=ft_b.id,
+            spool_id="SPOOL-B-001",
             initial_weight=1000.0,
             current_weight=1000.0,
             purchase_price=Decimal("30.00"),

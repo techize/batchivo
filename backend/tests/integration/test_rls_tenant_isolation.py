@@ -27,6 +27,7 @@ from app.auth.dependencies import get_tenant_db
 from app.auth.middleware import TenantContextMiddleware
 from app.database import get_db
 from app.main import app
+from app.models.filament_type import FilamentType
 from app.models.spool import Spool
 from app.models.tenant import Tenant
 from app.models.user import User, UserTenant, UserRole
@@ -125,14 +126,25 @@ async def spools_tenant_a(
 ) -> list[Spool]:
     """Create test spools for Tenant A."""
     spools = []
-    for i in range(3):
-        spool = Spool(
+    for i, color in enumerate(["Red", "Blue", "Green"]):
+        ft = FilamentType(
             id=uuid4(),
             tenant_id=tenant_a.id,
             material_type_id=test_material_type.id,
-            spool_id=f"TENANT-A-SPOOL-{i + 1:03d}",
             brand="Bambu Lab",
-            color=["Red", "Blue", "Green"][i],
+            color=color,
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft)
+        await db_session.flush()
+        spool = Spool(
+            id=uuid4(),
+            tenant_id=tenant_a.id,
+            filament_type_id=ft.id,
+            spool_id=f"TENANT-A-SPOOL-{i + 1:03d}",
             initial_weight=1000.0,
             current_weight=800.0 - (i * 100),
             purchase_price=Decimal("25.00"),
@@ -152,14 +164,25 @@ async def spools_tenant_b(
 ) -> list[Spool]:
     """Create test spools for Tenant B."""
     spools = []
-    for i in range(2):
-        spool = Spool(
+    for i, color in enumerate(["White", "Black"]):
+        ft = FilamentType(
             id=uuid4(),
             tenant_id=tenant_b.id,
             material_type_id=test_material_type.id,
-            spool_id=f"TENANT-B-SPOOL-{i + 1:03d}",
             brand="Prusa",
-            color=["White", "Black"][i],
+            color=color,
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft)
+        await db_session.flush()
+        spool = Spool(
+            id=uuid4(),
+            tenant_id=tenant_b.id,
+            filament_type_id=ft.id,
+            spool_id=f"TENANT-B-SPOOL-{i + 1:03d}",
             initial_weight=750.0,
             current_weight=500.0,
             purchase_price=Decimal("20.00"),

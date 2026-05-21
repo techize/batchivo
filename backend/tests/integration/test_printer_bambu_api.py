@@ -473,15 +473,27 @@ class TestPrinterConnectionTenantIsolation:
         db_session.add(other_tenant)
         await db_session.flush()
 
+        from app.models.filament_type import FilamentType
         from app.models.spool import Spool
 
-        other_spool = Spool(
+        ft_other = FilamentType(
             id=uuid4(),
             tenant_id=other_tenant.id,
             material_type_id=test_material_type.id,
-            spool_id="OTHER-SPOOL",
             brand="Other Brand",
             color="Blue",
+            diameter=1.75,
+            has_sample=False,
+            translucent=False,
+            glow=False,
+        )
+        db_session.add(ft_other)
+        await db_session.flush()
+        other_spool = Spool(
+            id=uuid4(),
+            tenant_id=other_tenant.id,
+            filament_type_id=ft_other.id,
+            spool_id="OTHER-SPOOL",
             initial_weight=1000.0,
             current_weight=500.0,
             purchase_price=Decimal("20.00"),
