@@ -74,7 +74,7 @@ spec:
       - name: harbor-creds
       initContainers:
       - name: run-migrations
-        image: registry.techize.co.uk/batchivo/batchivo-backend:f5069d1b1e9475bfc1cafdf79c9020c42d22070b
+        image: registry.techize.co.uk/batchivo/batchivo-backend:94e7e98848c5a3772d57dee37c09717c52fa270b
         imagePullPolicy: Always
         command: ["alembic", "upgrade", "heads"]
         securityContext:
@@ -103,7 +103,7 @@ spec:
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
       containers:
       - name: backend
-        image: registry.techize.co.uk/batchivo/batchivo-backend:f5069d1b1e9475bfc1cafdf79c9020c42d22070b
+        image: registry.techize.co.uk/batchivo/batchivo-backend:94e7e98848c5a3772d57dee37c09717c52fa270b
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
@@ -145,9 +145,9 @@ spec:
         - name: DATABASE_URL
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
         - name: BUILD_SHA
-          value: "f5069d1b1e9475bfc1cafdf79c9020c42d22070b"
+          value: "94e7e98848c5a3772d57dee37c09717c52fa270b"
         - name: BUILD_DATE
-          value: "2026-05-21T08:17:31Z"
+          value: "2026-05-21T08:55:16Z"
         - name: STORAGE_S3_ACCESS_KEY
           valueFrom:
             secretKeyRef:
