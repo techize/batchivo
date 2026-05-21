@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 from app.models.production_run import ProductionRun, ProductionRunItem, ProductionRunMaterial
 from app.models.inventory_transaction import InventoryTransaction, TransactionType
 from app.models.spool import Spool
+from app.models.filament_type import FilamentType
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.production_run import (
@@ -143,7 +144,8 @@ class ProductionRunService:
                 selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
                 selectinload(ProductionRun.materials)
                 .selectinload(ProductionRunMaterial.spool)
-                .selectinload(Spool.material_type),
+                .selectinload(Spool.filament_type)
+                .selectinload(FilamentType.material_type),
             )
         )
         return result.scalar_one_or_none()
@@ -166,7 +168,8 @@ class ProductionRunService:
                 selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
                 selectinload(ProductionRun.materials)
                 .selectinload(ProductionRunMaterial.spool)
-                .selectinload(Spool.material_type),
+                .selectinload(Spool.filament_type)
+                .selectinload(FilamentType.material_type),
             )
         )
         return result.scalar_one_or_none()
@@ -229,7 +232,8 @@ class ProductionRunService:
                 selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
                 selectinload(ProductionRun.materials)
                 .selectinload(ProductionRunMaterial.spool)
-                .selectinload(Spool.material_type),
+                .selectinload(Spool.filament_type)
+                .selectinload(FilamentType.material_type),
             )
         )
 
@@ -1492,7 +1496,8 @@ class ProductionRunService:
                 selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
                 selectinload(ProductionRun.materials)
                 .selectinload(ProductionRunMaterial.spool)
-                .selectinload(Spool.material_type),
+                .selectinload(Spool.filament_type)
+                .selectinload(FilamentType.material_type),
             )
         )
         loaded_run = result.scalar_one()

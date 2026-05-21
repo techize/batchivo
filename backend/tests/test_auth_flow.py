@@ -371,6 +371,7 @@ class TestAuthenticationFlow:
 
         # Create FilamentTypes for each tenant before creating spools
         from uuid import uuid4 as _uuid4
+
         ft1 = FilamentType(
             id=_uuid4(),
             tenant_id=tenant1.id,

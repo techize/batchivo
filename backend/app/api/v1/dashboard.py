@@ -23,6 +23,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models.production_run import ProductionRun, ProductionRunItem, ProductionRunMaterial
 from app.models.spool import Spool
+from app.models.filament_type import FilamentType
 from app.models.inventory_transaction import InventoryTransaction, TransactionType
 from app.auth.dependencies import CurrentTenant
 
@@ -343,7 +344,7 @@ async def get_low_stock_spools(
     """
     result = await db.execute(
         select(Spool)
-        .options(selectinload(Spool.material_type))
+        .options(selectinload(Spool.filament_type).selectinload(FilamentType.material_type))
         .where(
             and_(
                 Spool.tenant_id == tenant.id,
@@ -368,10 +369,12 @@ async def get_low_stock_spools(
             LowStockSpool(
                 id=spool.id,
                 spool_id=spool.spool_id,
-                brand=spool.brand,
-                color=spool.color,
-                color_hex=spool.color_hex,
-                material_type=spool.material_type.code if spool.material_type else "Unknown",
+                brand=spool.filament_type.brand if spool.filament_type else "Unknown",
+                color=spool.filament_type.color if spool.filament_type else "Unknown",
+                color_hex=spool.filament_type.color_hex if spool.filament_type else None,
+                material_type=spool.filament_type.material_type.code
+                if spool.filament_type and spool.filament_type.material_type
+                else "Unknown",
                 current_weight=float(spool.current_weight),
                 initial_weight=float(spool.initial_weight),
                 percent_remaining=round(percent_remaining, 1),
@@ -396,7 +399,7 @@ async def get_recent_activity(
     result = await db.execute(
         select(InventoryTransaction)
         .options(
-            selectinload(InventoryTransaction.spool),
+            selectinload(InventoryTransaction.spool).selectinload(Spool.filament_type),
             selectinload(InventoryTransaction.production_run),
         )
         .where(InventoryTransaction.tenant_id == tenant.id)
@@ -413,7 +416,9 @@ async def get_recent_activity(
                 transaction_type=tx.transaction_type.value,
                 created_at=tx.created_at,
                 spool_id=tx.spool.spool_id if tx.spool else None,
-                spool_color=tx.spool.color if tx.spool else None,
+                spool_color=tx.spool.filament_type.color
+                if tx.spool and tx.spool.filament_type
+                else None,
                 weight_change=float(tx.weight_change),
                 description=tx.description,
                 production_run_id=tx.production_run_id,
@@ -481,7 +486,7 @@ async def get_performance_data(
     # Calculate actual weight: prefer spool weighing (before - after), fallback to split actuals sum
     material_usage_result = await db.execute(
         select(
-            Spool.color,
+            FilamentType.color,
             func.sum(
                 case(
                     # If we have both before/after weights, use weighing
@@ -505,6 +510,7 @@ async def get_performance_data(
         .select_from(ProductionRunMaterial)
         .join(ProductionRun, ProductionRunMaterial.production_run_id == ProductionRun.id)
         .join(Spool, ProductionRunMaterial.spool_id == Spool.id)
+        .join(FilamentType, Spool.filament_type_id == FilamentType.id)
         .where(
             and_(
                 ProductionRun.tenant_id == tenant.id,
@@ -512,7 +518,7 @@ async def get_performance_data(
                 func.date(ProductionRun.completed_at) >= start_date,
             )
         )
-        .group_by(Spool.color)
+        .group_by(FilamentType.color)
     )
     material_usage_rows = material_usage_result.all()
 

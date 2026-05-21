@@ -22,6 +22,7 @@ from app.models.production_run import ProductionRun, ProductionRunItem, Producti
 from app.models.product import Product
 from app.models.model import Model
 from app.models.spool import Spool
+from app.models.filament_type import FilamentType
 from app.auth.dependencies import CurrentTenant
 
 
@@ -470,7 +471,7 @@ async def get_spool_production_usage(
     # Verify spool exists
     spool_result = await db.execute(
         select(Spool)
-        .options(selectinload(Spool.material_type))
+        .options(selectinload(Spool.filament_type).selectinload(FilamentType.material_type))
         .where(
             and_(
                 Spool.id == spool_id,
@@ -545,8 +546,10 @@ async def get_spool_production_usage(
     return SpoolUsageResponse(
         spool_id=spool.id,
         spool_code=spool.spool_id,
-        color=spool.color,
-        material_type=spool.material_type.code if spool.material_type else "Unknown",
+        color=spool.filament_type.color if spool.filament_type else "Unknown",
+        material_type=spool.filament_type.material_type.code
+        if spool.filament_type and spool.filament_type.material_type
+        else "Unknown",
         total_usage_grams=round(total_usage, 1),
         avg_usage_per_run=round(avg_usage, 1),
         run_count=len(usage_items),

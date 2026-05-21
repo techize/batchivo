@@ -15,6 +15,7 @@ from app.models.model import Model
 from app.models.model_component import ModelComponent
 from app.models.model_material import ModelMaterial
 from app.models.spool import Spool
+from app.models.filament_type import FilamentType
 from app.schemas.model import (
     BOMSpoolSuggestion,
     ModelComponentCreate,
@@ -239,7 +240,8 @@ async def get_model_production_defaults(
         .options(
             selectinload(Model.materials)
             .selectinload(ModelMaterial.spool)
-            .selectinload(Spool.material_type)
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type)
         )
     )
 
@@ -256,17 +258,22 @@ async def get_model_production_defaults(
     bom_suggestions = []
     for model_material in model.materials:
         spool = model_material.spool
-        material_type = spool.material_type
+        ft = spool.filament_type
+        material_type = ft.material_type if ft else None
 
         # Create spool name: "Brand - Material - Color"
-        spool_name = f"{spool.brand} - {material_type.code} - {spool.color}"
+        spool_name = (
+            f"{ft.brand} - {material_type.code} - {ft.color}"
+            if ft and material_type
+            else str(spool.spool_id)
+        )
 
         bom_suggestion = BOMSpoolSuggestion(
             spool_id=spool.id,
             spool_name=spool_name,
-            material_type_code=material_type.code,
-            color=spool.color,
-            color_hex=spool.color_hex,
+            material_type_code=material_type.code if material_type else "UNKNOWN",
+            color=ft.color if ft else "Unknown",
+            color_hex=ft.color_hex if ft else None,
             weight_grams=model_material.weight_grams,
             cost_per_gram=model_material.cost_per_gram,
             current_weight=spool.current_weight,

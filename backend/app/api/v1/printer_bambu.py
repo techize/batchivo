@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.auth.dependencies import CurrentTenant, CurrentUser
 from app.database import get_db
 from app.models import AMSSlotMapping, Printer, PrinterConnection, Spool
+from app.models.filament_type import FilamentType
 from app.schemas.ams_slot_mapping import (
     AMSFullStatus,
     AMSSlotListResponse,
@@ -393,7 +394,11 @@ async def list_ams_slots(
     # Get all slot mappings
     result = await db.execute(
         select(AMSSlotMapping)
-        .options(selectinload(AMSSlotMapping.spool))
+        .options(
+            selectinload(AMSSlotMapping.spool)
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type)
+        )
         .where(
             AMSSlotMapping.printer_id == printer_id,
             AMSSlotMapping.tenant_id == tenant.id,
@@ -410,11 +415,17 @@ async def list_ams_slots(
             spool_summary = SpoolSummaryForAMS(
                 id=mapping.spool.id,
                 spool_id=mapping.spool.spool_id,
-                brand=mapping.spool.brand,
-                color=mapping.spool.color,
-                color_hex=mapping.spool.color_hex,
-                material_type_code=mapping.spool.material_type.code
-                if mapping.spool.material_type
+                brand=mapping.spool.filament_type.brand
+                if mapping.spool.filament_type
+                else "Unknown",
+                color=mapping.spool.filament_type.color
+                if mapping.spool.filament_type
+                else "Unknown",
+                color_hex=mapping.spool.filament_type.color_hex
+                if mapping.spool.filament_type
+                else None,
+                material_type_code=mapping.spool.filament_type.material_type.code
+                if mapping.spool.filament_type and mapping.spool.filament_type.material_type
                 else None,
                 current_weight=float(mapping.spool.current_weight),
                 initial_weight=float(mapping.spool.initial_weight),

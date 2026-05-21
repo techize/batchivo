@@ -24,6 +24,7 @@ from app.models.production_run import ProductionRun, ProductionRunItem, Producti
 from app.models.model import Model
 from app.models.model_material import ModelMaterial
 from app.models.spool import Spool
+from app.models.filament_type import FilamentType
 from app.auth.dependencies import CurrentTenant, CurrentUser, RequireAdmin
 from app.schemas.production_run import (
     ProductionRunCreateRequest,
@@ -161,7 +162,8 @@ async def create_production_run(
             selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
             selectinload(ProductionRun.materials)
             .selectinload(ProductionRunMaterial.spool)
-            .selectinload(Spool.material_type),
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type),
         )
         .where(ProductionRun.id == db_production_run.id)
     )
@@ -265,7 +267,8 @@ async def get_production_run(
             selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
             selectinload(ProductionRun.materials)
             .selectinload(ProductionRunMaterial.spool)
-            .selectinload(Spool.material_type),
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type),
         )
         .where(and_(ProductionRun.id == run_id, ProductionRun.tenant_id == tenant.id))
     )
@@ -308,7 +311,8 @@ async def update_production_run(
             selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
             selectinload(ProductionRun.materials)
             .selectinload(ProductionRunMaterial.spool)
-            .selectinload(Spool.material_type),
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type),
         )
         .where(and_(ProductionRun.id == run_id, ProductionRun.tenant_id == tenant.id))
     )
@@ -355,7 +359,8 @@ async def update_production_run(
             selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
             selectinload(ProductionRun.materials)
             .selectinload(ProductionRunMaterial.spool)
-            .selectinload(Spool.material_type),
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type),
         )
         .where(ProductionRun.id == run_id)
     )
@@ -654,7 +659,11 @@ async def add_production_run_material(
     # Reload with spool relationship
     result = await db.execute(
         select(ProductionRunMaterial)
-        .options(selectinload(ProductionRunMaterial.spool).selectinload(Spool.material_type))
+        .options(
+            selectinload(ProductionRunMaterial.spool)
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type)
+        )
         .where(ProductionRunMaterial.id == db_material.id)
     )
     db_material = result.scalar_one()
@@ -690,7 +699,11 @@ async def update_production_run_material(
     result = await db.execute(
         select(ProductionRunMaterial, ProductionRun.status)
         .join(ProductionRun)
-        .options(selectinload(ProductionRunMaterial.spool).selectinload(Spool.material_type))
+        .options(
+            selectinload(ProductionRunMaterial.spool)
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type)
+        )
         .where(
             and_(
                 ProductionRunMaterial.id == material_id,
@@ -727,7 +740,11 @@ async def update_production_run_material(
     # Reload with spool relationship
     result = await db.execute(
         select(ProductionRunMaterial)
-        .options(selectinload(ProductionRunMaterial.spool).selectinload(Spool.material_type))
+        .options(
+            selectinload(ProductionRunMaterial.spool)
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type)
+        )
         .where(ProductionRunMaterial.id == material.id)
     )
     material = result.scalar_one()
@@ -814,7 +831,8 @@ async def complete_production_run(
             selectinload(ProductionRun.items),
             selectinload(ProductionRun.materials)
             .selectinload(ProductionRunMaterial.spool)
-            .selectinload(Spool.material_type),
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type),
         )
         .where(and_(ProductionRun.id == run_id, ProductionRun.tenant_id == tenant.id))
     )
@@ -940,7 +958,8 @@ async def complete_production_run(
             selectinload(ProductionRun.items).selectinload(ProductionRunItem.model),
             selectinload(ProductionRun.materials)
             .selectinload(ProductionRunMaterial.spool)
-            .selectinload(Spool.material_type),
+            .selectinload(Spool.filament_type)
+            .selectinload(FilamentType.material_type),
         )
         .where(ProductionRun.id == run_id)
     )

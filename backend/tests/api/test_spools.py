@@ -211,6 +211,7 @@ class TestCreateSpool:
     ):
         """Test that unauthenticated requests are rejected."""
         from uuid import uuid4 as _uuid4
+
         response = await unauthenticated_client.post(
             "/api/v1/spools",
             json={

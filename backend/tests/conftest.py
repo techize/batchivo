@@ -24,6 +24,7 @@ from decimal import Decimal
 from app.database import Base, get_db
 from app.main import app
 from app.models.customer import Customer
+from app.models.filament_type import FilamentType  # noqa: F401 — must be in metadata before create_all
 from app.models.material import MaterialType
 from app.models.product import Product
 from app.models.spool import Spool
@@ -377,7 +378,6 @@ async def test_filament_type(
     db_session: AsyncSession, test_tenant: Tenant, test_material_type: MaterialType
 ):
     """Create a test filament type linked to test_material_type."""
-    from app.models.filament_type import FilamentType
 
     ft = FilamentType(
         id=uuid4(),
