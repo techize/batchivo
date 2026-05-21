@@ -49,6 +49,7 @@ from app.models.production_run import ProductionRun, ProductionRunItem, Producti
 from app.models.production_run_plate import ProductionRunPlate
 
 # Inventory
+from app.models.filament_type import FilamentType
 from app.models.spool import Spool
 from app.models.inventory_transaction import InventoryTransaction, TransactionType
 from app.models.spoolmandb import SpoolmanDBFilament, SpoolmanDBManufacturer
@@ -152,6 +153,7 @@ __all__ = [
     "ProductionRunMaterial",
     "ProductionRunPlate",
     # Inventory
+    "FilamentType",
     "Spool",
     "InventoryTransaction",
     "TransactionType",

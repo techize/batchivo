@@ -404,7 +404,7 @@ class TestSpoolProductionUsage:
         data = response.json()
         assert data["spool_id"] == str(analytics_spool.id)
         assert data["spool_code"] == analytics_spool.spool_id
-        assert data["color"] == analytics_spool.color
+        assert data["color"] == "Blue"  # analytics_spool filament_type color
         assert data["run_count"] == 0
         assert data["usage_history"] == []
 

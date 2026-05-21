@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, computed_field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, computed_field, model_validator
 
 if TYPE_CHECKING:
     from app.schemas.printer import PrinterSummary
@@ -54,13 +54,34 @@ class SpoolSummary(BaseModel):
 
     id: UUID
     spool_id: str = Field(..., description="User-friendly spool ID (e.g., FIL-001)")
-    brand: str
-    color: str
+    brand: str = ""
+    color: str = ""
     color_hex: Optional[str] = None
     finish: Optional[str] = None
     material_type: Optional[MaterialTypeSummary] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_from_filament_type(cls, values):
+        """Pull brand/color/color_hex/finish from filament_type when Spool ORM is passed."""
+        if isinstance(values, dict):
+            return values
+        ft = getattr(values, "filament_type", None)
+        # Guard against unloaded lazy relationship (would be an InstrumentedAttribute)
+        if ft is None or not hasattr(ft, "brand"):
+            return values
+        # Convert ORM object to dict with filament_type fields filled in
+        return {
+            "id": getattr(values, "id", None),
+            "spool_id": getattr(values, "spool_id", None),
+            "brand": getattr(ft, "brand", "") or "",
+            "color": getattr(ft, "color", "") or "",
+            "color_hex": getattr(ft, "color_hex", None),
+            "finish": getattr(ft, "finish", None),
+            "material_type": getattr(ft, "material_type", None),
+        }
 
 
 # Production Run Base Schemas
