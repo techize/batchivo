@@ -5,8 +5,6 @@ Revises: (all 12 current heads)
 Create Date: 2026-05-19
 
 """
-from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "merge_filament_type_heads"

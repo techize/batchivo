@@ -223,7 +223,7 @@ export function AddFilamentDialog({ open, onOpenChange }: AddFilamentDialogProps
   const handleBatchSubmit = async () => {
     if (batchRows.length === 0) return
     const payload: BatchCreateRequest = {
-      entries: batchRows.map(({ id: _id, color_hex, ...rest }) => ({
+      entries: batchRows.map(({ id: _unused, color_hex, ...rest }) => ({ // eslint-disable-line @typescript-eslint/no-unused-vars
         ...rest,
         color_hex: color_hex ? color_hex.replace('#', '') : null,
       })),
