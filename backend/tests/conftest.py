@@ -237,7 +237,7 @@ async def client(
     db_session: AsyncSession, seed_material_types, test_user: User, test_tenant: Tenant
 ) -> AsyncGenerator[AsyncClient, None]:
     """Create a test HTTP client with database session and auth overrides."""
-    from app.auth.dependencies import get_current_user, get_current_tenant
+    from app.auth.dependencies import get_current_user, get_current_tenant, get_tenant_db
 
     async def override_get_db():
         yield db_session
@@ -249,6 +249,7 @@ async def client(
         return test_tenant
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_tenant_db] = override_get_db  # TenantDB endpoints use same session
     app.dependency_overrides[get_current_user] = override_get_current_user
     app.dependency_overrides[get_current_tenant] = override_get_current_tenant
 
@@ -274,12 +275,14 @@ async def unauthenticated_client(
 ) -> AsyncGenerator[AsyncClient, None]:
     """Create a test HTTP client WITHOUT authentication overrides for testing auth."""
     from app.database import get_db
+    from app.auth.dependencies import get_tenant_db
 
     async def override_get_db():
         yield db_session
 
     # Only override the database, not auth
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_tenant_db] = override_get_db
 
     # Disable rate limiting for tests
     app.state.limiter.enabled = False
