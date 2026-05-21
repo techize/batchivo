@@ -33,6 +33,7 @@ WORKDIR /app
 # k8s service-account secrets in Kaniko are read-only
 RUN apk upgrade --no-cache --ignore alpine-baselayout && \
     apk add --no-cache libpq && \
+    apk upgrade --no-cache libpq && \
     pip install --no-cache-dir --upgrade pip
 
 # Copy virtual environment from builder
