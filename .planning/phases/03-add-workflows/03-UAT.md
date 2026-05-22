@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 03-add-workflows
 source: [03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md, 03-04-SUMMARY.md, 03-05-SUMMARY.md, 03-06-SUMMARY.md, 03-07-SUMMARY.md]
 started: 2026-05-21T06:58:08Z
@@ -74,9 +74,13 @@ blocked: 0
   reason: "User reported: menu/navigation from the main page is missing, footer is missing, page does not have the same look as other pages"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "FilamentLibrary.tsx was added without wrapping its return in <AppLayout>, rendering bare content with no nav/footer unlike every other authenticated page"
+  artifacts:
+    - path: "frontend/src/pages/FilamentLibrary.tsx"
+      issue: "return starts with bare <div> — missing AppLayout import and wrapper"
+  missing:
+    - "Import AppLayout from '@/components/layout/AppLayout'"
+    - "Wrap returned JSX in <AppLayout>...</AppLayout>"
   debug_session: ""
 
 - truth: "Bulk add submit creates spools in the database and they appear in the filament library list after success"
@@ -84,9 +88,17 @@ blocked: 0
   reason: "User reported: i do not see the new filament on the library list. refreshing the page does not show it either"
   severity: major
   test: 9
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "After db.rollback() in the IntegrityError retry path, SET LOCAL app.current_tenant_id is cleared; subsequent flush fails the RLS INSERT check in production causing a 500 that silently dismisses the dialog"
+  artifacts:
+    - path: "backend/app/api/v1/filament_types.py"
+      issue: "bulk_create and batch_create IntegrityError retry paths call _find_or_create_filament_type after db.rollback(), losing RLS context"
+    - path: "backend/app/auth/dependencies.py"
+      issue: "get_tenant_db sets SET LOCAL once — not re-established after rollback within route handler"
+    - path: "frontend/src/hooks/useFilamentTypes.ts"
+      issue: "useBulkCreateFilamentType and useBatchCreateFilamentTypes only invalidate ['filament-types'], not ['filament-type-spools', *]"
+  missing:
+    - "Re-execute SET LOCAL app.current_tenant_id after db.rollback() in both retry paths in filament_types.py"
+    - "Add queryClient.invalidateQueries({ queryKey: ['filament-type-spools'] }) in both mutation onSuccess callbacks"
   debug_session: ""
 
 - truth: "Quantity field accepts manual typed input, values outside 1-20 are rejected or clamped"
@@ -94,7 +106,10 @@ blocked: 0
   reason: "User reported: + and - work, i cannot type in the field"
   severity: minor
   test: 6
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "Quantity input is rendered as a read-only display element controlled only by +/- buttons, with no direct text input capability"
+  artifacts:
+    - path: "frontend/src/components/filament/AddFilamentDialog.tsx"
+      issue: "Quantity display is not an editable <input> — users cannot type values directly"
+  missing:
+    - "Change quantity display to an <input type='number'> with min=1 max=20 and clamp validation on change"
   debug_session: ""
