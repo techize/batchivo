@@ -595,9 +595,19 @@ export function AddFilamentDialog({ open, onOpenChange }: AddFilamentDialogProps
                         </Button>
                         <Input
                           type="number"
-                          readOnly
+                          min={1}
+                          max={20}
                           className="w-16 text-center"
-                          {...field}
+                          value={field.value}
+                          onChange={(e) => {
+                            const raw = parseInt(e.target.value, 10)
+                            if (!isNaN(raw)) {
+                              field.onChange(Math.max(1, Math.min(20, raw)))
+                            }
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                         <Button
                           type="button"
