@@ -9,7 +9,9 @@ from sqlalchemy import case, func, select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.auth.dependencies import CurrentTenant, CurrentUser, TenantDB
-from app.config import settings
+from app.config import get_settings
+
+settings = get_settings()
 from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.spool import Spool
