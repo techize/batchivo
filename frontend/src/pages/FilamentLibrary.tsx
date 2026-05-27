@@ -23,6 +23,7 @@ import { FilamentTypeRow } from '@/components/filaments/FilamentTypeRow'
 import { FilamentTypeSpoolSheet } from '@/components/filaments/FilamentTypeSpoolSheet'
 import { FilamentTypeFilterSheet } from '@/components/filaments/FilamentTypeFilterSheet'
 import { AddFilamentDialog } from '@/components/filaments/AddFilamentDialog'
+import { AppLayout } from '@/components/layout/AppLayout'
 
 export function FilamentLibrary() {
   const [spoolSheetFilamentTypeId, setSpoolSheetFilamentTypeId] = useState<string | null>(null)
@@ -71,6 +72,7 @@ export function FilamentLibrary() {
   }
 
   return (
+    <AppLayout>
     <div className="space-y-6 p-4 sm:p-6">
       {/* Page header */}
       <div>
@@ -257,5 +259,6 @@ export function FilamentLibrary() {
       />
       <AddFilamentDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
+    </AppLayout>
   )
 }
