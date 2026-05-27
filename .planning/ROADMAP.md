@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Data Model Migration** - Introduce FilamentType + Spool two-tier model and migrate existing spool data safely
 - [x] **Phase 2: Consolidated List View** - Collapse /inventory route and deliver aggregated FilamentType list UI (completed 2026-05-20)
-- [ ] **Phase 3: Add Workflows** - Bulk add and rapid mixed-batch add for creating FilamentType + Spool records
+- [x] **Phase 3: Add Workflows** - Bulk add and rapid mixed-batch add for creating FilamentType + Spool records (completed 2026-05-27)
 - [ ] **Phase 4: Detail Views** - FilamentType and individual Spool detail pages with status toggles
 
 ## Phase Details
@@ -99,29 +99,34 @@ Plans:
   2. After a bulk add, newly created spools appear in the list with a "needs label" indicator
   3. User can enter brand and material type once, then add multiple color variants in rapid succession with those fields pre-filled; only color (and optionally finish/notes) is required per step
 
-**Plans**: 7 plans
+**Plans**: 9 plans
 Plans:
 **Wave 0**
 
-- [ ] 03-01-PLAN.md — Test stubs: TestBulkCreate + TestBatchCreate (backend) + AddFilamentDialog.test.tsx (frontend)
+- [x] 03-01-PLAN.md — Test stubs: TestBulkCreate + TestBatchCreate (backend) + AddFilamentDialog.test.tsx (frontend)
 
 **Wave 1** *(parallel — no file overlap)*
 
-- [ ] 03-02-PLAN.md — Backend schemas + _next_spool_ids helper + bulk_create + batch_create endpoints
-- [ ] 03-03-PLAN.md — Frontend types + API client methods + mutation hooks
+- [x] 03-02-PLAN.md — Backend schemas + _next_spool_ids helper + bulk_create + batch_create endpoints
+- [x] 03-03-PLAN.md — Frontend types + API client methods + mutation hooks
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-04-PLAN.md — AddFilamentDialog component (mode selector, bulk form, rapid batch form)
+- [x] 03-04-PLAN.md — AddFilamentDialog component (mode selector, bulk form, rapid batch form)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-05-PLAN.md — Wire FilamentLibrary: Add Filament button + AddFilamentDialog render
+- [x] 03-05-PLAN.md — Wire FilamentLibrary: Add Filament button + AddFilamentDialog render
 
 **Wave 4** *(blocked on Wave 2/3 completion — parallel)*
 
-- [ ] 03-06-PLAN.md — Backend integration tests: TestBulkCreate + TestBatchCreate fully passing
-- [ ] 03-07-PLAN.md — Frontend tests: AddFilamentDialog.test.tsx fully passing
+- [x] 03-06-PLAN.md — Backend integration tests: TestBulkCreate + TestBatchCreate fully passing
+- [x] 03-07-PLAN.md — Frontend tests: AddFilamentDialog.test.tsx fully passing
+
+**Wave 5** *(gap closure — parallel)*
+
+- [x] 03-08-PLAN.md — FilamentLibrary AppLayout wrap + quantity input editable with clamp validation
+- [x] 03-09-PLAN.md — RLS context restore after rollback in bulk/batch create + filament-type-spools cache invalidation
 
 ### Phase 4: Detail Views
 
