@@ -5,10 +5,11 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.auth.dependencies import CurrentTenant, CurrentUser, TenantDB
+from app.config import settings
 from app.models.filament_type import FilamentType
 from app.models.material import MaterialType
 from app.models.spool import Spool
@@ -280,6 +281,12 @@ async def bulk_create(
         await db.commit()
     except IntegrityError:
         await db.rollback()
+        # Re-establish RLS context — SET LOCAL is transaction-scoped and is cleared by rollback.
+        if settings.rls_enabled:
+            await db.execute(
+                text("SET LOCAL app.current_tenant_id = :tenant_id"),
+                {"tenant_id": str(tenant.id)},
+            )
         ft = await _find_or_create_filament_type(db, tenant.id, data)
         spool_ids = await _next_spool_ids(db, tenant.id, data.quantity)
         spools = [
@@ -342,6 +349,12 @@ async def batch_create(
         await db.commit()
     except IntegrityError:
         await db.rollback()
+        # Re-establish RLS context — SET LOCAL is transaction-scoped and is cleared by rollback.
+        if settings.rls_enabled:
+            await db.execute(
+                text("SET LOCAL app.current_tenant_id = :tenant_id"),
+                {"tenant_id": str(tenant.id)},
+            )
         all_spool_ids = await _next_spool_ids(db, tenant.id, len(data.entries))
         results = []
         for i, entry in enumerate(data.entries):
