@@ -96,6 +96,7 @@ export function useBulkCreateFilamentType() {
     mutationFn: (data: BulkCreateRequest) => filamentTypesApi.bulkCreate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['filament-types'] })
+      queryClient.invalidateQueries({ queryKey: ['filament-type-spools'] })
     },
   })
 }
@@ -106,6 +107,7 @@ export function useBatchCreateFilamentTypes() {
     mutationFn: (data: BatchCreateRequest) => filamentTypesApi.batchCreate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['filament-types'] })
+      queryClient.invalidateQueries({ queryKey: ['filament-type-spools'] })
     },
   })
 }
