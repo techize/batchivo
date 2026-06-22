@@ -152,6 +152,9 @@ kind: Job
 metadata:
   name: minio-create-bucket
   namespace: batchivo
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded,BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 300
   template:
