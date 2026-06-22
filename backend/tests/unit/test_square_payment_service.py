@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 
 from square.core.api_error import ApiError
+from square.environment import SquareEnvironment
 
 from app.schemas.payment import (
     CartItem,
@@ -154,7 +155,7 @@ class TestSquarePaymentServiceInit:
 
                 mock_client.assert_called_once_with(
                     token="test-token",
-                    environment="sandbox",
+                    environment=SquareEnvironment.SANDBOX,
                 )
                 assert service.location_id == "test-location"
                 assert service.environment == "sandbox"

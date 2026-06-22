@@ -8,6 +8,7 @@ from typing import Optional
 
 from square import Square
 from square.core.api_error import ApiError
+from square.environment import SquareEnvironment
 
 from app.config import get_settings
 from app.schemas.payment import PaymentRequest, PaymentResponse, PaymentError
@@ -57,6 +58,16 @@ RETRIABLE_ERROR_CODES = {
 }
 
 
+def get_square_environment(environment: str | SquareEnvironment) -> SquareEnvironment:
+    """Convert app config values to the Square SDK environment enum."""
+    if isinstance(environment, SquareEnvironment):
+        return environment
+    normalized = environment.lower().strip()
+    if normalized == "production":
+        return SquareEnvironment.PRODUCTION
+    return SquareEnvironment.SANDBOX
+
+
 class SquarePaymentService:
     """Service for processing payments via Square API with retry logic."""
 
@@ -88,7 +99,7 @@ class SquarePaymentService:
 
         self.client = Square(
             token=self._access_token,
-            environment=self.environment,
+            environment=get_square_environment(self.environment),
         )
 
     def _get_user_friendly_message(self, error_code: str, detail: str = "") -> str:

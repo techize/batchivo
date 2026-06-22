@@ -11,6 +11,7 @@ from square.core.api_error import ApiError
 
 from app.core.encryption import encrypt_value, mask_credential, safe_decrypt
 from app.models.tenant import Tenant
+from app.services.square_payment import get_square_environment
 from app.schemas.tenant_settings import (
     BrandingSettingsResponse,
     BrandingSettingsUpdate,
@@ -138,7 +139,7 @@ class TenantSettingsService:
             # Initialize Square client
             client = Square(
                 token=access_token,
-                environment=environment,
+                environment=get_square_environment(environment),
             )
 
             # Test by fetching the location
