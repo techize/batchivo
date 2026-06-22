@@ -1,8 +1,9 @@
 """Payment processing API endpoints for multi-tenant shops."""
 
 from datetime import datetime, timezone
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +14,7 @@ from app.database import get_db
 from app.models.order import Order as OrderModel, OrderItem as OrderItemModel, OrderStatus
 from app.models.product import Product
 from app.schemas.payment import PaymentRequest, PaymentResponse, PaymentError
-from app.services.square_payment import get_payment_service
+from app.services.square_payment import SquarePaymentService, get_payment_service
 from app.services.email_service import get_email_service
 
 router = APIRouter()
@@ -29,8 +30,42 @@ class PaymentConfigResponse(BaseModel):
     location_id: str | None = None
 
 
+def _is_test_shop_hostname(hostname: str | None) -> bool:
+    """Return True for non-production shop hostnames that must use sandbox payments."""
+    if not hostname:
+        return False
+    normalized = hostname.split(":")[0].lower().strip()
+    return normalized.startswith("test.")
+
+
+def _get_square_runtime_config(hostname: str | None) -> dict[str, str | bool | None]:
+    """Select Square runtime config for the requested shop hostname."""
+    if _is_test_shop_hostname(hostname):
+        enabled = bool(settings.square_sandbox_access_token and settings.square_sandbox_location_id)
+        return {
+            "enabled": enabled,
+            "environment": "sandbox",
+            "app_id": settings.square_sandbox_app_id if enabled else None,
+            "access_token": settings.square_sandbox_access_token if enabled else None,
+            "location_id": settings.square_sandbox_location_id if enabled else None,
+            "sandbox": True,
+        }
+
+    enabled = bool(settings.square_access_token and settings.square_location_id)
+    return {
+        "enabled": enabled,
+        "environment": settings.square_environment,
+        "app_id": settings.square_app_id if enabled else None,
+        "access_token": settings.square_access_token if enabled else None,
+        "location_id": settings.square_location_id if enabled else None,
+        "sandbox": settings.square_environment == "sandbox",
+    }
+
+
 @router.get("/config", response_model=PaymentConfigResponse)
-async def get_payment_config() -> PaymentConfigResponse:
+async def get_payment_config(
+    x_shop_hostname: Annotated[str | None, Header()] = None,
+) -> PaymentConfigResponse:
     """
     Get payment configuration for Square Web Payments SDK.
 
@@ -40,12 +75,12 @@ async def get_payment_config() -> PaymentConfigResponse:
 
     This endpoint is public - no auth required.
     """
-    enabled = bool(settings.square_access_token and settings.square_location_id)
+    square_config = _get_square_runtime_config(x_shop_hostname)
     return PaymentConfigResponse(
-        enabled=enabled,
-        environment=settings.square_environment,
-        app_id=settings.square_app_id if enabled else None,
-        location_id=settings.square_location_id if enabled else None,
+        enabled=bool(square_config["enabled"]),
+        environment=str(square_config["environment"]),
+        app_id=str(square_config["app_id"]) if square_config["app_id"] else None,
+        location_id=str(square_config["location_id"]) if square_config["location_id"] else None,
     )
 
 
@@ -53,6 +88,7 @@ async def get_payment_config() -> PaymentConfigResponse:
 async def process_payment(
     request: PaymentRequest,
     shop_context: ShopContext,
+    x_shop_hostname: Annotated[str | None, Header()] = None,
     db: AsyncSession = Depends(get_db),
 ) -> PaymentResponse:
     """
@@ -69,8 +105,11 @@ async def process_payment(
     logger = logging.getLogger(__name__)
     shop_tenant, channel = shop_context
 
+    square_config = _get_square_runtime_config(x_shop_hostname)
+    payment_environment = str(square_config["environment"])
+
     # Validate configuration
-    if not settings.square_access_token or not settings.square_location_id:
+    if not square_config["enabled"]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Payment processing is not configured",
@@ -113,7 +152,14 @@ async def process_payment(
     )
 
     # Process the payment
-    payment_service = get_payment_service()
+    if square_config["sandbox"]:
+        payment_service = SquarePaymentService(
+            access_token=str(square_config["access_token"]),
+            location_id=str(square_config["location_id"]),
+            environment="sandbox",
+        )
+    else:
+        payment_service = get_payment_service()
     result = payment_service.process_payment(request)
 
     if isinstance(result, PaymentError):
@@ -155,7 +201,7 @@ async def process_payment(
             subtotal=items_total / 100,  # Convert pence to pounds
             total=request.amount / 100,  # Convert pence to pounds
             currency=request.currency,
-            payment_provider="square",
+            payment_provider="square_sandbox" if payment_environment == "sandbox" else "square",
             payment_id=result.payment_id,
             payment_status=result.status,
         )
@@ -206,33 +252,36 @@ async def process_payment(
         # Update result with actual order number
         result.order_id = order_number
 
-        # Send confirmation email and track result
-        email_service = get_email_service()
-        email_sent = await email_service.send_order_confirmation(
-            to_email=request.customer.email,
-            customer_name=customer_name,
-            order_number=order_number,
-            order_items=[
-                {
-                    "name": item.name,
-                    "quantity": item.quantity,
-                    "price": item.price / 100,  # Convert pence to pounds
-                }
-                for item in request.items
-            ],
-            subtotal=items_total / 100,
-            shipping_cost=request.shipping_cost / 100,
-            total=request.amount / 100,
-            shipping_address={
-                "address_line1": request.shipping_address.address_line1,
-                "address_line2": request.shipping_address.address_line2,
-                "city": request.shipping_address.city,
-                "county": request.shipping_address.county,
-                "postcode": request.shipping_address.postcode,
-                "country": request.shipping_address.country,
-            },
-            receipt_url=result.receipt_url,
-        )
+        # Send confirmation email and track result. Sandbox/test-host orders are
+        # non-customer smoke tests and must not send transactional email.
+        email_sent = False
+        if payment_environment != "sandbox":
+            email_service = get_email_service()
+            email_sent = await email_service.send_order_confirmation(
+                to_email=request.customer.email,
+                customer_name=customer_name,
+                order_number=order_number,
+                order_items=[
+                    {
+                        "name": item.name,
+                        "quantity": item.quantity,
+                        "price": item.price / 100,  # Convert pence to pounds
+                    }
+                    for item in request.items
+                ],
+                subtotal=items_total / 100,
+                shipping_cost=request.shipping_cost / 100,
+                total=request.amount / 100,
+                shipping_address={
+                    "address_line1": request.shipping_address.address_line1,
+                    "address_line2": request.shipping_address.address_line2,
+                    "city": request.shipping_address.city,
+                    "county": request.shipping_address.county,
+                    "postcode": request.shipping_address.postcode,
+                    "country": request.shipping_address.country,
+                },
+                receipt_url=result.receipt_url,
+            )
 
         # Update order with email status
         db_order.confirmation_email_sent = email_sent

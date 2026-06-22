@@ -203,6 +203,29 @@ class TestGetPaymentConfig:
             assert data["enabled"] is False
             assert data["environment"] == "production"
 
+    async def test_get_config_uses_sandbox_for_test_hostname(self, payments_client: AsyncClient):
+        """Test hostnames use sandbox Square config without exposing production credentials."""
+        with patch("app.api.v1.payments.settings") as mock_settings:
+            mock_settings.square_access_token = ""
+            mock_settings.square_location_id = ""
+            mock_settings.square_environment = "production"
+            mock_settings.square_app_id = "prod-app-id"
+            mock_settings.square_sandbox_access_token = "sandbox-token"
+            mock_settings.square_sandbox_location_id = "sandbox-location"
+            mock_settings.square_sandbox_app_id = "sandbox-app-id"
+
+            response = await payments_client.get(
+                "/api/v1/payments/config",
+                headers={"X-Shop-Hostname": "test.mystmereforge.co.uk"},
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["enabled"] is True
+            assert data["environment"] == "sandbox"
+            assert data["app_id"] == "sandbox-app-id"
+            assert data["location_id"] == "sandbox-location"
+
 
 class TestProcessPayment:
     """Tests for POST /api/v1/payments/process endpoint."""
@@ -337,6 +360,58 @@ class TestProcessPayment:
 
                     # Verify email was sent
                     mock_email.send_order_confirmation.assert_called_once()
+
+    async def test_process_payment_uses_sandbox_for_test_hostname(
+        self,
+        payments_client: AsyncClient,
+        shop_product: Product,
+        db_session: AsyncSession,
+    ):
+        """Test host payments use sandbox credentials and do not send customer email."""
+        with patch("app.api.v1.payments.settings") as mock_settings:
+            mock_settings.square_access_token = ""
+            mock_settings.square_location_id = ""
+            mock_settings.square_sandbox_access_token = "sandbox-token"
+            mock_settings.square_sandbox_location_id = "sandbox-location"
+            mock_settings.square_sandbox_app_id = "sandbox-app-id"
+
+            with patch("app.api.v1.payments.SquarePaymentService", create=True) as mock_service_cls:
+                mock_service = MagicMock()
+                mock_service.process_payment.return_value = PaymentResponse(
+                    success=True,
+                    order_id="MF-SANDBOX",
+                    payment_id="sandbox_payment_123",
+                    amount=2999,
+                    currency="GBP",
+                    status="COMPLETED",
+                    receipt_url=None,
+                    created_at=datetime.now(timezone.utc),
+                )
+                mock_service_cls.return_value = mock_service
+
+                with patch("app.api.v1.payments.get_email_service") as mock_get_email:
+                    body = self._create_payment_body(str(shop_product.id))
+
+                    response = await payments_client.post(
+                        "/api/v1/payments/process",
+                        json=body,
+                        headers={"X-Shop-Hostname": "test.mystmereforge.co.uk"},
+                    )
+
+                    assert response.status_code == 200
+                    mock_service_cls.assert_called_once_with(
+                        access_token="sandbox-token",
+                        location_id="sandbox-location",
+                        environment="sandbox",
+                    )
+                    mock_get_email.assert_not_called()
+
+                    result = await db_session.execute(
+                        select(Order).where(Order.payment_id == "sandbox_payment_123")
+                    )
+                    order = result.scalar_one()
+                    assert order.payment_provider == "square_sandbox"
+                    assert order.confirmation_email_sent is False
 
     async def test_process_payment_card_declined(
         self,

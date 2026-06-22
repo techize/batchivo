@@ -262,6 +262,27 @@ class TestShopTenantResolution:
         processed = hostname.split(":")[0].lower()
         assert processed == "shop.mystmereforge.co.uk"
 
+    @pytest.mark.asyncio
+    async def test_resolve_custom_domain_accepts_test_hostname_prefix(self):
+        """Should resolve test.<custom-domain> to the production custom domain tenant."""
+        from app.api.v1.shop_resolver import resolve_tenant_by_custom_domain
+
+        mock_db = AsyncMock()
+        mock_db.bind.dialect.name = "sqlite"
+        mock_tenant = MagicMock()
+        mock_tenant.slug = "mystmereforge"
+
+        no_match = MagicMock()
+        no_match.scalar_one_or_none.return_value = None
+        match = MagicMock()
+        match.scalar_one_or_none.return_value = mock_tenant
+        mock_db.execute.side_effect = [no_match, no_match, match]
+
+        result = await resolve_tenant_by_custom_domain(mock_db, "test.mystmereforge.co.uk")
+
+        assert result == mock_tenant
+        assert mock_db.execute.await_count == 3
+
     def test_custom_domain_in_settings(self):
         """Test that custom domain is stored correctly in tenant settings."""
         settings = {

@@ -167,12 +167,23 @@ async def resolve_tenant_by_custom_domain(db: AsyncSession, hostname: str) -> Te
     """
     hostname = hostname.split(":")[0].lower()
 
-    # Normalize: try both with and without www
+    # Normalize: try with/without www, and allow test.<custom-domain> to map
+    # to the same tenant for non-production checkout smoke tests.
     hostnames_to_try = [hostname]
     if hostname.startswith("www."):
         hostnames_to_try.append(hostname[4:])  # Without www
     else:
         hostnames_to_try.append(f"www.{hostname}")  # With www
+
+    test_hostnames = list(hostnames_to_try)
+    for candidate in test_hostnames:
+        if candidate.startswith("test."):
+            base_hostname = candidate[5:]
+            hostnames_to_try.append(base_hostname)
+            if base_hostname.startswith("www."):
+                hostnames_to_try.append(base_hostname[4:])
+            else:
+                hostnames_to_try.append(f"www.{base_hostname}")
 
     # Try exact match on custom_domain for both hostname variants
     dialect = db.bind.dialect.name if db.bind else "postgresql"

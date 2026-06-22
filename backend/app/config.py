@@ -95,6 +95,9 @@ class Settings(BaseSettings):
     square_location_id: str = ""
     square_environment: Literal["sandbox", "production"] = "sandbox"
     square_webhook_signature_key: str = ""
+    square_sandbox_app_id: str = ""
+    square_sandbox_access_token: str = ""
+    square_sandbox_location_id: str = ""
 
     # Shopify integration (optional - for Shopify → Batchivo order sync)
     shopify_webhook_secret: str = ""  # Shopify API secret for HMAC validation
