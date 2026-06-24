@@ -27,8 +27,13 @@ data:
   EMAIL_FROM_ADDRESS: "noreply@batchivo.com"
   EMAIL_FROM_NAME: "Batchivo"
   FRONTEND_BASE_URL: "https://app.batchivo.com"
+  SHOP_NAME: "Mystmere Forge"
+  SHOP_TAGLINE: "Handcrafted 3D printed dragons and collectables"
+  SHOP_WEBSITE_URL: "https://www.mystmereforge.co.uk"
   SHOP_SUPPORT_EMAIL: "jonathan@techize.co.uk"
   SHOP_ORDERS_EMAIL: "jonathan@techize.co.uk"
+  SHOP_SOCIAL_HANDLE: "@mystmereforge_uk"
+  SHOP_BRAND_COLOR: "#d97754"
 ---
 apiVersion: v1
 kind: Service
