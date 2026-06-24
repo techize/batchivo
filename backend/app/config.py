@@ -104,8 +104,9 @@ class Settings(BaseSettings):
     shopify_store_domain: str = ""  # e.g. mystmereforge.myshopify.com
     shopify_access_token: str = ""  # Shopify Admin API token (for fulfilment sync)
 
-    # Email (Brevo) - configure via environment variables
+    # Email (Brevo or Resend) - configure via environment variables
     brevo_api_key: str = ""
+    resend_api_key: str = ""
     email_from_address: str = "noreply@example.com"
     email_from_name: str = "Batchivo"
     frontend_base_url: str = "http://localhost:5173"  # Base URL for email links

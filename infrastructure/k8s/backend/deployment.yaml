@@ -23,10 +23,12 @@ data:
   # Row-Level Security (RLS) configuration
   # Set to "true" after RLS policies are deployed and tested
   RLS_ENABLED: "false"
-  # Email configuration (Brevo)
+  # Email configuration
   EMAIL_FROM_ADDRESS: "noreply@batchivo.com"
   EMAIL_FROM_NAME: "Batchivo"
   FRONTEND_BASE_URL: "https://app.batchivo.com"
+  SHOP_SUPPORT_EMAIL: "jonathan@techize.co.uk"
+  SHOP_ORDERS_EMAIL: "jonathan@techize.co.uk"
 ---
 apiVersion: v1
 kind: Service
@@ -127,6 +129,9 @@ spec:
             optional: true  # Enables non-charging test.mystmereforge.co.uk checkout smoke tests
         - secretRef:
             name: brevo-credentials
+        - secretRef:
+            name: resend-credentials
+            optional: true
         - secretRef:
             name: rls-credentials
             optional: true  # Allow deployment without RLS secret initially

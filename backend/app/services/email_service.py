@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 # Brevo API endpoints
 BREVO_EMAIL_API_URL = "https://api.brevo.com/v3/smtp/email"
 BREVO_CONTACTS_API_URL = "https://api.brevo.com/v3/contacts"
+RESEND_EMAIL_API_URL = "https://api.resend.com/emails"
 
 
 class EmailService:
@@ -22,6 +23,7 @@ class EmailService:
         """Initialize Brevo client."""
         settings = get_settings()
         self.api_key = settings.brevo_api_key
+        self.resend_api_key = settings.resend_api_key
         self.from_address = settings.email_from_address
         self.from_name = settings.email_from_name
         self.frontend_base_url = settings.frontend_base_url.rstrip("/")
@@ -38,7 +40,7 @@ class EmailService:
     @property
     def is_configured(self) -> bool:
         """Check if email service is configured."""
-        return bool(self.api_key)
+        return bool(self.api_key or self.resend_api_key)
 
     async def _send_email_async(
         self,
@@ -47,28 +49,52 @@ class EmailService:
         html_content: str,
         reply_to: str | None = None,
     ) -> bool:
-        """Async email sending via Brevo."""
-        try:
-            headers = {
-                "api-key": self.api_key,
-                "Content-Type": "application/json",
-            }
-            payload = {
-                "sender": {"name": self.from_name, "email": self.from_address},
-                "to": [{"email": to_email}],
-                "subject": subject,
-                "htmlContent": html_content,
-            }
-            if reply_to:
-                payload["replyTo"] = {"email": reply_to}
+        """Async email sending via Brevo, falling back to Resend when configured."""
+        if self.api_key:
+            try:
+                headers = {
+                    "api-key": self.api_key,
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "sender": {"name": self.from_name, "email": self.from_address},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html_content,
+                }
+                if reply_to:
+                    payload["replyTo"] = {"email": reply_to}
 
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(BREVO_EMAIL_API_URL, json=payload, headers=headers)
-                response.raise_for_status()
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {e}")
-            return False
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(BREVO_EMAIL_API_URL, json=payload, headers=headers)
+                    response.raise_for_status()
+                return True
+            except Exception as e:
+                logger.error(f"Failed to send email to {to_email} via Brevo: {e}")
+
+        if self.resend_api_key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.resend_api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "from": f"{self.from_name} <{self.from_address}>",
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html_content,
+                }
+                if reply_to:
+                    payload["reply_to"] = reply_to
+
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(RESEND_EMAIL_API_URL, json=payload, headers=headers)
+                    response.raise_for_status()
+                return True
+            except Exception as e:
+                logger.error(f"Failed to send email to {to_email} via Resend: {e}")
+
+        return False
 
     async def subscribe_newsletter(
         self,

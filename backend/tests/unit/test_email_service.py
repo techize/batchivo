@@ -11,6 +11,7 @@ def get_mock_settings(**overrides):
     """Helper to create mock settings with shop branding defaults."""
     defaults = {
         "brevo_api_key": "test-api-key",
+        "resend_api_key": "",
         "email_from_address": "orders@testshop.com",
         "email_from_name": "Test Shop",
         "frontend_base_url": "http://localhost:5173",
@@ -36,13 +37,14 @@ class TestEmailService:
             service = EmailService()
 
             assert service.api_key == "test-api-key"
+            assert service.resend_api_key == ""
             assert service.from_address == "orders@testshop.com"
             assert service.from_name == "Test Shop"
 
     def test_init_without_api_key(self):
         """Test initialization when API key is not configured."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = get_mock_settings(brevo_api_key="")
+            mock_settings.return_value = get_mock_settings(brevo_api_key="", resend_api_key="")
             service = EmailService()
 
             assert service.api_key == ""
@@ -59,7 +61,7 @@ class TestEmailService:
     def test_is_configured_false(self):
         """Test is_configured returns False when API key is empty."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = get_mock_settings(brevo_api_key="")
+            mock_settings.return_value = get_mock_settings(brevo_api_key="", resend_api_key="")
             service = EmailService()
 
             assert service.is_configured is False
@@ -67,10 +69,21 @@ class TestEmailService:
     def test_is_configured_false_when_none(self):
         """Test is_configured returns False when API key is None."""
         with patch("app.services.email_service.get_settings") as mock_settings:
-            mock_settings.return_value = get_mock_settings(brevo_api_key=None)
+            mock_settings.return_value = get_mock_settings(brevo_api_key=None, resend_api_key=None)
             service = EmailService()
 
             assert service.is_configured is False
+
+    def test_is_configured_true_with_resend_only(self):
+        """Test is_configured returns True when only Resend is configured."""
+        with patch("app.services.email_service.get_settings") as mock_settings:
+            mock_settings.return_value = get_mock_settings(
+                brevo_api_key="",
+                resend_api_key="test-resend-api-key",
+            )
+            service = EmailService()
+
+            assert service.is_configured is True
 
 
 class TestSendOrderConfirmation:
