@@ -140,9 +140,6 @@ spec:
         - secretRef:
             name: rls-credentials
             optional: true  # Allow deployment without RLS secret initially
-        - secretRef:
-            name: shopify-credentials
-            optional: true  # Allow deployment without Shopify integration
         env:
         # Construct DATABASE_URL from postgres-secret (password not in repo)
         - name: DB_USER
@@ -173,7 +170,9 @@ spec:
               key: MINIO_ROOT_PASSWORD
         resources:
           requests:
-            memory: "256Mi"
+            # Steady-state usage is ~250Mi. A realistic request prevents the HPA
+            # treating ordinary idle memory as sustained pressure.
+            memory: "384Mi"
             cpu: "250m"
           limits:
             memory: "512Mi"
