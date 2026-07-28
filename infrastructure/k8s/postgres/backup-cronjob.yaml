@@ -1,6 +1,19 @@
 ---
 # PostgreSQL Automated Backup CronJob
-# Runs daily at 3am, stores backups in MinIO with 30-day retention
+# Runs daily at 3am, stores backups in MinIO and on a separate cluster node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-offnode-backups
+  namespace: batchivo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -33,8 +46,16 @@ data:
       --no-acl \
       | gzip > "/tmp/backup/${BACKUP_FILE}"
 
+    gzip -t "/tmp/backup/${BACKUP_FILE}"
     BACKUP_SIZE=$(du -h "/tmp/backup/${BACKUP_FILE}" | cut -f1)
     echo "Backup created successfully: ${BACKUP_SIZE}"
+
+    # Keep a second copy on node03. PostgreSQL and MinIO currently both use
+    # local-path volumes on node01, so this copy survives loss of that node.
+    echo "Copying backup to off-node storage..."
+    cp "/tmp/backup/${BACKUP_FILE}" "/offnode-backups/${BACKUP_FILE}"
+    gzip -t "/offnode-backups/${BACKUP_FILE}"
+    echo "Off-node backup verified successfully"
 
     # Configure MinIO client
     echo "Configuring MinIO client..."
@@ -66,6 +87,9 @@ data:
       fi
     done
 
+    find /offnode-backups -type f -name 'batchivo-backup-*.sql.gz' \
+      -mtime "+${RETENTION_DAYS}" -exec rm -f {} \;
+
     echo "Backup completed successfully at $(date)"
 
     # Cleanup local temp file
@@ -94,6 +118,9 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
+            fsGroup: 1000
+          nodeSelector:
+            kubernetes.io/hostname: k3s-node03-lab
           restartPolicy: OnFailure
           initContainers:
           - name: mc-installer
@@ -165,6 +192,8 @@ spec:
               mountPath: /scripts
             - name: mc-bin
               mountPath: /mc-bin
+            - name: offnode-backups
+              mountPath: /offnode-backups
           volumes:
           - name: scripts
             configMap:
@@ -172,6 +201,9 @@ spec:
               defaultMode: 0755
           - name: mc-bin
             emptyDir: {}
+          - name: offnode-backups
+            persistentVolumeClaim:
+              claimName: postgres-offnode-backups
 ---
 # Manual backup Job (run with: kubectl create job --from=cronjob/postgres-backup manual-backup-$(date +%s) -n batchivo)
 # This is just a reference - the CronJob handles automatic backups
