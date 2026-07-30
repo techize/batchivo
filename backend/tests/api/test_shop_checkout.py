@@ -431,6 +431,25 @@ class TestCreateCheckoutSession:
         assert "sessionId" in data
         assert "orderTotal" in data
 
+    async def test_validate_discount_invalid_code_returns_handled_response(
+        self, shop_client: AsyncClient
+    ):
+        """Invalid codes should return a validation result, not a server error."""
+        response = await shop_client.post(
+            "/api/v1/shop/checkout/validate-discount",
+            json={
+                "code": "NOTREAL",
+                "subtotal": "35.97",
+                "customer_email": "test@example.com",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["valid"] is False
+        assert data["code"] == "NOTREAL"
+        assert data["message"] == "Invalid discount code"
+
     async def test_create_checkout_with_discount(
         self,
         shop_client: AsyncClient,

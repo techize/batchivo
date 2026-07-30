@@ -1175,8 +1175,8 @@ class ValidateDiscountResponse(BaseModel):
 @router.post("/checkout/validate-discount", response_model=ValidateDiscountResponse)
 @limiter.limit("20/minute")
 async def validate_discount(
-    http_request: Request,
-    request: ValidateDiscountRequest,
+    request: Request,
+    data: ValidateDiscountRequest,
     shop_context: ShopContext,
     db: AsyncSession = Depends(get_db),
 ):
@@ -1193,9 +1193,9 @@ async def validate_discount(
 
     # Convert to internal validation request
     validation_request = DiscountValidationRequest(
-        code=request.code.upper().strip(),
-        subtotal=request.subtotal,
-        customer_email=request.customer_email,
+        code=data.code.upper().strip(),
+        subtotal=data.subtotal,
+        customer_email=data.customer_email,
     )
 
     # Validate using existing discount validation logic
@@ -1207,7 +1207,7 @@ async def validate_discount(
 
     return ValidateDiscountResponse(
         valid=validation_response.valid,
-        code=request.code.upper().strip(),
+        code=data.code.upper().strip(),
         discount_type=validation_response.discount_type.value
         if validation_response.discount_type
         else None,
