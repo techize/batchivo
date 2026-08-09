@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from typing import Annotated
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel
@@ -143,8 +144,12 @@ async def process_payment(
     order_seq = len(existing_orders) + 1
     order_number = f"{order_prefix}-{today}-{order_seq:03d}"
 
-    # Use order_number as idempotency key (or client-provided key if given)
-    idempotency_key = request.idempotency_key or order_number
+    # Use a unique payment-attempt idempotency key unless the client supplies one
+    # for an intentional retry of the exact same tokenized payment attempt.
+    # Do not use the bare order_number here: failed/abandoned payments do not
+    # create orders, so the next attempt would reuse e.g. MYST-YYYYMMDD-001 with
+    # different Square parameters and be rejected as IDEMPOTENCY_KEY_REUSED.
+    idempotency_key = request.idempotency_key or f"{order_number}-{uuid4()}"
     request.idempotency_key = idempotency_key
 
     logger.info(

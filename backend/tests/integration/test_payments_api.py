@@ -445,6 +445,50 @@ class TestProcessPayment:
                 detail = response.json()["detail"]
                 assert detail["error_code"] == "CARD_DECLINED"
 
+    async def test_failed_payment_attempts_use_unique_square_idempotency_keys(
+        self,
+        payments_client: AsyncClient,
+        shop_product: Product,
+        mystmereforge_channel: SalesChannel,
+    ):
+        """Failed attempts must not reuse the next order number as Square idempotency key."""
+        with patch("app.api.v1.payments.settings") as mock_settings:
+            mock_settings.square_access_token = "test-token"
+            mock_settings.square_location_id = "test-location"
+
+            with patch("app.api.v1.payments.get_payment_service") as mock_get_service:
+                mock_service = MagicMock()
+                mock_service.process_payment.return_value = PaymentError(
+                    success=False,
+                    error_code="CARD_DECLINED",
+                    error_message="Card was declined",
+                    detail="Insufficient funds",
+                )
+                mock_get_service.return_value = mock_service
+
+                first_body = self._create_payment_body(str(shop_product.id))
+                first_body["payment_token"] = "cnon:first-attempt"
+                second_body = self._create_payment_body(str(shop_product.id))
+                second_body["payment_token"] = "cnon:second-attempt"
+
+                first_response = await payments_client.post(
+                    "/api/v1/payments/process",
+                    json=first_body,
+                )
+                second_response = await payments_client.post(
+                    "/api/v1/payments/process",
+                    json=second_body,
+                )
+
+                assert first_response.status_code == 402
+                assert second_response.status_code == 402
+
+                first_request = mock_service.process_payment.call_args_list[0].args[0]
+                second_request = mock_service.process_payment.call_args_list[1].args[0]
+                assert first_request.idempotency_key != second_request.idempotency_key
+                assert first_request.idempotency_key.startswith("TEST-")
+                assert second_request.idempotency_key.startswith("TEST-")
+
     async def test_process_payment_creates_order_items(
         self,
         payments_client: AsyncClient,
