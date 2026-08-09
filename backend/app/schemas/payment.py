@@ -40,6 +40,9 @@ class PaymentRequest(BaseModel):
     """Request to process a payment."""
 
     payment_token: str = Field(..., description="Token from Square Web Payments SDK")
+    verification_token: Optional[str] = Field(
+        None, description="Buyer verification token from Square Web Payments SDK"
+    )
     amount: int = Field(ge=1, description="Total amount in pence")
     currency: str = Field(default="GBP", pattern="^[A-Z]{3}$")
     customer: CustomerDetails

@@ -32,6 +32,7 @@ from app.services.square_payment import (
 
 def create_payment_request(
     payment_token: str = "cnon:card-nonce-ok",
+    verification_token: str | None = None,
     amount: int = 2999,
     currency: str = "GBP",
     idempotency_key: str | None = None,
@@ -40,6 +41,7 @@ def create_payment_request(
     """Create a test payment request."""
     return PaymentRequest(
         payment_token=payment_token,
+        verification_token=verification_token,
         amount=amount,
         currency=currency,
         customer=CustomerDetails(
@@ -469,11 +471,42 @@ class TestProcessPaymentSuccess:
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
-                request = create_payment_request(phone="+44123456789")
+                request = create_payment_request(phone="+441234567890")
                 service.process_payment(request)
 
                 call_body = mock_payments_api.create.call_args.kwargs
-                assert call_body["buyer_phone_number"] == "+44123456789"
+                assert call_body["buyer_phone_number"] == "+441234567890"
+
+    def test_process_payment_includes_verification_token(self):
+        """Test successful payment sends Square SCA buyer verification token."""
+        with patch("app.services.square_payment.get_settings") as mock_settings:
+            mock_settings.return_value = create_mock_settings()
+            with patch("app.services.square_payment.Square") as mock_client:
+                mock_payments_api = MagicMock()
+                mock_payments_api.create.return_value = create_mock_success_response()
+                mock_client.return_value.payments = mock_payments_api
+
+                service = SquarePaymentService()
+                request = create_payment_request(verification_token="verf:sca-token")
+                service.process_payment(request)
+
+                call_body = mock_payments_api.create.call_args.kwargs
+                assert call_body["verification_token"] == "verf:sca-token"
+
+    def test_process_payment_omits_verification_token_when_not_provided(self):
+        """Test payments without a verification token retain existing behavior."""
+        with patch("app.services.square_payment.get_settings") as mock_settings:
+            mock_settings.return_value = create_mock_settings()
+            with patch("app.services.square_payment.Square") as mock_client:
+                mock_payments_api = MagicMock()
+                mock_payments_api.create.return_value = create_mock_success_response()
+                mock_client.return_value.payments = mock_payments_api
+
+                service = SquarePaymentService()
+                service.process_payment(create_payment_request())
+
+                call_body = mock_payments_api.create.call_args.kwargs
+                assert "verification_token" not in call_body
 
 
 # ============================================

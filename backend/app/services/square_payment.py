@@ -168,6 +168,9 @@ class SquarePaymentService:
             },
         }
 
+        if request.verification_token:
+            body["verification_token"] = request.verification_token
+
         if request.customer.phone:
             # Format phone to E.164 for Square (e.g., +441234567890)
             phone = request.customer.phone.strip()
