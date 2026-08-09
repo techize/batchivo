@@ -488,6 +488,8 @@ class TestProcessPayment:
                 assert first_request.idempotency_key != second_request.idempotency_key
                 assert first_request.idempotency_key.startswith("TEST-")
                 assert second_request.idempotency_key.startswith("TEST-")
+                assert len(first_request.idempotency_key) <= 45
+                assert len(second_request.idempotency_key) <= 45
 
     async def test_process_payment_creates_order_items(
         self,

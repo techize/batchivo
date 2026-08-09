@@ -149,7 +149,7 @@ async def process_payment(
     # Do not use the bare order_number here: failed/abandoned payments do not
     # create orders, so the next attempt would reuse e.g. MYST-YYYYMMDD-001 with
     # different Square parameters and be rejected as IDEMPOTENCY_KEY_REUSED.
-    idempotency_key = request.idempotency_key or f"{order_number}-{uuid4()}"
+    idempotency_key = request.idempotency_key or f"{order_number}-{uuid4().hex[:12]}"
     request.idempotency_key = idempotency_key
 
     logger.info(
