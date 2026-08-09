@@ -18,6 +18,15 @@ from app.middleware.security import SecurityHeadersMiddleware
 
 settings = get_settings()
 
+CORS_ALLOW_HEADERS = [
+    "Authorization",
+    "Content-Type",
+    "X-Tenant-ID",
+    "X-Shop-Hostname",
+    "Sentry-Trace",
+    "Baggage",
+]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -94,7 +103,7 @@ class CORSPreflightMiddleware(BaseHTTPMiddleware):
                     headers={
                         "Access-Control-Allow-Origin": origin,
                         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                        "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Tenant-ID, X-Shop-Hostname",
+                        "Access-Control-Allow-Headers": ", ".join(CORS_ALLOW_HEADERS),
                         "Access-Control-Allow-Credentials": "true"
                         if settings.cors_allow_credentials
                         else "false",
@@ -112,7 +121,7 @@ app.add_middleware(
     allow_origins=settings.cors_origins,
     allow_credentials=settings.cors_allow_credentials,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Tenant-ID", "X-Shop-Hostname"],
+    allow_headers=CORS_ALLOW_HEADERS,
 )
 
 # Security headers middleware
