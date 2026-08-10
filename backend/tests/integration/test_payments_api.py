@@ -301,6 +301,57 @@ class TestProcessPayment:
             assert response.status_code == 400
             assert "Amount mismatch" in response.json()["detail"]
 
+    async def test_hosted_checkout_creates_pending_order_and_square_link(
+        self,
+        payments_client: AsyncClient,
+        shop_product: Product,
+        db_session: AsyncSession,
+    ):
+        """Hosted Square checkout creates a pending order and returns redirect URL."""
+        with patch("app.api.v1.payments.settings") as mock_settings:
+            mock_settings.square_access_token = "test-token"
+            mock_settings.square_location_id = "test-location"
+            mock_settings.square_environment = "production"
+
+            with patch("app.api.v1.payments.get_payment_service") as mock_get_service:
+                mock_service = MagicMock()
+                mock_service.create_payment_link.return_value = {
+                    "id": "LPM_TEST_LINK",
+                    "url": "https://square.link/u/test",
+                    "order_id": "square_order_123",
+                }
+                mock_get_service.return_value = mock_service
+
+                body = self._create_payment_body(str(shop_product.id))
+                body.pop("payment_token")
+                body["redirect_url"] = "https://www.mystmereforge.co.uk/order-confirmation"
+
+                response = await payments_client.post(
+                    "/api/v1/payments/hosted-checkout",
+                    json=body,
+                )
+
+                assert response.status_code == 200
+                data = response.json()
+                assert data["checkout_url"] == "https://square.link/u/test"
+                assert data["payment_link_id"] == "LPM_TEST_LINK"
+                assert "-" in data["order_id"]
+
+                mock_service.create_payment_link.assert_called_once()
+                call = mock_service.create_payment_link.call_args.kwargs
+                assert call["amount"] == 2999
+                assert call["currency"] == "GBP"
+                assert call["order_number"] == data["order_id"]
+
+                result = await db_session.execute(
+                    select(Order).where(Order.order_number == data["order_id"])
+                )
+                order = result.scalar_one()
+                assert order.payment_provider == "square_hosted"
+                assert order.payment_id == "square_order_123"
+                assert order.payment_status == "PENDING_HOSTED_CHECKOUT"
+                assert order.confirmation_email_sent is False
+
     async def test_process_payment_success(
         self,
         payments_client: AsyncClient,

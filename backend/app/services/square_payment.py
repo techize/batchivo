@@ -3,6 +3,9 @@
 import logging
 import time
 import uuid
+import json
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -267,6 +270,63 @@ class SquarePaymentService:
             error_message=self._get_user_friendly_message(last_error_code, last_error or ""),
             detail=last_error or "Payment failed after multiple attempts",
         )
+
+    def create_payment_link(
+        self,
+        *,
+        idempotency_key: str,
+        order_number: str,
+        amount: int,
+        currency: str,
+        redirect_url: str,
+    ) -> dict:
+        """Create a Square-hosted checkout payment link for an order."""
+        body = {
+            "idempotency_key": idempotency_key,
+            "quick_pay": {
+                "name": f"Mystmere Forge order {order_number}",
+                "price_money": {"amount": amount, "currency": currency},
+                "location_id": self.location_id,
+            },
+            "checkout_options": {
+                "redirect_url": redirect_url,
+                "ask_for_shipping_address": False,
+            },
+            "pre_populated_data": {},
+        }
+
+        request = urllib.request.Request(
+            "https://connect.squareup.com/v2/online-checkout/payment-links",
+            data=json.dumps(body).encode(),
+            headers={
+                "Authorization": f"Bearer {self._access_token}",
+                "Square-Version": "2026-07-16",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                payload = json.loads(response.read())
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode(errors="replace")[:1000]
+            logger.warning("Square payment-link creation failed: %s %s", exc.code, detail)
+            raise
+
+        payment_link = payload.get("payment_link") or {}
+        checkout_url = payment_link.get("url")
+        payment_link_id = payment_link.get("id")
+        if not checkout_url or not payment_link_id:
+            raise RuntimeError("Square did not return a hosted checkout URL")
+
+        logger.info("Created Square payment link %s for order %s", payment_link_id, order_number)
+        return {
+            "id": payment_link_id,
+            "url": checkout_url,
+            "order_id": payment_link.get("order_id"),
+        }
 
     def get_payment(self, payment_id: str) -> Optional[dict]:
         """

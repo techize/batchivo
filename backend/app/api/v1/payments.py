@@ -14,7 +14,13 @@ from app.config import get_settings
 from app.database import get_db
 from app.models.order import Order as OrderModel, OrderItem as OrderItemModel, OrderStatus
 from app.models.product import Product
-from app.schemas.payment import PaymentRequest, PaymentResponse, PaymentError
+from app.schemas.payment import (
+    HostedCheckoutRequest,
+    HostedCheckoutResponse,
+    PaymentRequest,
+    PaymentResponse,
+    PaymentError,
+)
 from app.services.square_payment import SquarePaymentService, get_payment_service
 from app.services.email_service import get_email_service
 
@@ -63,6 +69,131 @@ def _get_square_runtime_config(hostname: str | None) -> dict[str, str | bool | N
     }
 
 
+def _validate_checkout_amount(request: HostedCheckoutRequest | PaymentRequest) -> int:
+    """Validate cart item totals and return item subtotal in pence."""
+    items_total = sum(item.price * item.quantity for item in request.items)
+    expected_total = items_total + request.shipping_cost - request.discount_amount
+
+    if request.amount != expected_total:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Amount mismatch: received {request.amount}, expected {expected_total}",
+        )
+    return items_total
+
+
+async def _next_order_number(db: AsyncSession, shop_tenant) -> str:
+    tenant_settings = shop_tenant.settings or {}
+    shop_settings = tenant_settings.get("shop", {})
+    order_prefix = shop_settings.get("order_prefix") or shop_tenant.slug.upper()[:4]
+    today = datetime.now(timezone.utc).strftime("%Y%m%d")
+    order_count_result = await db.execute(
+        select(OrderModel).where(
+            OrderModel.tenant_id == shop_tenant.id,
+            OrderModel.order_number.like(f"{order_prefix}-{today}-%"),
+        )
+    )
+    existing_orders = order_count_result.scalars().all()
+    return f"{order_prefix}-{today}-{len(existing_orders) + 1:03d}"
+
+
+async def _create_order_record(
+    *,
+    db: AsyncSession,
+    shop_tenant,
+    channel,
+    request: HostedCheckoutRequest | PaymentRequest,
+    items_total: int,
+    order_number: str,
+    payment_provider: str,
+    payment_id: str | None,
+    payment_status: str,
+    send_confirmation_email: bool,
+    receipt_url: str | None = None,
+) -> OrderModel:
+    """Persist a Batchivo order and line items for a checkout request."""
+    customer_name = f"{request.shipping_address.first_name} {request.shipping_address.last_name}"
+    db_order = OrderModel(
+        tenant_id=shop_tenant.id,
+        sales_channel_id=channel.id,
+        order_number=order_number,
+        status=OrderStatus.PENDING,
+        customer_email=request.customer.email,
+        customer_name=customer_name,
+        customer_phone=request.customer.phone,
+        shipping_address_line1=request.shipping_address.address_line1,
+        shipping_address_line2=request.shipping_address.address_line2,
+        shipping_city=request.shipping_address.city,
+        shipping_county=request.shipping_address.county,
+        shipping_postcode=request.shipping_address.postcode,
+        shipping_country=request.shipping_address.country,
+        shipping_method=request.shipping_method,
+        shipping_cost=request.shipping_cost / 100,
+        subtotal=items_total / 100,
+        total=request.amount / 100,
+        currency=request.currency,
+        discount_code=request.discount_code,
+        discount_amount=request.discount_amount / 100,
+        payment_provider=payment_provider,
+        payment_id=payment_id,
+        payment_status=payment_status,
+    )
+    db.add(db_order)
+    await db.flush()
+
+    for item in request.items:
+        product_result = await db.execute(
+            select(Product).where(
+                Product.id == item.product_id,
+                Product.tenant_id == shop_tenant.id,
+            )
+        )
+        product = product_result.scalar_one_or_none()
+        db.add(
+            OrderItemModel(
+                tenant_id=shop_tenant.id,
+                order_id=db_order.id,
+                product_id=product.id if product else None,
+                product_sku=product.sku if product else str(item.product_id),
+                product_name=item.name,
+                quantity=item.quantity,
+                unit_price=item.price / 100,
+                total_price=(item.price * item.quantity) / 100,
+            )
+        )
+
+    email_sent = False
+    if send_confirmation_email:
+        email_service = get_email_service()
+        email_sent = await email_service.send_order_confirmation(
+            to_email=request.customer.email,
+            customer_name=customer_name,
+            order_number=order_number,
+            order_items=[
+                {"name": item.name, "quantity": item.quantity, "price": item.price / 100}
+                for item in request.items
+            ],
+            subtotal=items_total / 100,
+            shipping_cost=request.shipping_cost / 100,
+            total=request.amount / 100,
+            shipping_address={
+                "address_line1": request.shipping_address.address_line1,
+                "address_line2": request.shipping_address.address_line2,
+                "city": request.shipping_address.city,
+                "county": request.shipping_address.county,
+                "postcode": request.shipping_address.postcode,
+                "country": request.shipping_address.country,
+            },
+            receipt_url=receipt_url,
+        )
+
+    db_order.confirmation_email_sent = email_sent
+    if email_sent:
+        db_order.confirmation_email_sent_at = datetime.now(timezone.utc)
+    await db.commit()
+    return db_order
+
+
 @router.get("/config", response_model=PaymentConfigResponse)
 async def get_payment_config(
     x_shop_hostname: Annotated[str | None, Header()] = None,
@@ -82,6 +213,77 @@ async def get_payment_config(
         environment=str(square_config["environment"]),
         app_id=str(square_config["app_id"]) if square_config["app_id"] else None,
         location_id=str(square_config["location_id"]) if square_config["location_id"] else None,
+    )
+
+
+@router.post("/hosted-checkout", response_model=HostedCheckoutResponse)
+async def create_hosted_checkout(
+    request: HostedCheckoutRequest,
+    shop_context: ShopContext,
+    x_shop_hostname: Annotated[str | None, Header()] = None,
+    db: AsyncSession = Depends(get_db),
+) -> HostedCheckoutResponse:
+    """Create a Square-hosted checkout link and pending Batchivo order."""
+    shop_tenant, channel = shop_context
+    square_config = _get_square_runtime_config(x_shop_hostname)
+    payment_environment = str(square_config["environment"])
+
+    if not square_config["enabled"]:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Payment processing is not configured",
+        )
+
+    items_total = _validate_checkout_amount(request)
+    order_number = await _next_order_number(db, shop_tenant)
+    idempotency_key = request.idempotency_key or f"hosted-{order_number}-{uuid4().hex[:8]}"
+    redirect_url = request.redirect_url or (
+        f"https://www.mystmereforge.co.uk/order-confirmation?order={order_number}&hosted=true"
+    )
+
+    if square_config["sandbox"]:
+        payment_service = SquarePaymentService(
+            access_token=str(square_config["access_token"]),
+            location_id=str(square_config["location_id"]),
+            environment="sandbox",
+        )
+    else:
+        payment_service = get_payment_service()
+
+    try:
+        payment_link = payment_service.create_payment_link(
+            idempotency_key=idempotency_key,
+            order_number=order_number,
+            amount=request.amount,
+            currency=request.currency,
+            redirect_url=redirect_url,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not create Square checkout link",
+        ) from exc
+
+    square_order_id = payment_link.get("order_id") or payment_link["id"]
+    await _create_order_record(
+        db=db,
+        shop_tenant=shop_tenant,
+        channel=channel,
+        request=request,
+        items_total=items_total,
+        order_number=order_number,
+        payment_provider="square_sandbox_hosted"
+        if payment_environment == "sandbox"
+        else "square_hosted",
+        payment_id=square_order_id,
+        payment_status="PENDING_HOSTED_CHECKOUT",
+        send_confirmation_email=False,
+    )
+
+    return HostedCheckoutResponse(
+        order_id=order_number,
+        payment_link_id=payment_link["id"],
+        checkout_url=payment_link["url"],
     )
 
 
@@ -116,33 +318,11 @@ async def process_payment(
             detail="Payment processing is not configured",
         )
 
-    # Validate amount matches items + shipping
-    items_total = sum(item.price * item.quantity for item in request.items)
-    expected_total = items_total + request.shipping_cost
+    # Validate amount matches items + shipping - discounts
+    items_total = _validate_checkout_amount(request)
 
-    if request.amount != expected_total:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Amount mismatch: received {request.amount}, expected {expected_total}",
-        )
-
-    # Generate order_number BEFORE payment to use as idempotency key
-    # This ensures retries don't create duplicate charges (Square 24-hour window)
-    # Get order prefix from tenant settings, fallback to uppercase slug
-    tenant_settings = shop_tenant.settings or {}
-    shop_settings = tenant_settings.get("shop", {})
-    order_prefix = shop_settings.get("order_prefix") or shop_tenant.slug.upper()[:4]
-
-    today = datetime.now(timezone.utc).strftime("%Y%m%d")
-    order_count_result = await db.execute(
-        select(OrderModel).where(
-            OrderModel.tenant_id == shop_tenant.id,
-            OrderModel.order_number.like(f"{order_prefix}-{today}-%"),
-        )
-    )
-    existing_orders = order_count_result.scalars().all()
-    order_seq = len(existing_orders) + 1
-    order_number = f"{order_prefix}-{today}-{order_seq:03d}"
+    # Generate order_number BEFORE payment
+    order_number = await _next_order_number(db, shop_tenant)
 
     # Use a unique payment-attempt idempotency key unless the client supplies one
     # for an intentional retry of the exact same tokenized payment attempt.

@@ -296,13 +296,23 @@ class SquareWebhookService:
 
         logger.info(f"Payment updated: payment_id={payment_id} status={new_status}")
 
-        # Find associated order
-        order_result = await self.db.execute(select(Order).where(Order.payment_id == payment_id))
+        # Find associated order. Embedded card payments store Square payment_id;
+        # hosted checkout orders are initially keyed by Square order_id because
+        # the card payment_id only exists after Square-hosted checkout completes.
+        square_order_id = payment.get("order_id")
+        order_result = await self.db.execute(
+            select(Order).where(
+                (Order.payment_id == payment_id)
+                | ((Order.payment_id == square_order_id) if square_order_id else False)
+            )
+        )
         order = order_result.scalar_one_or_none()
 
         if order:
             # Update order within transaction
             old_status = order.payment_status
+            if payment_id:
+                order.payment_id = payment_id
             order.payment_status = new_status
             order.updated_at = datetime.now(timezone.utc)
 
@@ -365,8 +375,14 @@ class SquareWebhookService:
             f"error_code={error_code} error_detail={error_detail}"
         )
 
-        # Find associated order if any
-        order_result = await self.db.execute(select(Order).where(Order.payment_id == payment_id))
+        # Find associated order. Hosted checkout payments are matched by Square order_id.
+        square_order_id = payment.get("order_id")
+        order_result = await self.db.execute(
+            select(Order).where(
+                (Order.payment_id == payment_id)
+                | ((Order.payment_id == square_order_id) if square_order_id else False)
+            )
+        )
         order = order_result.scalar_one_or_none()
 
         if order:

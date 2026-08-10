@@ -36,13 +36,9 @@ class CartItem(BaseModel):
     price: int = Field(ge=0, description="Price in pence")
 
 
-class PaymentRequest(BaseModel):
-    """Request to process a payment."""
+class CheckoutBaseRequest(BaseModel):
+    """Shared customer/cart fields for checkout payment flows."""
 
-    payment_token: str = Field(..., description="Token from Square Web Payments SDK")
-    verification_token: Optional[str] = Field(
-        None, description="Buyer verification token from Square Web Payments SDK"
-    )
     amount: int = Field(ge=1, description="Total amount in pence")
     currency: str = Field(default="GBP", pattern="^[A-Z]{3}$")
     customer: CustomerDetails
@@ -50,9 +46,37 @@ class PaymentRequest(BaseModel):
     shipping_method: str
     shipping_cost: int = Field(ge=0, description="Shipping cost in pence")
     items: list[CartItem]
+    discount_code: Optional[str] = None
+    discount_amount: int = Field(default=0, ge=0, description="Discount amount in pence")
     idempotency_key: Optional[str] = Field(
         None, description="Client-provided idempotency key for duplicate prevention"
     )
+
+
+class PaymentRequest(CheckoutBaseRequest):
+    """Request to process an embedded Square card payment."""
+
+    payment_token: str = Field(..., description="Token from Square Web Payments SDK")
+    verification_token: Optional[str] = Field(
+        None, description="Buyer verification token from Square Web Payments SDK"
+    )
+
+
+class HostedCheckoutRequest(CheckoutBaseRequest):
+    """Request to create a Square-hosted checkout link."""
+
+    redirect_url: Optional[str] = Field(
+        None, description="Storefront URL Square should redirect to after payment"
+    )
+
+
+class HostedCheckoutResponse(BaseModel):
+    """Response containing a Square-hosted checkout URL."""
+
+    success: bool = True
+    order_id: str
+    payment_link_id: str
+    checkout_url: str
 
 
 class PaymentResponse(BaseModel):
