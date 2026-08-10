@@ -1,5 +1,6 @@
 """Comprehensive tests for Square payment service - 100% coverage."""
 
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -25,6 +26,22 @@ from app.services.square_payment import (
 )
 
 
+class FakeHttpResponse:
+    """Minimal context-manager HTTP response for urllib tests."""
+
+    def __init__(self, payload: dict):
+        self.payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def read(self):
+        return json.dumps(self.payload).encode()
+
+
 # ============================================
 # Test Fixtures
 # ============================================
@@ -36,7 +53,7 @@ def create_payment_request(
     amount: int = 2999,
     currency: str = "GBP",
     idempotency_key: str | None = None,
-    phone: str | None = "+44123456789",
+    phone: str | None = "+441****6789",
 ) -> PaymentRequest:
     """Create a test payment request."""
     return PaymentRequest(
@@ -471,11 +488,11 @@ class TestProcessPaymentSuccess:
                 mock_client.return_value.payments = mock_payments_api
 
                 service = SquarePaymentService()
-                request = create_payment_request(phone="+441234567890")
+                request = create_payment_request(phone="+441****7890")
                 service.process_payment(request)
 
                 call_body = mock_payments_api.create.call_args.kwargs
-                assert call_body["buyer_phone_number"] == "+441234567890"
+                assert call_body["buyer_phone_number"] == "+441****7890"
 
     def test_process_payment_includes_verification_token(self):
         """Test successful payment sends Square SCA buyer verification token."""
@@ -1257,3 +1274,68 @@ class TestPaymentServiceSingleton:
                 assert isinstance(service, SquarePaymentService)
 
         reset_payment_service()
+
+
+class TestCreatePaymentLinkEndpoint:
+    """Tests for Square-hosted payment link API endpoint selection."""
+
+    @patch("app.services.square_payment.urllib.request.urlopen")
+    def test_sandbox_payment_link_uses_square_sandbox_host(self, mock_urlopen):
+        """Sandbox service must call connect.squareupsandbox.com for hosted checkout."""
+        mock_urlopen.return_value = FakeHttpResponse(
+            {
+                "payment_link": {
+                    "id": "sandbox-link",
+                    "url": "https://sandbox.square.link/u/test",
+                    "order_id": "sandbox-order",
+                }
+            }
+        )
+        service = SquarePaymentService(
+            access_token="sandbox-token",
+            location_id="sandbox-location",
+            environment="sandbox",
+        )
+
+        service.create_payment_link(
+            idempotency_key="idem-1",
+            order_number="MYST-TEST-001",
+            amount=2998,
+            currency="GBP",
+            redirect_url="https://test.mystmereforge.co.uk/order-confirmation",
+        )
+
+        request = mock_urlopen.call_args.args[0]
+        assert (
+            request.full_url
+            == "https://connect.squareupsandbox.com/v2/online-checkout/payment-links"
+        )
+
+    @patch("app.services.square_payment.urllib.request.urlopen")
+    def test_production_payment_link_uses_square_production_host(self, mock_urlopen):
+        """Production service must call connect.squareup.com for hosted checkout."""
+        mock_urlopen.return_value = FakeHttpResponse(
+            {
+                "payment_link": {
+                    "id": "production-link",
+                    "url": "https://square.link/u/test",
+                    "order_id": "production-order",
+                }
+            }
+        )
+        service = SquarePaymentService(
+            access_token="prod-token",
+            location_id="prod-location",
+            environment="production",
+        )
+
+        service.create_payment_link(
+            idempotency_key="idem-2",
+            order_number="MYST-PROD-001",
+            amount=2998,
+            currency="GBP",
+            redirect_url="https://www.mystmereforge.co.uk/order-confirmation",
+        )
+
+        request = mock_urlopen.call_args.args[0]
+        assert request.full_url == "https://connect.squareup.com/v2/online-checkout/payment-links"

@@ -295,8 +295,13 @@ class SquarePaymentService:
             "pre_populated_data": {},
         }
 
+        checkout_api_base = (
+            "https://connect.squareupsandbox.com"
+            if str(self.environment).lower().strip() == "sandbox"
+            else "https://connect.squareup.com"
+        )
         request = urllib.request.Request(
-            "https://connect.squareup.com/v2/online-checkout/payment-links",
+            f"{checkout_api_base}/v2/online-checkout/payment-links",
             data=json.dumps(body).encode(),
             headers={
                 "Authorization": f"Bearer {self._access_token}",
