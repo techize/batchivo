@@ -34,11 +34,15 @@ async def main():
             replies=await asyncio.gather(post('/reservations',a),post('/reservations',b))
             check('two simultaneous requests for all finite stock yield exactly one winner',sorted(r.status_code for r in replies)==[200,409])
             winner=a if replies[0].status_code==200 else b;loser=b if winner is a else a
+            stock=await post('/stock',{'items':[{'product_id':str(product.id),'variant_id':None}]})
+            check('availability excludes the held units',stock.status_code==200 and stock.json()['items'][0]['available']==0)
             check('identical reservation retry is idempotent',(await post('/reservations',winner)).status_code==200)
             changed=json.loads(json.dumps(winner));changed['total_pence']+=1
             check('reservation identity cannot be rewritten',(await post('/reservations',changed)).status_code==409)
             check('foreign order cannot release hold',(await action(winner,'release',winner['order_id']+1)).status_code==404)
             check('release before payment succeeds',(await action(winner,'release')).status_code==200)
+            stock=await post('/stock',{'items':[{'product_id':str(product.id),'variant_id':None}]})
+            check('released units return to availability',stock.status_code==200 and stock.json()['items'][0]['available']==product.units_in_stock)
             check('release retry is idempotent',(await action(winner,'release')).status_code==200)
             check('released reservation cannot start payment',(await action(winner,'begin_payment')).status_code==409)
             check('released units are available to waiting order',(await post('/reservations',loser)).status_code==200)

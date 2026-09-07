@@ -67,6 +67,7 @@ class Event(BaseModel):
     version: int=Field(gt=0)
     state: str
     payment_id: str=Field(min_length=1,max_length=192)
+    reservation_id: UUID|None=None
     currency: str='GBP'
     subtotal_pence: int=Field(ge=0)
     shipping_pence: int=Field(ge=0)
@@ -130,6 +131,7 @@ class ReservationAction(BaseModel):
     reservation_id: UUID
     order_id: int=Field(gt=0)
     action: str
+    decline_code: str=''
 
 async def signed_body(request):
     body=await request.body()
@@ -209,7 +211,7 @@ async def reservation_action(request:Request):
     body=await signed_body(request)
     try:data=ReservationAction.model_validate_json(body)
     except ValueError:raise HTTPException(422,'Invalid reservation action')
-    if data.action not in ['begin_payment','release']:raise HTTPException(422,'Unknown reservation action')
+    if data.action not in ['begin_payment','release','payment_declined']:raise HTTPException(422,'Unknown reservation action')
     async with async_session_maker() as db,db.begin():
         await reservation_order_lock(db,data.order_id)
         row=await db.scalar(select(CommerceReservation).where(CommerceReservation.reservation_id==str(data.reservation_id),CommerceReservation.woo_order_id==data.order_id).with_for_update())
@@ -219,10 +221,49 @@ async def reservation_action(request:Request):
             await locked_reservation_stock(db,ReservationRequest.model_validate(row.snapshot).lines)
             if row.state=='held' and row.expires_at>datetime.now(timezone.utc):row.state='payment_pending'
             elif row.state!='payment_pending':raise HTTPException(409,'Reservation cannot start payment')
+        elif data.action=='payment_declined':
+            # Authenticated checkout reports a definitive response for this exact attempt.
+            if data.decline_code not in ['GENERIC_DECLINE','CARD_DECLINED','VERIFY_CVV_FAILURE','VERIFY_AVS_FAILURE']:
+                raise HTTPException(422,'Not a definitive supported decline')
+            if row.state=='payment_pending':row.state='declined'
+            elif row.state!='declined':raise HTTPException(409,'Reservation cannot accept a decline')
         else:
             if row.state=='held':row.state='released'
             elif row.state!='released':raise HTTPException(409,'Payment may be in flight; reconcile before release')
     return {'reservation_id':row.reservation_id,'state':row.state}
+
+class StockKey(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    product_id: UUID
+    variant_id: UUID|None=None
+class StockRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    items: list[StockKey]=Field(min_length=1,max_length=100)
+
+@app.post('/stock')
+async def stock_snapshot(request:Request):
+    body=await signed_body(request)
+    try:data=StockRequest.model_validate_json(body)
+    except ValueError:raise HTTPException(422,'Invalid stock request')
+    now=datetime.now(timezone.utc);items=[]
+    async with async_session_maker() as db:
+        holds=(await db.scalars(select(CommerceReservation).where(or_(CommerceReservation.state=='payment_pending',and_(CommerceReservation.state=='held',CommerceReservation.expires_at>now))))).all()
+        reserved={}
+        for row in holds:
+            for line in row.snapshot['lines']:
+                key=(line['product_id'],line.get('variant_id'));reserved[key]=reserved.get(key,0)+line['quantity']
+        for key in data.items:
+            product=await db.scalar(select(Product).where(Product.id==key.product_id,Product.tenant_id==TENANT))
+            if not product:raise HTTPException(409,'Stock mapping not found')
+            variant=None
+            if key.variant_id:
+                variant=await db.scalar(select(ProductVariant).where(ProductVariant.id==key.variant_id,ProductVariant.product_id==product.id,ProductVariant.tenant_id==TENANT))
+                if not variant:raise HTTPException(409,'Variant mapping not found')
+            stock=variant or product;pto=variant.fulfilment_type in ['print_to_order','made_to_order'] if variant else product.print_to_order
+            active=product.is_active and (variant.is_active if variant else True)
+            quantity=max(0,stock.units_in_stock-reserved.get((str(key.product_id),str(key.variant_id) if key.variant_id else None),0)) if active else 0
+            items.append({'product_id':str(key.product_id),'variant_id':str(key.variant_id) if key.variant_id else None,'available':quantity,'print_to_order':pto})
+    return {'items':items}
 
 @app.get('/health')
 async def health():
@@ -237,8 +278,16 @@ async def verify_payment(event: Event):
     p=r.json()['payment']
     if p['status']!='COMPLETED' or p['amount_money']!={'amount':event.total_pence,'currency':'GBP'}:
         raise HTTPException(409,'Payment status or amount does not match order')
-    if event.state=='refunded' and p.get('refunded_money',{}).get('amount',0)!=event.total_pence:
-        raise HTTPException(409,'Full refund is not yet verified by Square')
+    if event.state=='refunded':
+        completed=0
+        async with httpx.AsyncClient(timeout=20) as client:
+            for refund_id in p.get('refund_ids',[]):
+                refund=await client.get('https://connect.squareupsandbox.com/v2/refunds/'+refund_id,
+                    headers={'Authorization':'Bearer '+os.environ['SQUARE_SANDBOX_ACCESS_TOKEN'],'Square-Version':'2026-01-22'})
+                if refund.status_code!=200:raise HTTPException(503,'Refund verification unavailable')
+                value=refund.json()['refund']
+                if value['status']=='COMPLETED' and value['amount_money']['currency']=='GBP':completed+=value['amount_money']['amount']
+        if completed!=event.total_pence:raise HTTPException(503,'Full refund completion is not yet verified by Square')
 
 @app.post('/events')
 async def receive(request:Request):
@@ -269,9 +318,14 @@ async def receive(request:Request):
             keys=['payment_id','currency','subtotal_pence','shipping_pence','discount_pence','total_pence']
             line_keys=['line_id','product_id','variant_id','sku','quantity','total_pence']
             def identity(lines):return sorted([tuple(str(line.get(k)) for k in line_keys) for line in lines])
-            if any(old[k]!=new[k] for k in keys) or identity(old['lines'])!=identity(new['lines']):
+            if any(old[k]!=new[k] for k in keys) or old.get('reservation_id')!=new.get('reservation_id') or identity(old['lines'])!=identity(new['lines']):
                 raise HTTPException(409,'Paid order changes require an explicit adjustment workflow')
         await verify_payment(event)
+        reservation=None
+        if not mapping and event.reservation_id:
+            reservation=await db.scalar(select(CommerceReservation).where(CommerceReservation.reservation_id==str(event.reservation_id),CommerceReservation.woo_order_id==event.order_id).with_for_update())
+            if not reservation or reservation.state!='payment_pending' or reservation_identity(reservation.snapshot)!=reservation_identity(event.model_dump(mode='json')):
+                raise HTTPException(409,'Matching payment-pending reservation required')
         if not mapping:
             if event.state not in ['processing','completed']:raise HTTPException(409,'Paid order must be reconciled before its terminal event')
             order=Order(tenant_id=TENANT,order_number=f'WOO-TEST-{event.order_id}',status='processing',
@@ -291,14 +345,16 @@ async def receive(request:Request):
                     variant=await db.scalar(select(ProductVariant).where(ProductVariant.id==line.variant_id,ProductVariant.product_id==product.id,ProductVariant.tenant_id==TENANT,ProductVariant.is_active.is_(True)).with_for_update())
                     if not variant:raise HTTPException(409,'Invalid mapped variant')
                 if line.sku!=(variant.sku if variant else product.sku):raise HTTPException(409,'SKU does not match source mapping')
-                pto=variant.fulfilment_type=='print_to_order' if variant else product.print_to_order
+                pto=variant.fulfilment_type in ['print_to_order','made_to_order'] if variant else product.print_to_order
                 if not pto:
+                    if not reservation:raise HTTPException(409,'Finite stock requires a pre-payment reservation')
                     stock=variant or product
                     if stock.units_in_stock<line.quantity:raise HTTPException(409,'Insufficient Batchivo test stock')
                     stock.units_in_stock-=line.quantity
                     effects['stock'].append({'product_id':str(product.id),'variant_id':str(variant.id) if variant else None,'quantity':line.quantity})
                 db.add(OrderItem(tenant_id=TENANT,order_id=order.id,product_id=product.id,product_sku=line.sku,product_name=(line.name+' '+line.option).strip()[:255],quantity=line.quantity,unit_price=Decimal(line.total_pence)/100/line.quantity,total_price=Decimal(line.total_pence)/100))
                 if pto:db.add(PrintJob(tenant_id=TENANT,product_id=product.id,quantity=line.quantity,status=JobStatus.PENDING,reference=f'WOO-TEST-{event.order_id}:{line.line_id}',notes=json.dumps({'source':'woocommerce-test','variant_id':str(line.variant_id) if line.variant_id else None,'sku':line.sku,'option':line.option,'payment_id':event.payment_id})))
+            if reservation:reservation.state='committed'
             mapping=CommerceOrder(woo_order_id=event.order_id,batchivo_order_id=str(order.id),version=event.version,state=event.state,snapshot=event.model_dump(mode='json'),effects=effects);db.add(mapping)
         else:
             order=await db.get(Order,UUID(mapping.batchivo_order_id));mapping.version=event.version;mapping.state=event.state;mapping.snapshot=event.model_dump(mode='json')
