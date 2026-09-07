@@ -5,7 +5,7 @@ production adapter release, not removal of this guard during testing.
 """
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 import hashlib
 import hmac
@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy import Index, Integer, String, Text, select, text
+from sqlalchemy import DateTime, Index, Integer, String, Text, and_, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -104,7 +104,125 @@ async def enrich_job_options(db, event: Event):
                 changed+=1
     return changed
 
-app=FastAPI(title='Batchivo isolated commerce acceptance',docs_url=None,redoc_url=None)
+class CommerceReservation(Base, UUIDMixin, TimestampMixin):
+    __tablename__='commerce_reservations'
+    reservation_id: Mapped[str]=mapped_column(String(36),unique=True)
+    woo_order_id: Mapped[int]=mapped_column(Integer,index=True)
+    state: Mapped[str]=mapped_column(String(32),index=True)
+    snapshot: Mapped[dict]=mapped_column(JSONB)
+    expires_at: Mapped[datetime]=mapped_column(DateTime(timezone=True))
+
+class ReservationRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    reservation_id: UUID
+    order_id: int=Field(gt=0)
+    total_pence: int=Field(ge=0)
+    currency: str='GBP'
+    lines: list[Line]=Field(min_length=1,max_length=100)
+    @model_validator(mode='after')
+    def valid(self):
+        if self.currency!='GBP' or len({line.line_id for line in self.lines})!=len(self.lines):
+            raise ValueError('Invalid reservation currency or duplicate line IDs')
+        return self
+
+class ReservationAction(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    reservation_id: UUID
+    order_id: int=Field(gt=0)
+    action: str
+
+async def signed_body(request):
+    body=await request.body()
+    if len(body)>256000:raise HTTPException(413,'Payload too large')
+    stamp=request.headers.get('x-mf-timestamp','')
+    if not stamp.isdigit() or abs(time.time()-int(stamp))>300:raise HTTPException(401,'Expired event signature')
+    expected=hmac.new(SECRET,stamp.encode()+b'.'+body,hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected,request.headers.get('x-mf-signature','')):raise HTTPException(401,'Invalid event signature')
+    return body
+
+async def reservation_order_lock(db,order_id):
+    await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),{'key':order_id})
+
+def reservation_identity(snapshot):
+    return (snapshot['order_id'],snapshot['currency'],snapshot['total_pence'],
+        sorted((str(x['product_id']),str(x.get('variant_id')),x['sku'],x['quantity'],x['total_pence'],x['line_id']) for x in snapshot['lines']))
+
+async def locked_reservation_stock(db,lines):
+    quantities={};stock_rows={}
+    # Stable parent/variant order serializes overlaps, including duplicate basket lines.
+    for line in sorted(lines,key=lambda x:(str(x.product_id),str(x.variant_id))):
+        product=await db.scalar(select(Product).where(Product.id==line.product_id,Product.tenant_id==TENANT).with_for_update())
+        if not product or not product.is_active:raise HTTPException(409,'Unknown or inactive mapped product')
+        variant=None
+        if line.variant_id:
+            variant=await db.scalar(select(ProductVariant).where(ProductVariant.id==line.variant_id,ProductVariant.product_id==product.id,ProductVariant.tenant_id==TENANT,ProductVariant.is_active.is_(True)).with_for_update())
+            if not variant:raise HTTPException(409,'Invalid mapped variant')
+        stock=variant or product
+        if line.sku!=stock.sku:raise HTTPException(409,'SKU does not match source mapping')
+        pto=variant.fulfilment_type in ['print_to_order','made_to_order'] if variant else product.print_to_order
+        if not pto:
+            key=(str(product.id),str(variant.id) if variant else None)
+            quantities[key]=quantities.get(key,0)+line.quantity;stock_rows[key]=stock
+    return quantities,stock_rows
+
+@asynccontextmanager
+async def commerce_lifespan(app):
+    async with engine.begin() as conn:
+        await conn.run_sync(lambda sync:CommerceReservation.__table__.create(sync,checkfirst=True))
+    yield
+
+app=FastAPI(title='Batchivo isolated commerce acceptance',docs_url=None,redoc_url=None,lifespan=commerce_lifespan)
+
+@app.post('/reservations')
+async def reserve(request:Request):
+    body=await signed_body(request)
+    try:data=ReservationRequest.model_validate_json(body)
+    except ValueError:raise HTTPException(422,'Invalid reservation')
+    snapshot=data.model_dump(mode='json');now=datetime.now(timezone.utc)
+    async with async_session_maker() as db,db.begin():
+        await db.execute(text('SELECT pg_advisory_xact_lock(hashtextextended(:key,2))'),{'key':str(data.reservation_id)})
+        await reservation_order_lock(db,data.order_id)
+        prior=await db.scalar(select(CommerceReservation).where(CommerceReservation.reservation_id==str(data.reservation_id)).with_for_update())
+        if prior:
+            if reservation_identity(prior.snapshot)!=reservation_identity(snapshot):raise HTTPException(409,'Reservation identity cannot be changed')
+            if prior.state=='held' and prior.expires_at<=now:raise HTTPException(409,'Reservation expired; use a new attempt')
+            if prior.state not in ['held','payment_pending']:raise HTTPException(409,'Reservation is terminal')
+            return {'reservation_id':prior.reservation_id,'state':prior.state,'expires_at':prior.expires_at.isoformat()}
+        existing=await db.scalar(select(CommerceReservation).where(CommerceReservation.woo_order_id==data.order_id,or_(CommerceReservation.state.in_(['payment_pending','committed']),and_(CommerceReservation.state=='held',CommerceReservation.expires_at>now))))
+        if existing:raise HTTPException(409,'Order already has an active reservation')
+        needed,stocks=await locked_reservation_stock(db,data.lines)
+        active=(await db.scalars(select(CommerceReservation).where(or_(CommerceReservation.state=='payment_pending',and_(CommerceReservation.state=='held',CommerceReservation.expires_at>now))))).all()
+        reserved={}
+        for row in active:
+            if row.state=='held' and row.expires_at<=now:continue
+            for line in row.snapshot['lines']:
+                key=(line['product_id'],line.get('variant_id'))
+                reserved[key]=reserved.get(key,0)+line['quantity']
+        if any(stocks[key].units_in_stock-reserved.get(key,0)<qty for key,qty in needed.items()):
+            raise HTTPException(409,'Insufficient available stock')
+        row=CommerceReservation(reservation_id=str(data.reservation_id),woo_order_id=data.order_id,state='held',snapshot=snapshot,expires_at=now+timedelta(minutes=15))
+        db.add(row)
+    return {'reservation_id':row.reservation_id,'state':row.state,'expires_at':row.expires_at.isoformat()}
+
+@app.post('/reservations/action')
+async def reservation_action(request:Request):
+    body=await signed_body(request)
+    try:data=ReservationAction.model_validate_json(body)
+    except ValueError:raise HTTPException(422,'Invalid reservation action')
+    if data.action not in ['begin_payment','release']:raise HTTPException(422,'Unknown reservation action')
+    async with async_session_maker() as db,db.begin():
+        await reservation_order_lock(db,data.order_id)
+        row=await db.scalar(select(CommerceReservation).where(CommerceReservation.reservation_id==str(data.reservation_id),CommerceReservation.woo_order_id==data.order_id).with_for_update())
+        if not row:raise HTTPException(404,'Reservation not found')
+        if data.action=='begin_payment':
+            # Lock the same inventory rows as a competing reservation before validating expiry.
+            await locked_reservation_stock(db,ReservationRequest.model_validate(row.snapshot).lines)
+            if row.state=='held' and row.expires_at>datetime.now(timezone.utc):row.state='payment_pending'
+            elif row.state!='payment_pending':raise HTTPException(409,'Reservation cannot start payment')
+        else:
+            if row.state=='held':row.state='released'
+            elif row.state!='released':raise HTTPException(409,'Payment may be in flight; reconcile before release')
+    return {'reservation_id':row.reservation_id,'state':row.state}
 
 @app.get('/health')
 async def health():
@@ -124,12 +242,7 @@ async def verify_payment(event: Event):
 
 @app.post('/events')
 async def receive(request:Request):
-    body=await request.body()
-    if len(body)>256000:raise HTTPException(413,'Payload too large')
-    stamp=request.headers.get('x-mf-timestamp','')
-    if not stamp.isdigit() or abs(time.time()-int(stamp))>300:raise HTTPException(401,'Expired event signature')
-    expected=hmac.new(SECRET,stamp.encode()+b'.'+body,hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected,request.headers.get('x-mf-signature','')):raise HTTPException(401,'Invalid event signature')
+    body=await signed_body(request)
     try:event=Event.model_validate_json(body)
     except ValueError:raise HTTPException(422,'Invalid order snapshot')
     digest=hashlib.sha256(body).hexdigest()
