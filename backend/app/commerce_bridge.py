@@ -83,6 +83,27 @@ class Event(BaseModel):
             raise ValueError('Line/shipping totals do not reconcile')
         return self
 
+async def enrich_job_options(db, event: Event):
+    """Fill absent display labels from the validated variant; never change work or stock."""
+    changed=0
+    for line in event.lines:
+        if not line.variant_id:
+            continue
+        variant=await db.get(ProductVariant,line.variant_id)
+        if not variant or variant.tenant_id!=TENANT or variant.product_id!=line.product_id or variant.sku!=line.sku:
+            raise HTTPException(409,'Variant label reconciliation requires a valid mapping')
+        jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference==f'WOO-TEST-{event.order_id}:{line.line_id}').with_for_update())).all()
+        for job in jobs:
+            notes=json.loads(job.notes or '{}')
+            if not notes.get('option'):
+                if job.product_id!=line.product_id or notes.get('variant_id')!=str(line.variant_id) or notes.get('sku')!=line.sku:
+                    raise HTTPException(409,'Manufacturing label mapping mismatch')
+                notes['option']=variant.size
+                notes['option_source']='validated_batchivo_variant'
+                job.notes=json.dumps(notes)
+                changed+=1
+    return changed
+
 app=FastAPI(title='Batchivo isolated commerce acceptance',docs_url=None,redoc_url=None)
 
 @app.get('/health')
@@ -183,6 +204,8 @@ async def receive(request:Request):
                     effects['restored']=True;mapping.effects=effects
                 order.status=event.state
                 if event.state=='refunded':order.payment_status='REFUNDED'
+        await db.flush()
+        await enrich_job_options(db,event)
         db.add(CommerceReceipt(event_id=str(event.event_id),body_sha256=digest,woo_order_id=event.order_id,outcome='applied'))
     return {'status':'applied','event_id':str(event.event_id),'batchivo_order_id':mapping.batchivo_order_id}
 
@@ -206,4 +229,13 @@ async def seed(file):
                 # Only insert missing records; reseeding never resets stock or test orders.
                 await db.execute(text(f'INSERT INTO {table} ({names}) SELECT {names} FROM json_populate_record(NULL::{table},CAST(:row AS json)) ON CONFLICT(id) DO NOTHING'),{'row':json.dumps(row)})
     print('Isolated Batchivo schema and catalogue seeded; no production customers, credentials or printers copied.')
-if __name__=='__main__':asyncio.run(seed(sys.argv[1]))
+async def reconcile_job_options():
+    async with async_session_maker() as db,db.begin():
+        mappings=(await db.scalars(select(CommerceOrder).with_for_update())).all()
+        changed=0
+        for mapping in mappings:
+            changed+=await enrich_job_options(db,Event.model_validate(mapping.snapshot))
+    print(json.dumps({'option_labels_enriched':changed,'scope':'Isolated variant labels only; quantities, status, payments and stock unchanged'}))
+
+if __name__=='__main__':
+    asyncio.run(reconcile_job_options() if sys.argv[1]=='--reconcile-job-options' else seed(sys.argv[1]))
