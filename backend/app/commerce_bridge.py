@@ -14,11 +14,14 @@ import os
 import sys
 import time
 from uuid import UUID, uuid4
+from typing import Literal
+from urllib.parse import urlsplit
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy import DateTime, Index, Integer, String, Text, and_, or_, select, text
+from sqlalchemy import DateTime, Index, Integer, String, Text, UniqueConstraint, and_, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -46,6 +49,33 @@ class CommerceOrder(Base, UUIDMixin, TimestampMixin):
     state: Mapped[str]=mapped_column(String(32))
     snapshot: Mapped[dict]=mapped_column(JSONB)
     effects: Mapped[dict]=mapped_column(JSONB,default=dict)
+
+class CommerceFulfilmentEvent(Base, UUIDMixin, TimestampMixin):
+    __tablename__='commerce_fulfilment_events'
+    __table_args__=(UniqueConstraint('woo_order_id','version'),)
+    event_id: Mapped[str]=mapped_column(String(36),unique=True)
+    command_sha256: Mapped[str]=mapped_column(String(64))
+    woo_order_id: Mapped[int]=mapped_column(Integer,index=True)
+    version: Mapped[int]=mapped_column(Integer)
+    payload: Mapped[dict]=mapped_column(JSONB)
+    state: Mapped[str]=mapped_column(String(16),default='pending',index=True)
+
+class DispatchCommand(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    event_id: UUID
+    order_id: int=Field(gt=0)
+    state: Literal['shipped','delivered']
+    tracking_number: str=Field(default='',max_length=100)
+    tracking_url: str=Field(default='',max_length=500)
+    @model_validator(mode='after')
+    def valid(self):
+        if any(ord(c)<32 for c in self.tracking_number+self.tracking_url):
+            raise ValueError('Invalid tracking characters')
+        if self.tracking_url:
+            value=urlsplit(self.tracking_url)
+            if value.scheme!='https' or not value.hostname or value.username or value.password:
+                raise ValueError('Tracking links must be HTTPS without embedded credentials')
+        return self
 
 payment_identity_index=Index('commerce_orders_payment_unique', CommerceOrder.snapshot['payment_id'].astext, unique=True)
 
@@ -142,6 +172,12 @@ async def signed_body(request):
     if not hmac.compare_digest(expected,request.headers.get('x-mf-signature','')):raise HTTPException(401,'Invalid event signature')
     return body
 
+def signed_response(data):
+    body=json.dumps(data,separators=(',',':'),sort_keys=True)
+    stamp=str(int(time.time()))
+    signature=hmac.new(SECRET,(stamp+'.'+body).encode(),hashlib.sha256).hexdigest()
+    return Response(content=body,media_type='application/json',headers={'X-MF-Timestamp':stamp,'X-MF-Signature':signature})
+
 async def reservation_order_lock(db,order_id):
     await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),{'key':order_id})
 
@@ -171,6 +207,7 @@ async def locked_reservation_stock(db,lines):
 async def commerce_lifespan(app):
     async with engine.begin() as conn:
         await conn.run_sync(lambda sync:CommerceReservation.__table__.create(sync,checkfirst=True))
+        await conn.run_sync(lambda sync:CommerceFulfilmentEvent.__table__.create(sync,checkfirst=True))
     yield
 
 app=FastAPI(title='Batchivo isolated commerce acceptance',docs_url=None,redoc_url=None,lifespan=commerce_lifespan)
@@ -265,6 +302,78 @@ async def stock_snapshot(request:Request):
             items.append({'product_id':str(key.product_id),'variant_id':str(key.variant_id) if key.variant_id else None,'available':quantity,'print_to_order':pto})
     return {'items':items}
 
+@app.post('/fulfilment/dispatch')
+async def dispatch(request: Request):
+    body=await signed_body(request)
+    try:command=DispatchCommand.model_validate_json(body)
+    except ValueError:raise HTTPException(422,'Invalid dispatch command')
+    digest=hashlib.sha256(body).hexdigest()
+    async with async_session_maker() as db,db.begin():
+        await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),{'key':-int.from_bytes(hashlib.sha256(str(command.event_id).encode()).digest()[:7],'big')-1})
+        await reservation_order_lock(db,command.order_id)
+        prior=await db.scalar(select(CommerceFulfilmentEvent).where(CommerceFulfilmentEvent.event_id==str(command.event_id)))
+        if prior:
+            if prior.command_sha256!=digest:raise HTTPException(409,'Dispatch identity reused with different data')
+            return {'status':'duplicate','event_id':prior.event_id,'version':prior.version}
+        mapping=await db.scalar(select(CommerceOrder).where(CommerceOrder.woo_order_id==command.order_id).with_for_update())
+        if not mapping:raise HTTPException(404,'Mapped paid order not found')
+        order=await db.scalar(select(Order).where(Order.id==UUID(mapping.batchivo_order_id),Order.tenant_id==TENANT).with_for_update())
+        if not order or order.payment_status!='COMPLETED' or mapping.state in ['cancelled','refunded']:
+            raise HTTPException(409,'Order cannot be dispatched')
+        previous=await db.scalar(select(CommerceFulfilmentEvent).where(CommerceFulfilmentEvent.woo_order_id==command.order_id).order_by(CommerceFulfilmentEvent.version.desc()).limit(1))
+        if command.state=='shipped':
+            if order.status not in ['pending','processing'] or order.shipped_at:
+                raise HTTPException(409,'Order has already been dispatched or is terminal')
+            jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(f'WOO-TEST-{command.order_id}:%')).with_for_update())).all()
+            finite={(effect['product_id'],effect['variant_id']) for effect in mapping.effects.get('stock',[])}
+            expected={f'WOO-TEST-{command.order_id}:{line["line_id"]}':line for line in mapping.snapshot['lines'] if (line['product_id'],line.get('variant_id')) not in finite}
+            if len(jobs)!=len(expected) or {job.reference for job in jobs}!=set(expected):
+                raise HTTPException(409,'Manufacturing job mappings require reconciliation')
+            if any(job.product_id!=UUID(expected[job.reference]['product_id']) or job.quantity!=expected[job.reference]['quantity'] for job in jobs):
+                raise HTTPException(409,'Manufacturing quantities require reconciliation')
+            if any(job.status!=JobStatus.COMPLETED for job in jobs):
+                raise HTTPException(409,'Manufacturing jobs must be completed before dispatch')
+            try:payment=await verify_payment(Event.model_validate(mapping.snapshot))
+            except httpx.HTTPError:raise HTTPException(503,'Payment verification unavailable; dispatch not recorded')
+            if payment.get('refund_ids') or payment.get('refunded_money',{}).get('amount',0):
+                raise HTTPException(409,'Refund activity requires review before dispatch')
+            order.shipped_at=datetime.now(timezone.utc)
+            order.tracking_number=command.tracking_number or None
+            order.tracking_url=command.tracking_url or None
+            # Commerce has already committed stock/payment effects. Never deduct again here.
+            if not order.fulfilled_at:order.fulfilled_at=order.shipped_at
+        else:
+            if order.status!='shipped' or not previous or previous.payload['state']!='shipped':
+                raise HTTPException(409,'Dispatch must be recorded before delivery')
+            if command.tracking_number or command.tracking_url:
+                raise HTTPException(422,'Delivery retains the recorded dispatch tracking')
+            order.delivered_at=datetime.now(timezone.utc)
+        order.status=command.state
+        version=previous.version+1 if previous else 1
+        payload={'event_id':str(command.event_id),'order_id':command.order_id,'batchivo_order_id':str(order.id),'payment_id':order.payment_id,'version':version,'state':command.state,'tracking_number':order.tracking_number or '','tracking_url':order.tracking_url or '','shipped_at':order.shipped_at.isoformat(),'delivered_at':order.delivered_at.isoformat() if order.delivered_at else None}
+        db.add(CommerceFulfilmentEvent(event_id=str(command.event_id),command_sha256=digest,woo_order_id=command.order_id,version=version,payload=payload))
+    return {'status':'recorded','event_id':str(command.event_id),'version':version}
+
+@app.post('/fulfilment/pending')
+async def pending_fulfilment(request: Request):
+    await signed_body(request)
+    async with async_session_maker() as db,db.begin():
+        events=(await db.scalars(select(CommerceFulfilmentEvent).where(CommerceFulfilmentEvent.state=='pending').order_by(CommerceFulfilmentEvent.updated_at,CommerceFulfilmentEvent.woo_order_id,CommerceFulfilmentEvent.version).limit(100).with_for_update(skip_locked=True))).all()
+        for event in events:event.updated_at=datetime.now(timezone.utc)
+        return signed_response({'events':[event.payload for event in events]})
+
+@app.post('/fulfilment/ack')
+async def acknowledge_fulfilment(request: Request):
+    body=await signed_body(request)
+    try:
+        value=json.loads(body);event_id=str(UUID(value['event_id']));order_id=int(value['order_id'])
+    except (ValueError,KeyError,TypeError):raise HTTPException(422,'Invalid acknowledgement')
+    async with async_session_maker() as db,db.begin():
+        event=await db.scalar(select(CommerceFulfilmentEvent).where(CommerceFulfilmentEvent.event_id==event_id,CommerceFulfilmentEvent.woo_order_id==order_id).with_for_update())
+        if not event:raise HTTPException(404,'Dispatch event not found')
+        event.state='delivered'
+    return signed_response({'status':'acknowledged','event_id':event_id})
+
 @app.get('/health')
 async def health():
     async with engine.connect() as conn:await conn.execute(text('SELECT 1'))
@@ -288,6 +397,7 @@ async def verify_payment(event: Event):
                 value=refund.json()['refund']
                 if value['status']=='COMPLETED' and value['amount_money']['currency']=='GBP':completed+=value['amount_money']['amount']
         if completed!=event.total_pence:raise HTTPException(503,'Full refund completion is not yet verified by Square')
+    return p
 
 @app.post('/events')
 async def receive(request:Request):
