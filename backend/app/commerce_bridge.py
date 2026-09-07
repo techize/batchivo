@@ -98,6 +98,8 @@ class Event(BaseModel):
     state: str
     payment_id: str=Field(min_length=1,max_length=192)
     reservation_id: UUID|None=None
+    refunded_pence: int|None=Field(default=None,ge=0)
+    refund_ids: list[str]=Field(default_factory=list,max_length=100)
     currency: str='GBP'
     subtotal_pence: int=Field(ge=0)
     shipping_pence: int=Field(ge=0)
@@ -110,6 +112,10 @@ class Event(BaseModel):
     def valid(self):
         if self.currency!='GBP' or self.state not in ['processing','completed','cancelled','refunded']:
             raise ValueError('Unsupported currency or state')
+        if self.refunded_pence is not None and (self.refunded_pence>self.total_pence or (self.state=='refunded' and self.refunded_pence!=self.total_pence)):
+            raise ValueError('Invalid cumulative refund amount')
+        if len(set(self.refund_ids))!=len(self.refund_ids) or any(not v or len(v)>192 for v in self.refund_ids):
+            raise ValueError('Invalid refund identities')
         if sum(x.total_pence for x in self.lines)+self.shipping_pence!=self.total_pence:
             raise ValueError('Line/shipping totals do not reconcile')
         return self
@@ -387,16 +393,28 @@ async def verify_payment(event: Event):
     p=r.json()['payment']
     if p['status']!='COMPLETED' or p['amount_money']!={'amount':event.total_pence,'currency':'GBP'}:
         raise HTTPException(409,'Payment status or amount does not match order')
-    if event.state=='refunded':
-        completed=0
+    target=event.refunded_pence if event.refunded_pence is not None else (event.total_pence if event.state=='refunded' else 0)
+    verified=[]
+    if target:
+        ids=event.refund_ids if event.refunded_pence is not None else p.get('refund_ids',[])
+        if not ids or not set(ids).issubset(set(p.get('refund_ids',[]))):
+            raise HTTPException(503,'Expected refund identities are not yet present on Square payment')
         async with httpx.AsyncClient(timeout=20) as client:
-            for refund_id in p.get('refund_ids',[]):
+            for refund_id in ids:
                 refund=await client.get('https://connect.squareupsandbox.com/v2/refunds/'+refund_id,
                     headers={'Authorization':'Bearer '+os.environ['SQUARE_SANDBOX_ACCESS_TOKEN'],'Square-Version':'2026-01-22'})
                 if refund.status_code!=200:raise HTTPException(503,'Refund verification unavailable')
                 value=refund.json()['refund']
-                if value['status']=='COMPLETED' and value['amount_money']['currency']=='GBP':completed+=value['amount_money']['amount']
-        if completed!=event.total_pence:raise HTTPException(503,'Full refund completion is not yet verified by Square')
+                if value.get('payment_id')!=event.payment_id or value.get('amount_money',{}).get('currency')!='GBP':
+                    raise HTTPException(409,'Refund payment identity or currency mismatch')
+                if value['status']!='COMPLETED':raise HTTPException(503,'Refund completion is not yet verified by Square')
+                verified.append({'id':refund_id,'amount_pence':value['amount_money']['amount'],'status':'COMPLETED'})
+        if sum(v['amount_pence'] for v in verified)!=target:
+            raise HTTPException(409,'Verified refund amount does not match snapshot')
+    elif event.refund_ids:
+        raise HTTPException(422,'Refund identities require a positive refund amount')
+    p['_verified_refunds']=verified
+    p['_verified_refunded_pence']=target
     return p
 
 @app.post('/events')
@@ -415,7 +433,8 @@ async def receive(request:Request):
         prior=await db.scalar(select(CommerceReceipt).where(CommerceReceipt.event_id==str(event.event_id)))
         if prior:
             if prior.body_sha256!=digest:raise HTTPException(409,'Event ID reused with different data')
-            return {'status':'duplicate','event_id':str(event.event_id)}
+            recorded=await db.scalar(select(CommerceOrder).where(CommerceOrder.woo_order_id==event.order_id))
+            return {'status':'duplicate','event_id':str(event.event_id),'refund_review':recorded.effects.get('refund_review','') if recorded else '', 'refunded_pence':recorded.effects.get('refunded_pence',0) if recorded else 0}
         mapping=await db.scalar(select(CommerceOrder).where(CommerceOrder.woo_order_id==event.order_id).with_for_update())
         if mapping and event.version<=mapping.version:
             db.add(CommerceReceipt(event_id=str(event.event_id),body_sha256=digest,woo_order_id=event.order_id,outcome='stale'))
@@ -430,7 +449,11 @@ async def receive(request:Request):
             def identity(lines):return sorted([tuple(str(line.get(k)) for k in line_keys) for line in lines])
             if any(old[k]!=new[k] for k in keys) or old.get('reservation_id')!=new.get('reservation_id') or identity(old['lines'])!=identity(new['lines']):
                 raise HTTPException(409,'Paid order changes require an explicit adjustment workflow')
-        await verify_payment(event)
+        payment=await verify_payment(event)
+        if mapping and payment['_verified_refunded_pence']<mapping.effects.get('refunded_pence',0):
+            raise HTTPException(409,'Verified refunds cannot be removed by a later event')
+        if mapping and not {r['id'] for r in mapping.effects.get('refunds',[])}.issubset({r['id'] for r in payment['_verified_refunds']}):
+            raise HTTPException(409,'Verified refund identities cannot be removed by a later event')
         reservation=None
         if not mapping and event.reservation_id:
             reservation=await db.scalar(select(CommerceReservation).where(CommerceReservation.reservation_id==str(event.reservation_id),CommerceReservation.woo_order_id==event.order_id).with_for_update())
@@ -468,25 +491,39 @@ async def receive(request:Request):
             mapping=CommerceOrder(woo_order_id=event.order_id,batchivo_order_id=str(order.id),version=event.version,state=event.state,snapshot=event.model_dump(mode='json'),effects=effects);db.add(mapping)
         else:
             order=await db.get(Order,UUID(mapping.batchivo_order_id));mapping.version=event.version;mapping.state=event.state;mapping.snapshot=event.model_dump(mode='json')
+            effects=dict(mapping.effects)
+            if payment['_verified_refunded_pence']:
+                effects['refunds']=payment['_verified_refunds']
+                effects['refunded_pence']=payment['_verified_refunded_pence']
+                order.payment_status='REFUNDED' if payment['_verified_refunded_pence']==event.total_pence else 'PARTIALLY_REFUNDED'
             if event.state in ['cancelled','refunded']:
                 jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(f'WOO-TEST-{event.order_id}:%')).with_for_update())).all()
-                if any(j.status not in [JobStatus.PENDING,JobStatus.QUEUED,JobStatus.CANCELLED] for j in jobs):raise HTTPException(409,'Manufacturing already started; operator review required')
-                for job in jobs:job.status=JobStatus.CANCELLED
-                effects=dict(mapping.effects)
-                if not effects.get('restored'):
-                    for effect in effects.get('stock',[]):
-                        cls=ProductVariant if effect['variant_id'] else Product
-                        key=UUID(effect['variant_id'] or effect['product_id'])
-                        stock=await db.scalar(select(cls).where(cls.id==key,cls.tenant_id==TENANT).with_for_update())
-                        if not stock:raise HTTPException(409,'Stock mapping requires operator review')
-                        stock.units_in_stock+=effect['quantity']
-                    effects['restored']=True;mapping.effects=effects
-                order.status=event.state
+                started=any(j.status not in [JobStatus.PENDING,JobStatus.QUEUED,JobStatus.CANCELLED] for j in jobs)
+                dispatched=bool(order.shipped_at)
+                if event.state=='cancelled' and (started or dispatched):
+                    raise HTTPException(409,'Manufacturing/dispatch already started; cancellation requires operator review')
+                # Refund is a financial fact. Never erase completed/active manufacturing or dispatch.
+                if event.state=='refunded' and (started or dispatched):
+                    effects['refund_review']='Refund after manufacturing or dispatch: review goods/returns; no stock restored.'
+                    for job in jobs:
+                        if job.status in [JobStatus.PENDING,JobStatus.QUEUED]:job.status=JobStatus.CANCELLED
+                else:
+                    for job in jobs:job.status=JobStatus.CANCELLED
+                    if not effects.get('restored'):
+                        for effect in effects.get('stock',[]):
+                            cls=ProductVariant if effect['variant_id'] else Product
+                            key=UUID(effect['variant_id'] or effect['product_id'])
+                            stock=await db.scalar(select(cls).where(cls.id==key,cls.tenant_id==TENANT).with_for_update())
+                            if not stock:raise HTTPException(409,'Stock mapping requires operator review')
+                            stock.units_in_stock+=effect['quantity']
+                        effects['restored']=True
+                if not dispatched:order.status=event.state
                 if event.state=='refunded':order.payment_status='REFUNDED'
+            mapping.effects=effects
         await db.flush()
         await enrich_job_options(db,event)
         db.add(CommerceReceipt(event_id=str(event.event_id),body_sha256=digest,woo_order_id=event.order_id,outcome='applied'))
-    return {'status':'applied','event_id':str(event.event_id),'batchivo_order_id':mapping.batchivo_order_id}
+    return {'status':'applied','event_id':str(event.event_id),'batchivo_order_id':mapping.batchivo_order_id,'refund_review':mapping.effects.get('refund_review',''),'refunded_pence':mapping.effects.get('refunded_pence',0)}
 
 async def seed(file):
     d=json.load(open(file))
