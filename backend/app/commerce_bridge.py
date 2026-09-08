@@ -313,7 +313,10 @@ async def dispatch(request: Request):
     body=await signed_body(request)
     try:command=DispatchCommand.model_validate_json(body)
     except ValueError:raise HTTPException(422,'Invalid dispatch command')
-    digest=hashlib.sha256(body).hexdigest()
+    return await record_dispatch(command, hashlib.sha256(body).hexdigest())
+
+async def record_dispatch(command: DispatchCommand, digest: str):
+    """Single durable dispatch path for signed integration and native operator actions."""
     async with async_session_maker() as db,db.begin():
         await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),{'key':-int.from_bytes(hashlib.sha256(str(command.event_id).encode()).digest()[:7],'big')-1})
         await reservation_order_lock(db,command.order_id)

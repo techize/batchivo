@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.order import Order
 from app.models.product import Product
 from app.models.tenant import Tenant
+from app.services.commerce_order_ownership import reject_native_commerce_mutation
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,8 @@ class OrderFulfillmentService:
         Returns:
             FulfillmentResult with validation status
         """
+        await reject_native_commerce_mutation(self.db, order)
+
         items_with_product = [item for item in order.items if item.product_id]
         product_ids = [item.product_id for item in items_with_product]
 
@@ -128,6 +131,8 @@ class OrderFulfillmentService:
         Returns:
             FulfillmentResult with deduction status
         """
+        await reject_native_commerce_mutation(self.db, order)
+
         insufficient_items = []
         deducted_items = []
 
@@ -227,6 +232,8 @@ class OrderFulfillmentService:
         Returns:
             FulfillmentResult with revert status
         """
+        await reject_native_commerce_mutation(self.db, order)
+
         if not order.fulfilled_at:
             return FulfillmentResult(
                 success=True,
