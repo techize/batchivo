@@ -363,6 +363,34 @@ async def record_dispatch(command: DispatchCommand, digest: str):
         db.add(CommerceFulfilmentEvent(event_id=str(command.event_id),command_sha256=digest,woo_order_id=command.order_id,version=version,payload=payload))
     return {'status':'recorded','event_id':str(command.event_id),'version':version}
 
+class NativeDispatchRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    order_id: int=Field(gt=0)
+    state: Literal['shipped','delivered']
+    tracking_number: str=Field(default='',max_length=100)
+    tracking_url: str=Field(default='',max_length=500)
+
+@app.post('/fulfilment/operator')
+async def operator_dispatch(request: Request):
+    body=await signed_body(request)
+    try:command=NativeDispatchRequest.model_validate_json(body)
+    except ValueError:return signed_response({'ok':False,'code':422,'error':'Invalid dispatch details'})
+    from app.api.v1.orders import ship_order,deliver_order,ShipOrderRequest
+    try:
+        if command.state=='delivered' and (command.tracking_number or command.tracking_url):
+            raise HTTPException(422,'Delivery retains recorded dispatch tracking')
+        async with async_session_maker() as db:
+            mapping=await db.scalar(select(CommerceOrder).where(CommerceOrder.woo_order_id==command.order_id))
+            if not mapping:raise HTTPException(404,'Mapped paid order not found')
+            tenant=await db.get(Tenant,TENANT)
+            if command.state=='shipped':
+                result=await ship_order(UUID(mapping.batchivo_order_id),ShipOrderRequest(tracking_number=command.tracking_number,tracking_url=command.tracking_url),db=db,tenant=tenant)
+            else:result=await deliver_order(UUID(mapping.batchivo_order_id),db=db,tenant=tenant)
+            if not result.get('commerce'):raise HTTPException(409,'Native commerce dispatch result missing')
+            return signed_response({'ok':True,'order_id':command.order_id,'state':command.state,'result':result['commerce']})
+    except HTTPException as error:
+        return signed_response({'ok':False,'code':error.status_code,'error':str(error.detail)})
+
 @app.post('/fulfilment/pending')
 async def pending_fulfilment(request: Request):
     await signed_body(request)
