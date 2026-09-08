@@ -1,8 +1,4 @@
-"""Isolated WooCommerce acceptance bridge using real Batchivo order/print-job models.
-
-This service deliberately refuses production databases. Promotion requires a reviewed
-production adapter release, not removal of this guard during testing.
-"""
+"""WooCommerce bridge with explicit isolated and separately activated production profiles."""
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
@@ -21,18 +17,31 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy import DateTime, Index, Integer, String, Text, UniqueConstraint, and_, or_, select, text
+from sqlalchemy import event, inspect, DateTime, Index, Integer, String, Text, UniqueConstraint, and_, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Session, Mapped, mapped_column
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
-if os.environ.get('COMMERCE_ISOLATED') != 'true' or 'batchivo_commerce_test' not in os.environ.get('DATABASE_URL',''):
-    raise RuntimeError('Commerce acceptance bridge requires an isolated test database')
-from app.database import Base, engine, async_session_maker
+from app.commerce_runtime import CommerceRuntime
+RUNTIME = CommerceRuntime.from_environment(os.environ)
+from app.database import Base, engine
 from app.models import Product, ProductVariant, Tenant, Order, OrderItem, PrintJob, JobStatus
 from app.models.base import UUIDMixin, TimestampMixin
 
 TENANT=UUID(os.environ['COMMERCE_TENANT_ID'])
 SECRET=os.environ['COMMERCE_BRIDGE_SECRET'].encode()
+# The actual engine target must agree with the configuration guard, including RLS URLs.
+CommerceRuntime.from_environment({**os.environ,'DATABASE_URL':engine.url.render_as_string(hide_password=False),'RLS_ENABLED':'false'})
+
+class CommerceSession(Session):
+    pass
+
+@event.listens_for(CommerceSession,'after_begin')
+def commerce_tenant_context(session,transaction,connection):
+    connection.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(TENANT)})
+
+# Only bridge sessions get this fixed tenant; native application sessions retain their own context.
+async_session_maker=async_sessionmaker(engine,expire_on_commit=False,autoflush=False,sync_session_class=CommerceSession)
 
 class CommerceReceipt(Base, UUIDMixin, TimestampMixin):
     __tablename__='commerce_receipts'
@@ -118,6 +127,12 @@ class Event(BaseModel):
             raise ValueError('Invalid refund identities')
         if sum(x.total_pence for x in self.lines)+self.shipping_pence!=self.total_pence:
             raise ValueError('Line/shipping totals do not reconcile')
+        if not RUNTIME.isolated:
+            for fields, required in [(self.customer, ['email','name']), (self.shipping, ['address_1','city','postcode'])]:
+                if any(not isinstance(fields.get(key),str) or not fields[key].strip() for key in required):
+                    raise ValueError('Production orders require customer and delivery details')
+            if '@' not in self.customer['email'] or self.shipping.get('country')!='GB':
+                raise ValueError('Production orders require a valid email and supported delivery country')
         return self
 
 async def enrich_job_options(db, event: Event):
@@ -129,7 +144,7 @@ async def enrich_job_options(db, event: Event):
         variant=await db.get(ProductVariant,line.variant_id)
         if not variant or variant.tenant_id!=TENANT or variant.product_id!=line.product_id or variant.sku!=line.sku:
             raise HTTPException(409,'Variant label reconciliation requires a valid mapping')
-        jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference==f'WOO-TEST-{event.order_id}:{line.line_id}').with_for_update())).all()
+        jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference==RUNTIME.job_reference(event.order_id,line.line_id)).with_for_update())).all()
         for job in jobs:
             notes=json.loads(job.notes or '{}')
             if not notes.get('option'):
@@ -212,11 +227,16 @@ async def locked_reservation_stock(db,lines):
 @asynccontextmanager
 async def commerce_lifespan(app):
     async with engine.begin() as conn:
-        await conn.run_sync(lambda sync:CommerceReservation.__table__.create(sync,checkfirst=True))
-        await conn.run_sync(lambda sync:CommerceFulfilmentEvent.__table__.create(sync,checkfirst=True))
+        if RUNTIME.isolated:
+            await conn.run_sync(lambda sync:CommerceReservation.__table__.create(sync,checkfirst=True))
+            await conn.run_sync(lambda sync:CommerceFulfilmentEvent.__table__.create(sync,checkfirst=True))
+        else:
+            required=['commerce_receipts','commerce_orders','commerce_fulfilment_events','commerce_reservations']
+            present=await conn.run_sync(lambda sync:all(inspect(sync).has_table(name) for name in required))
+            if not present:raise RuntimeError('Production commerce migration must be applied before activation')
     yield
 
-app=FastAPI(title='Batchivo isolated commerce acceptance',docs_url=None,redoc_url=None,lifespan=commerce_lifespan)
+app=FastAPI(title='Batchivo commerce integration',docs_url=None,redoc_url=None,lifespan=commerce_lifespan)
 
 @app.post('/reservations')
 async def reserve(request:Request):
@@ -333,9 +353,9 @@ async def record_dispatch(command: DispatchCommand, digest: str):
         if command.state=='shipped':
             if order.status not in ['pending','processing'] or order.shipped_at:
                 raise HTTPException(409,'Order has already been dispatched or is terminal')
-            jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(f'WOO-TEST-{command.order_id}:%')).with_for_update())).all()
+            jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(RUNTIME.order_reference(command.order_id)+':%')).with_for_update())).all()
             finite={(effect['product_id'],effect['variant_id']) for effect in mapping.effects.get('stock',[])}
-            expected={f'WOO-TEST-{command.order_id}:{line["line_id"]}':line for line in mapping.snapshot['lines'] if (line['product_id'],line.get('variant_id')) not in finite}
+            expected={RUNTIME.job_reference(command.order_id,line["line_id"]):line for line in mapping.snapshot['lines'] if (line['product_id'],line.get('variant_id')) not in finite}
             if len(jobs)!=len(expected) or {job.reference for job in jobs}!=set(expected):
                 raise HTTPException(409,'Manufacturing job mappings require reconciliation')
             if any(job.product_id!=UUID(expected[job.reference]['product_id']) or job.quantity!=expected[job.reference]['quantity'] for job in jobs):
@@ -414,14 +434,21 @@ async def acknowledge_fulfilment(request: Request):
 @app.get('/health')
 async def health():
     async with engine.connect() as conn:await conn.execute(text('SELECT 1'))
-    return {'status':'ok','environment':'isolated-test'}
+    return {'status':'ok','environment':RUNTIME.mode}
 
 async def verify_payment(event: Event):
     async with httpx.AsyncClient(timeout=20) as client:
-        r=await client.get('https://connect.squareupsandbox.com/v2/payments/'+event.payment_id,
-            headers={'Authorization':'Bearer '+os.environ['SQUARE_SANDBOX_ACCESS_TOKEN'],'Square-Version':'2026-01-22'})
-    if r.status_code!=200:raise HTTPException(503,'Square sandbox payment verification unavailable')
+        r=await client.get(RUNTIME.square_base+'/payments/'+event.payment_id,
+            headers={'Authorization':'Bearer '+os.environ[RUNTIME.token_environment_key],'Square-Version':'2026-01-22'})
+    if r.status_code!=200:raise HTTPException(503,'Square payment verification unavailable')
     p=r.json()['payment']
+    expected_location=os.environ.get(RUNTIME.location_environment_key)
+    if not expected_location or p.get('location_id')!=expected_location:
+        raise HTTPException(409,'Payment location does not match this store')
+    if p.get('reference_id')!=str(event.order_id):
+        raise HTTPException(409,'Payment reference does not match this order')
+    if event.reservation_id and not p.get('note','').startswith('[MF-RESERVATION:'+str(event.reservation_id)+'] '):
+        raise HTTPException(409,'Payment does not match the stock reservation')
     if p['status']!='COMPLETED' or p['amount_money']!={'amount':event.total_pence,'currency':'GBP'}:
         raise HTTPException(409,'Payment status or amount does not match order')
     target=event.refunded_pence if event.refunded_pence is not None else (event.total_pence if event.state=='refunded' else 0)
@@ -432,8 +459,8 @@ async def verify_payment(event: Event):
             raise HTTPException(503,'Expected refund identities are not yet present on Square payment')
         async with httpx.AsyncClient(timeout=20) as client:
             for refund_id in ids:
-                refund=await client.get('https://connect.squareupsandbox.com/v2/refunds/'+refund_id,
-                    headers={'Authorization':'Bearer '+os.environ['SQUARE_SANDBOX_ACCESS_TOKEN'],'Square-Version':'2026-01-22'})
+                refund=await client.get(RUNTIME.square_base+'/refunds/'+refund_id,
+                    headers={'Authorization':'Bearer '+os.environ[RUNTIME.token_environment_key],'Square-Version':'2026-01-22'})
                 if refund.status_code!=200:raise HTTPException(503,'Refund verification unavailable')
                 value=refund.json()['refund']
                 if value.get('payment_id')!=event.payment_id or value.get('amount_money',{}).get('currency')!='GBP':
@@ -492,14 +519,15 @@ async def receive(request:Request):
                 raise HTTPException(409,'Matching payment-pending reservation required')
         if not mapping:
             if event.state not in ['processing','completed']:raise HTTPException(409,'Paid order must be reconciled before its terminal event')
-            order=Order(tenant_id=TENANT,order_number=f'WOO-TEST-{event.order_id}',status='processing',
+            order=Order(tenant_id=TENANT,order_number=RUNTIME.order_reference(event.order_id),status='processing',
                 customer_email=event.customer.get('email','test@example.invalid'),customer_name=event.customer.get('name','Test customer'),
+                customer_phone=event.customer.get('phone') or None,
                 shipping_address_line1=event.shipping.get('address_1',''),shipping_address_line2=event.shipping.get('address_2',''),
                 shipping_city=event.shipping.get('city',''),shipping_postcode=event.shipping.get('postcode',''),shipping_country='United Kingdom',
                 shipping_method=event.shipping.get('method','Royal Mail'),shipping_cost=Decimal(event.shipping_pence)/100,
                 subtotal=Decimal(event.subtotal_pence)/100,total=Decimal(event.total_pence)/100,discount_amount=Decimal(event.discount_pence)/100,
-                currency='GBP',payment_provider='square-sandbox',payment_id=event.payment_id,payment_status='COMPLETED',
-                confirmation_email_sent=False,internal_notes='Isolated WooCommerce acceptance order. Never dispatch to a real customer.')
+                currency='GBP',payment_provider='square-sandbox' if RUNTIME.isolated else 'square',payment_id=event.payment_id,payment_status='COMPLETED',
+                confirmation_email_sent=False,internal_notes=('Isolated WooCommerce acceptance order. Never dispatch to a real customer.' if RUNTIME.isolated else 'WooCommerce owns payment, refund and customer email actions; dispatch through the commerce workflow.'))
             db.add(order);await db.flush();effects={'stock':[],'restored':False}
             for line in sorted(event.lines,key=lambda x:str(x.product_id)):
                 product=await db.scalar(select(Product).where(Product.id==line.product_id,Product.tenant_id==TENANT).with_for_update())
@@ -513,11 +541,11 @@ async def receive(request:Request):
                 if not pto:
                     if not reservation:raise HTTPException(409,'Finite stock requires a pre-payment reservation')
                     stock=variant or product
-                    if stock.units_in_stock<line.quantity:raise HTTPException(409,'Insufficient Batchivo test stock')
+                    if stock.units_in_stock<line.quantity:raise HTTPException(409,'Insufficient Batchivo stock')
                     stock.units_in_stock-=line.quantity
                     effects['stock'].append({'product_id':str(product.id),'variant_id':str(variant.id) if variant else None,'quantity':line.quantity})
                 db.add(OrderItem(tenant_id=TENANT,order_id=order.id,product_id=product.id,product_sku=line.sku,product_name=(line.name+' '+line.option).strip()[:255],quantity=line.quantity,unit_price=Decimal(line.total_pence)/100/line.quantity,total_price=Decimal(line.total_pence)/100))
-                if pto:db.add(PrintJob(tenant_id=TENANT,product_id=product.id,quantity=line.quantity,status=JobStatus.PENDING,reference=f'WOO-TEST-{event.order_id}:{line.line_id}',notes=json.dumps({'source':'woocommerce-test','variant_id':str(line.variant_id) if line.variant_id else None,'sku':line.sku,'option':line.option,'payment_id':event.payment_id})))
+                if pto:db.add(PrintJob(tenant_id=TENANT,product_id=product.id,quantity=line.quantity,status=JobStatus.PENDING,reference=RUNTIME.job_reference(event.order_id,line.line_id),notes=json.dumps({'source':RUNTIME.source,'variant_id':str(line.variant_id) if line.variant_id else None,'sku':line.sku,'option':line.option,'payment_id':event.payment_id})))
             if reservation:reservation.state='committed'
             mapping=CommerceOrder(woo_order_id=event.order_id,batchivo_order_id=str(order.id),version=event.version,state=event.state,snapshot=event.model_dump(mode='json'),effects=effects);db.add(mapping)
         else:
@@ -528,7 +556,7 @@ async def receive(request:Request):
                 effects['refunded_pence']=payment['_verified_refunded_pence']
                 order.payment_status='REFUNDED' if payment['_verified_refunded_pence']==event.total_pence else 'PARTIALLY_REFUNDED'
             if event.state in ['cancelled','refunded']:
-                jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(f'WOO-TEST-{event.order_id}:%')).with_for_update())).all()
+                jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(RUNTIME.order_reference(event.order_id)+':%')).with_for_update())).all()
                 started=any(j.status not in [JobStatus.PENDING,JobStatus.QUEUED,JobStatus.CANCELLED] for j in jobs)
                 dispatched=bool(order.shipped_at)
                 if event.state=='cancelled' and (started or dispatched):
@@ -557,6 +585,7 @@ async def receive(request:Request):
     return {'status':'applied','event_id':str(event.event_id),'batchivo_order_id':mapping.batchivo_order_id,'refund_review':mapping.effects.get('refund_review',''),'refunded_pence':mapping.effects.get('refunded_pence',0)}
 
 async def seed(file):
+    if not RUNTIME.isolated:raise RuntimeError('Catalogue seeding is prohibited in production')
     d=json.load(open(file))
     if d['_export']['tenant_id']!=str(TENANT):raise RuntimeError('Wrong source tenant')
     async with engine.begin() as conn:
@@ -577,6 +606,7 @@ async def seed(file):
                 await db.execute(text(f'INSERT INTO {table} ({names}) SELECT {names} FROM json_populate_record(NULL::{table},CAST(:row AS json)) ON CONFLICT(id) DO NOTHING'),{'row':json.dumps(row)})
     print('Isolated Batchivo schema and catalogue seeded; no production customers, credentials or printers copied.')
 async def reconcile_job_options():
+    if not RUNTIME.isolated:raise RuntimeError('Fixture enrichment is prohibited in production')
     async with async_session_maker() as db,db.begin():
         mappings=(await db.scalars(select(CommerceOrder).with_for_update())).all()
         changed=0

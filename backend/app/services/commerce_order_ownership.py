@@ -2,11 +2,13 @@
 
 The registry is authoritative; order-number prefixes only detect missing mappings.
 Legacy orders keep their existing behavior. Production activation remains a separate
-release: the currently available dispatch implementation accepts only the isolated DB.
+release with explicit database, provider and version identity checks.
 """
 import hashlib
 import json
 import os
+
+from app.commerce_runtime import CommerceRuntime
 from uuid import NAMESPACE_URL, uuid5
 
 from fastapi import HTTPException
@@ -49,8 +51,10 @@ async def dispatch_native_commerce(db, order, tenant, state, tracking_number="",
         return None
     if order.tenant_id != tenant.id:
         raise HTTPException(404, "Order not found")
-    if os.environ.get("COMMERCE_ISOLATED") != "true":
-        raise HTTPException(409, "WooCommerce dispatch adapter requires an activated release")
+    try:
+        CommerceRuntime.from_environment(os.environ)
+    except RuntimeError:
+        raise HTTPException(409, "WooCommerce dispatch adapter requires an activated release") from None
     from app.commerce_bridge import DispatchCommand, TENANT, record_dispatch
 
     if tenant.id != TENANT:
