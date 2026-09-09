@@ -19,6 +19,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 from app.commerce_bridge import TENANT, SECRET, CommerceOrder, CommerceFulfilmentEvent, Order, Tenant, async_session_maker
 from app.models import Product, OrderItem
+from app.database import async_session_maker as native_session_maker
 from app.api.v1 import orders as api
 from app.services.commerce_order_ownership import commerce_order_id
 from app.services.order_fulfillment import OrderFulfillmentService
@@ -39,8 +40,9 @@ async def main():
             check(name, False)
         except HTTPException as error:
             check(name, error.status_code == 409)
-    async with async_session_maker() as db:
+    async with native_session_maker() as db:
         before = await protected(db)
+        check("native API regression uses its separate database connection", await db.scalar(text("SELECT current_user")) == "commerce")
         tenant = await db.get(Tenant, TENANT)
         mapping = await db.scalar(select(CommerceOrder).where(CommerceOrder.woo_order_id == 431))
         order = await db.scalar(select(Order).where(Order.id == UUID(mapping.batchivo_order_id)).options(selectinload(Order.items)))

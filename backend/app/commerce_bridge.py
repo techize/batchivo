@@ -632,5 +632,9 @@ async def reconcile_job_options():
             changed+=await enrich_job_options(db,Event.model_validate(mapping.snapshot))
     print(json.dumps({'option_labels_enriched':changed,'scope':'Isolated variant labels only; quantities, status, payments and stock unchanged'}))
 
+if __name__ != '__main__':
+    from app.commerce_returns import install_routes as install_return_routes
+    install_return_routes(app)
+
 if __name__=='__main__':
     asyncio.run(reconcile_job_options() if sys.argv[1]=='--reconcile-job-options' else seed(sys.argv[1]))
