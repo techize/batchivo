@@ -60,6 +60,11 @@ metadata:
   namespace: batchivo
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: backend
@@ -68,6 +73,7 @@ spec:
       labels:
         app: backend
       annotations:
+        mystmere/native-release: "35d517885b56fa4150f9c9547de0295640ccef06"
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
@@ -81,7 +87,7 @@ spec:
       - name: harbor-creds
       initContainers:
       - name: run-migrations
-        image: registry.techize.co.uk/batchivo/batchivo-backend:b9d6466a3c586dca72ad06a256743e77bbb70a60
+        image: registry.techize.co.uk/batchivo/batchivo-backend@sha256:277b3111c6f5c2cb9c77eb726a56b44ef81e317d20c77ae3d9f31a9d875aa521
         imagePullPolicy: Always
         command: ["alembic", "upgrade", "heads"]
         securityContext:
@@ -110,7 +116,7 @@ spec:
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
       containers:
       - name: backend
-        image: registry.techize.co.uk/batchivo/batchivo-backend:b9d6466a3c586dca72ad06a256743e77bbb70a60
+        image: registry.techize.co.uk/batchivo/batchivo-backend@sha256:277b3111c6f5c2cb9c77eb726a56b44ef81e317d20c77ae3d9f31a9d875aa521
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
@@ -153,9 +159,41 @@ spec:
               name: postgres-secret
               key: POSTGRES_PASSWORD
         - name: DATABASE_URL
-          value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+          value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@postgres.batchivo.svc:5432/batchivo"
         - name: BUILD_SHA
-          value: "e2e08823ddafb5cca1ad736ace9f167d6f4bfac6"
+          value: "35d517885b56fa4150f9c9547de0295640ccef06"
+        - name: COMMERCE_MODE
+          value: "production"
+        - name: COMMERCE_ISOLATED
+          value: "false"
+        - name: COMMERCE_PRODUCTION_ENABLED
+          value: "true"
+        - name: COMMERCE_RELEASE_ID
+          value: "35d517885b56fa4150f9c9547de0295640ccef06"
+        - name: COMMERCE_TENANT_ID
+          value: "ad62b515-17b3-4830-bcb4-3f4c470c26e2"
+        - name: COMMERCE_SALES_CHANNEL_ID
+          value: "350fb516-f892-45e9-a0f9-052271c359a3"
+        - name: COMMERCE_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: commerce-native-runtime
+              key: COMMERCE_DATABASE_URL
+        - name: COMMERCE_BRIDGE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: commerce-native-runtime
+              key: COMMERCE_BRIDGE_SECRET
+        - name: SQUARE_PRODUCTION_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: square-credentials
+              key: SQUARE_ACCESS_TOKEN
+        - name: SQUARE_PRODUCTION_LOCATION_ID
+          valueFrom:
+            secretKeyRef:
+              name: square-credentials
+              key: SQUARE_LOCATION_ID
         - name: BUILD_DATE
           value: "2026-08-10T08:48:05Z"
         - name: STORAGE_S3_ACCESS_KEY
@@ -184,8 +222,9 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
+          timeoutSeconds: 5
           httpGet:
-            path: /health
+            path: /health/ready
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
