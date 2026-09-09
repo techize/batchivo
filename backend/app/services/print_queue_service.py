@@ -6,7 +6,8 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, func
+from fastapi import HTTPException
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,6 +24,10 @@ from app.schemas.print_queue import (
     PrintJobResponse,
     PrintJobUpdate,
     QueueOverview,
+)
+from app.services.commerce_job_ownership import (
+    protect_commerce_job_identity,
+    verify_commerce_job_work,
 )
 
 logger = logging.getLogger(__name__)
@@ -185,6 +190,7 @@ class PrintQueueService:
             return None
 
         update_data = data.model_dump(exclude_unset=True)
+        await protect_commerce_job_identity(self.db, job, update_data)
         for field, value in update_data.items():
             setattr(job, field, value)
 
@@ -239,6 +245,7 @@ class PrintQueueService:
             logger.warning(f"Cannot delete active job {job_id}")
             return False
 
+        await protect_commerce_job_identity(self.db, job, deleting=True)
         await self.db.delete(job)
         await self.db.commit()
 
@@ -265,6 +272,8 @@ class PrintQueueService:
         job = await self.get_job(job_id)
         if not job:
             return None
+
+        await verify_commerce_job_work(self.db, job)
 
         # Verify printer exists and is active
         printer = await self._get_printer(printer_id)
@@ -311,6 +320,11 @@ class PrintQueueService:
             matching_printer = await self._find_matching_printer(job, idle_printers)
 
             if matching_printer:
+                try:
+                    await verify_commerce_job_work(self.db, job)
+                except HTTPException:
+                    unassigned_reasons.append(f"Job {job.id}: Commerce payment/identity review prevents assignment")
+                    continue
                 job.assigned_printer_id = matching_printer.id
                 job.status = JobStatus.QUEUED
 
@@ -475,6 +489,8 @@ class PrintQueueService:
         job = await self.get_job(job_id)
         if not job or job.status != JobStatus.QUEUED:
             return None
+
+        await verify_commerce_job_work(self.db, job, starting=True)
 
         job.status = JobStatus.PRINTING
         job.started_at = datetime.now(timezone.utc)

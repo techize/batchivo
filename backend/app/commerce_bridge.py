@@ -528,7 +528,7 @@ async def receive(request:Request):
                 subtotal=Decimal(event.subtotal_pence)/100,total=Decimal(event.total_pence)/100,discount_amount=Decimal(event.discount_pence)/100,
                 currency='GBP',payment_provider='square-sandbox' if RUNTIME.isolated else 'square',payment_id=event.payment_id,payment_status='COMPLETED',
                 confirmation_email_sent=False,internal_notes=('Isolated WooCommerce acceptance order. Never dispatch to a real customer.' if RUNTIME.isolated else 'WooCommerce owns payment, refund and customer email actions; dispatch through the commerce workflow.'))
-            db.add(order);await db.flush();effects={'stock':[],'restored':False}
+            db.add(order);await db.flush();effects={'stock':[],'restored':False,'jobs':[]}
             for line in sorted(event.lines,key=lambda x:str(x.product_id)):
                 product=await db.scalar(select(Product).where(Product.id==line.product_id,Product.tenant_id==TENANT).with_for_update())
                 if not product or not product.is_active:raise HTTPException(409,'Unknown or inactive mapped product')
@@ -545,7 +545,10 @@ async def receive(request:Request):
                     stock.units_in_stock-=line.quantity
                     effects['stock'].append({'product_id':str(product.id),'variant_id':str(variant.id) if variant else None,'quantity':line.quantity})
                 db.add(OrderItem(tenant_id=TENANT,order_id=order.id,product_id=product.id,product_sku=line.sku,product_name=(line.name+' '+line.option).strip()[:255],quantity=line.quantity,unit_price=Decimal(line.total_pence)/100/line.quantity,total_price=Decimal(line.total_pence)/100))
-                if pto:db.add(PrintJob(tenant_id=TENANT,product_id=product.id,quantity=line.quantity,status=JobStatus.PENDING,reference=RUNTIME.job_reference(event.order_id,line.line_id),notes=json.dumps({'source':RUNTIME.source,'variant_id':str(line.variant_id) if line.variant_id else None,'sku':line.sku,'option':line.option,'payment_id':event.payment_id})))
+                if pto:
+                    job=PrintJob(id=uuid4(),tenant_id=TENANT,product_id=product.id,quantity=line.quantity,status=JobStatus.PENDING,reference=RUNTIME.job_reference(event.order_id,line.line_id),notes=json.dumps({'source':RUNTIME.source,'variant_id':str(line.variant_id) if line.variant_id else None,'sku':line.sku,'option':line.option,'payment_id':event.payment_id}))
+                    db.add(job)
+                    effects.setdefault('jobs',[]).append({'id':str(job.id),'line_id':line.line_id})
             if reservation:reservation.state='committed'
             mapping=CommerceOrder(woo_order_id=event.order_id,batchivo_order_id=str(order.id),version=event.version,state=event.state,snapshot=event.model_dump(mode='json'),effects=effects);db.add(mapping)
         else:
