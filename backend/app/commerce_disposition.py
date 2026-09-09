@@ -61,7 +61,7 @@ def refund_release_valid(effects, payment):
 
 
 async def review_in_transaction(db, order_id):
-    from app.commerce_bridge import TENANT, PrintJob
+    from app.commerce_bridge import RUNTIME, TENANT, PrintJob
 
     mapping, order = await load_order(db, order_id)
     if order.shipped_at or order.status not in ("pending", "processing"):
@@ -96,7 +96,10 @@ async def review_in_transaction(db, order_id):
         if is_finite == bool(job):
             raise HTTPException(409, "Allocation or manufacturing mapping requires reconciliation")
         if job and (
-            str(job.product_id) != line["product_id"] or (remaining and job.quantity != remaining)
+            str(job.product_id) != line["product_id"]
+            or job.reference != RUNTIME.job_reference(order_id, line["line_id"])
+            or (remaining and job.quantity != remaining)
+            or (not remaining and job.status.value != "cancelled")
         ):
             raise HTTPException(409, "Manufacturing quantities require reconciliation")
         rows.append(
