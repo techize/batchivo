@@ -110,6 +110,13 @@ async def main():
                     hmac.new(SECRET, stamp.encode() + b"." + r.content, hashlib.sha256).hexdigest(),
                 ),
             )
+            before_refund = await post("review", {"order_id": 557})
+            check(
+                "Signed review supports goods arriving before a refund",
+                before_refund.status_code == 200
+                and before_refund.json()["ok"]
+                and before_refund.json()["refunded_pence"] == 0,
+            )
             command = {
                 "order_id": 603,
                 "event_id": str(uuid4()),

@@ -174,6 +174,41 @@ async def main():
         finally:
             await db.rollback()
         check("Rollback restores all eight protected tables", await fingerprint(db) == before)
+    async with async_session_maker() as db:
+        before = await fingerprint(db)
+        try:
+            mapping, order = await module.load_order(db, 557)
+            await module.verify_refunds(mapping, order)
+            check(
+                "Shipped paid goods can be received before a refund",
+                order.payment_status == "COMPLETED" and not mapping.effects.get("refunded_pence"),
+            )
+            original = copy.deepcopy(mapping.snapshot)
+            effects = copy.deepcopy(mapping.effects)
+            effects.pop("returns", None)
+            mapping.effects = effects
+            cmd = module.ReturnCommand(
+                order_id=557,
+                event_id=uuid4(),
+                revision=module.revision(mapping, order),
+                line_id=mapping.snapshot["lines"][0]["line_id"],
+                action="receive",
+                quantity=1,
+                actor_id=1,
+                note="Synthetic pre-refund receipt; rollback only",
+            )
+            await module.apply_return_in_transaction(db, cmd)
+            check(
+                "Pre-refund receipt leaves payment and sold snapshot unchanged",
+                mapping.snapshot == original and order.payment_status == "COMPLETED",
+            )
+            check(
+                "Pre-refund goods remain awaiting inspection",
+                module.lines_for_review(mapping)[0]["awaiting_inspection"] == 1,
+            )
+        finally:
+            await db.rollback()
+        check("Pre-refund probe restores all eight tables", await fingerprint(db) == before)
     print(
         json.dumps(
             {

@@ -1,7 +1,7 @@
 """Physical returns, separate from Square refunds and immutable sold quantities.
 
-Only a shipped, provider-reconciled refunded order can receive returns. Receiving
-is separate from inspection; only inspected finite-stock goods increase stock.
+Only a shipped, provider-reconciled paid order can receive returns. Receiving
+is separate from inspection and financial refunds; only inspected finite-stock goods increase stock.
 Every command shares the order lock with financial and dispatch changes.
 """
 
@@ -82,12 +82,21 @@ async def verify_refunds(mapping, order):
         raise HTTPException(
             409, "Stock was already released; return quantities require reconciliation"
         )
-    if not mapping.effects.get("refunded_pence") or order.payment_status not in (
-        "PARTIALLY_REFUNDED",
-        "REFUNDED",
+    refunded = mapping.effects.get("refunded_pence", 0)
+    expected_status = (
+        "COMPLETED"
+        if refunded == 0
+        else "REFUNDED"
+        if refunded == mapping.snapshot["total_pence"]
+        else "PARTIALLY_REFUNDED"
+    )
+    if order.payment_status != expected_status or mapping.state not in (
+        "processing",
+        "completed",
+        "refunded",
     ):
         raise HTTPException(
-            409, "A completed, reconciled refund is required before this returns workflow"
+            409, "Reconcile the completed payment and any refunds before recording returns"
         )
     try:
         payment = await verify_payment(Event.model_validate(mapping.snapshot))
@@ -97,8 +106,9 @@ async def verify_refunds(mapping, order):
     if (
         verified != {r["id"] for r in mapping.effects.get("refunds", [])}
         or verified != set(payment.get("refund_ids", []))
-        or payment["_verified_refunded_pence"] != mapping.effects["refunded_pence"]
-        or payment.get("refunded_money", {}).get("amount", 0) != mapping.effects["refunded_pence"]
+        or payment["_verified_refunded_pence"] != mapping.effects.get("refunded_pence", 0)
+        or payment.get("refunded_money", {}).get("amount", 0)
+        != mapping.effects.get("refunded_pence", 0)
     ):
         raise HTTPException(
             409, "Square refund activity has changed; reconcile it before recording returns"
@@ -147,7 +157,7 @@ async def review_returns(order_id):
         return {
             "order_id": order_id,
             "revision": revision(mapping, order),
-            "refunded_pence": mapping.effects["refunded_pence"],
+            "refunded_pence": mapping.effects.get("refunded_pence", 0),
             "lines": lines_for_review(mapping),
             "history": list(mapping.effects.get("returns", {}).get("receipts", {}).values()),
         }
@@ -235,7 +245,7 @@ async def apply_return_in_transaction(db, command):
         "note": command.note,
         "at": datetime.now(UTC).isoformat(),
         "order_version": mapping.version,
-        "refunded_pence": effects["refunded_pence"],
+        "refunded_pence": effects.get("refunded_pence", 0),
     }
     mapping.effects = effects
     await db.flush()
