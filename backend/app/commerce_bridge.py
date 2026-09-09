@@ -580,6 +580,10 @@ async def receive(request:Request):
                 effects['refunds']=payment['_verified_refunds']
                 effects['refunded_pence']=payment['_verified_refunded_pence']
                 order.payment_status='REFUNDED' if payment['_verified_refunded_pence']==event.total_pence else 'PARTIALLY_REFUNDED'
+                if order.payment_status=='PARTIALLY_REFUNDED':
+                    from app.commerce_disposition import refund_release_valid
+                    if not refund_release_valid(effects,payment):
+                        effects['refund_review']='Partial refund requires a fresh fulfilment decision before new manufacturing or dispatch.'
             if event.state in ['cancelled','refunded']:
                 jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(RUNTIME.order_reference(event.order_id)+':%')).with_for_update())).all()
                 started=any(j.status not in [JobStatus.PENDING,JobStatus.QUEUED,JobStatus.CANCELLED] for j in jobs)
