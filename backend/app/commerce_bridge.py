@@ -362,10 +362,12 @@ async def record_dispatch(command: DispatchCommand, digest: str):
         mapping=await db.scalar(select(CommerceOrder).where(CommerceOrder.woo_order_id==command.order_id).with_for_update())
         if not mapping:raise HTTPException(404,'Mapped paid order not found')
         order=await db.scalar(select(Order).where(Order.id==UUID(mapping.batchivo_order_id),Order.tenant_id==TENANT).with_for_update())
-        if not order or order.payment_status!='COMPLETED' or mapping.state in ['cancelled','refunded']:
-            raise HTTPException(409,'Order cannot be dispatched')
+        if not order:
+            raise HTTPException(409,'Mapped order is unavailable')
         previous=await db.scalar(select(CommerceFulfilmentEvent).where(CommerceFulfilmentEvent.woo_order_id==command.order_id).order_by(CommerceFulfilmentEvent.version.desc()).limit(1))
         if command.state=='shipped':
+            if order.payment_status!='COMPLETED' or mapping.state in ['cancelled','refunded']:
+                raise HTTPException(409,'Order cannot be dispatched')
             if order.status not in ['pending','processing'] or order.shipped_at:
                 raise HTTPException(409,'Order has already been dispatched or is terminal')
             jobs=(await db.scalars(select(PrintJob).where(PrintJob.tenant_id==TENANT,PrintJob.reference.like(RUNTIME.order_reference(command.order_id)+':%')).with_for_update())).all()
@@ -387,7 +389,11 @@ async def record_dispatch(command: DispatchCommand, digest: str):
             # Commerce has already committed stock/payment effects. Never deduct again here.
             if not order.fulfilled_at:order.fulfilled_at=order.shipped_at
         else:
-            if order.status!='shipped' or not previous or previous.payload['state']!='shipped':
+            # Delivery is a physical fact about an existing shipment. A later
+            # refund must not erase or block it, or reopen the financial order.
+            if mapping.state=='cancelled' or order.payment_status not in ['COMPLETED','PARTIALLY_REFUNDED','REFUNDED']:
+                raise HTTPException(409,'Order requires reconciliation before delivery')
+            if order.status!='shipped' or not order.shipped_at or order.delivered_at or not previous or previous.payload['state']!='shipped':
                 raise HTTPException(409,'Dispatch must be recorded before delivery')
             if command.tracking_number or command.tracking_url:
                 raise HTTPException(422,'Delivery retains the recorded dispatch tracking')
