@@ -19,12 +19,15 @@ from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import event, inspect, DateTime, Index, Integer, String, Text, UniqueConstraint, and_, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Session, Mapped, mapped_column
+from sqlalchemy.orm import Session, Mapped, mapped_column, raiseload
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.commerce_runtime import CommerceRuntime
 RUNTIME = CommerceRuntime.from_environment(os.environ)
-from app.database import Base, engine
+from app.database import Base, engine as native_engine
+from app.services.commerce_database import commerce_engine, verify_commerce_role
+from app.services.commerce_sales_channel import commerce_sales_channel
+engine = commerce_engine(RUNTIME, os.environ, native_engine)
 from app.models import Product, ProductVariant, Tenant, Order, OrderItem, PrintJob, JobStatus
 from app.models.base import UUIDMixin, TimestampMixin
 
@@ -36,8 +39,18 @@ CommerceRuntime.from_environment({**os.environ,'DATABASE_URL':engine.url.render_
 class CommerceSession(Session):
     pass
 
+@event.listens_for(CommerceSession,'do_orm_execute')
+def commerce_explicit_relationships(state):
+    # Catalogue ORM defaults eagerly load pricing, designers and other native
+    # data that payment/stock writes do not use. Only explicit relationships are
+    # available in commerce sessions; native application sessions are unchanged.
+    if state.is_select:
+        state.statement = state.statement.options(raiseload('*'))
+
 @event.listens_for(CommerceSession,'after_begin')
 def commerce_tenant_context(session,transaction,connection):
+    if os.environ.get('COMMERCE_DATABASE_URL') or not RUNTIME.isolated:
+        verify_commerce_role(connection)
     connection.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(TENANT)})
 
 # Only bridge sessions get this fixed tenant; native application sessions retain their own context.
@@ -227,6 +240,8 @@ async def locked_reservation_stock(db,lines):
 @asynccontextmanager
 async def commerce_lifespan(app):
     async with engine.begin() as conn:
+        if os.environ.get('COMMERCE_DATABASE_URL') or not RUNTIME.isolated:
+            await conn.run_sync(verify_commerce_role)
         if RUNTIME.isolated:
             await conn.run_sync(lambda sync:CommerceReservation.__table__.create(sync,checkfirst=True))
             await conn.run_sync(lambda sync:CommerceFulfilmentEvent.__table__.create(sync,checkfirst=True))
@@ -519,7 +534,7 @@ async def receive(request:Request):
                 raise HTTPException(409,'Matching payment-pending reservation required')
         if not mapping:
             if event.state not in ['processing','completed']:raise HTTPException(409,'Paid order must be reconciled before its terminal event')
-            order=Order(tenant_id=TENANT,order_number=RUNTIME.order_reference(event.order_id),status='processing',
+            order=Order(tenant_id=TENANT,sales_channel_id=await commerce_sales_channel(db,TENANT,os.environ,RUNTIME.isolated),order_number=RUNTIME.order_reference(event.order_id),status='processing',
                 customer_email=event.customer.get('email','test@example.invalid'),customer_name=event.customer.get('name','Test customer'),
                 customer_phone=event.customer.get('phone') or None,
                 shipping_address_line1=event.shipping.get('address_1',''),shipping_address_line2=event.shipping.get('address_2',''),

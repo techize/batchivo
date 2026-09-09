@@ -1644,16 +1644,22 @@ class PublicOrder(BaseModel):
 async def get_order(
     order_number: str,
     email: str,
+    shop_context: ShopContext,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get order by number and email (for verification)."""
-    # Find order with matching order_number and email
+    """Look up an order only in the resolved storefront and sales channel."""
+    tenant, channel = shop_context
+    response.headers["Cache-Control"] = "private, no-store"
+    # Number/email verification never permits crossing storefront boundaries.
     result = await db.execute(
         select(OrderModel)
         .options(selectinload(OrderModel.items))
         .where(
             OrderModel.order_number == order_number,
             OrderModel.customer_email == email.lower().strip(),
+            OrderModel.tenant_id == tenant.id,
+            OrderModel.sales_channel_id == channel.id,
         )
     )
     db_order = result.scalar_one_or_none()
@@ -1664,7 +1670,7 @@ async def get_order(
     return {
         "data": PublicOrder(
             order_number=db_order.order_number,
-            status=db_order.status.value,
+            status=db_order.status,
             customer_name=db_order.customer_name,
             shipping_method=db_order.shipping_method or "Standard",
             shipping_cost=db_order.shipping_cost,
