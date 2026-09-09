@@ -70,10 +70,10 @@ async def load_order(db, order_id):
     return mapping, order
 
 
-async def verify_refunds(mapping, order):
+async def verify_refunds(mapping, order, require_shipped=True):
     from app.commerce_bridge import Event, verify_payment
 
-    if not order.shipped_at:
+    if require_shipped and not order.shipped_at:
         raise HTTPException(
             409,
             "Record a physical return only after dispatch; unshipped cancellations use the cancellation workflow",
@@ -116,6 +116,8 @@ async def verify_refunds(mapping, order):
 
 
 def lines_for_review(mapping):
+    from app.commerce_disposition import remaining_quantity
+
     ledger = mapping.effects.get("returns", {})
     finite = {(s["product_id"], s.get("variant_id")) for s in mapping.effects.get("stock", [])}
     rows = []
@@ -129,7 +131,12 @@ def lines_for_review(mapping):
         received, restocked, written_off = (
             counts.get(k, 0) for k in ("received", "restocked", "written_off")
         )
-        if not 0 <= restocked + written_off <= received <= line["quantity"]:
+        if (
+            not 0
+            <= restocked + written_off
+            <= received
+            <= remaining_quantity(mapping.effects, line)
+        ):
             raise HTTPException(409, "Return quantities require reconciliation")
         rows.append(
             {
@@ -138,6 +145,8 @@ def lines_for_review(mapping):
                 "sku": line["sku"],
                 "option": line.get("option", ""),
                 "sold": line["quantity"],
+                "cancelled": line["quantity"] - remaining_quantity(mapping.effects, line),
+                "shipped_quantity": remaining_quantity(mapping.effects, line),
                 "received": received,
                 "restocked": restocked,
                 "written_off": written_off,
@@ -197,7 +206,7 @@ async def apply_return_in_transaction(db, command):
     key = str(command.line_id)
     counts = ledger["lines"].setdefault(key, {"received": 0, "restocked": 0, "written_off": 0})
     if command.action == "receive":
-        if command.quantity > line["sold"] - line["received"]:
+        if command.quantity > line["shipped_quantity"] - line["received"]:
             raise HTTPException(409, "Received quantity exceeds the remaining sold quantity")
         counts["received"] += command.quantity
     else:

@@ -76,9 +76,9 @@ async def verify_commerce_job_work(db, job, starting=False):
         raise HTTPException(409, "Commerce manufacturing mapping changed")
     from app.models.print_job import JobStatus
 
-    if (
-        mapping["state"] not in ("processing", "completed")
-        or mapping["payment_status"] != "COMPLETED"
+    if mapping["state"] not in ("processing", "completed") or mapping["payment_status"] not in (
+        "COMPLETED",
+        "PARTIALLY_REFUNDED",
     ):
         raise HTTPException(409, "Commerce payment or refund state prevents new manufacturing")
     allowed = (
@@ -100,9 +100,14 @@ async def verify_commerce_job_work(db, job, starting=False):
     if len(lines) != 1:
         raise HTTPException(409, "Commerce manufacturing line requires reconciliation")
     line = lines[0]
+    from app.commerce_disposition import refund_release_valid, remaining_quantity
+
+    remaining = remaining_quantity(mapping["effects"], line)
+    if remaining < 1:
+        raise HTTPException(409, "This manufacturing line was cancelled")
     if (
         str(job.product_id) != line["product_id"]
-        or job.quantity != line["quantity"]
+        or job.quantity != remaining
         or job.reference != runtime.job_reference(mapping["woo_order_id"], line["line_id"])
     ):
         raise HTTPException(
@@ -114,6 +119,6 @@ async def verify_commerce_job_work(db, job, starting=False):
         payment = await verify_payment(Event.model_validate(mapping["snapshot"]))
     except (httpx.HTTPError, ValueError, KeyError):
         raise HTTPException(503, "Payment verification unavailable; manufacturing held") from None
-    if payment.get("refund_ids") or payment.get("refunded_money", {}).get("amount", 0):
+    if not refund_release_valid(mapping["effects"], payment):
         raise HTTPException(409, "Square refund activity requires review before new manufacturing")
     return True

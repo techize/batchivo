@@ -366,7 +366,8 @@ async def record_dispatch(command: DispatchCommand, digest: str):
             raise HTTPException(409,'Mapped order is unavailable')
         previous=await db.scalar(select(CommerceFulfilmentEvent).where(CommerceFulfilmentEvent.woo_order_id==command.order_id).order_by(CommerceFulfilmentEvent.version.desc()).limit(1))
         if command.state=='shipped':
-            if order.payment_status!='COMPLETED' or mapping.state in ['cancelled','refunded']:
+            from app.commerce_disposition import remaining_quantity, refund_release_valid
+            if order.payment_status not in ['COMPLETED','PARTIALLY_REFUNDED'] or mapping.state in ['cancelled','refunded']:
                 raise HTTPException(409,'Order cannot be dispatched')
             if order.status not in ['pending','processing'] or order.shipped_at:
                 raise HTTPException(409,'Order has already been dispatched or is terminal')
@@ -375,13 +376,13 @@ async def record_dispatch(command: DispatchCommand, digest: str):
             expected={RUNTIME.job_reference(command.order_id,line["line_id"]):line for line in mapping.snapshot['lines'] if (line['product_id'],line.get('variant_id')) not in finite}
             if len(jobs)!=len(expected) or {job.reference for job in jobs}!=set(expected):
                 raise HTTPException(409,'Manufacturing job mappings require reconciliation')
-            if any(job.product_id!=UUID(expected[job.reference]['product_id']) or job.quantity!=expected[job.reference]['quantity'] for job in jobs):
+            if any(job.product_id!=UUID(expected[job.reference]['product_id']) or (remaining_quantity(mapping.effects,expected[job.reference]) and job.quantity!=remaining_quantity(mapping.effects,expected[job.reference])) for job in jobs):
                 raise HTTPException(409,'Manufacturing quantities require reconciliation')
-            if any(job.status!=JobStatus.COMPLETED for job in jobs):
+            if any(job.status!=(JobStatus.COMPLETED if remaining_quantity(mapping.effects,expected[job.reference]) else JobStatus.CANCELLED) for job in jobs):
                 raise HTTPException(409,'Manufacturing jobs must be completed before dispatch')
             try:payment=await verify_payment(Event.model_validate(mapping.snapshot))
             except httpx.HTTPError:raise HTTPException(503,'Payment verification unavailable; dispatch not recorded')
-            if payment.get('refund_ids') or payment.get('refunded_money',{}).get('amount',0):
+            if not refund_release_valid(mapping.effects,payment):
                 raise HTTPException(409,'Refund activity requires review before dispatch')
             order.shipped_at=datetime.now(timezone.utc)
             order.tracking_number=command.tracking_number or None
@@ -641,6 +642,8 @@ async def reconcile_job_options():
 if __name__ != '__main__':
     from app.commerce_returns import install_routes as install_return_routes
     install_return_routes(app)
+    from app.commerce_disposition import install_routes as install_disposition_routes
+    install_disposition_routes(app)
 
 if __name__=='__main__':
     asyncio.run(reconcile_job_options() if sys.argv[1]=='--reconcile-job-options' else seed(sys.argv[1]))
