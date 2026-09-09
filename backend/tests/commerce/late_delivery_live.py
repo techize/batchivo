@@ -33,6 +33,10 @@ async def main():
     ]
 
     async def fingerprint(db):
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant, true)"),
+            {"tenant": str(bridge.TENANT)},
+        )
         return [
             await db.scalar(
                 text(f"SELECT md5(string_agg(row_to_json(t)::text,'' ORDER BY id)) FROM {table} t")
@@ -46,7 +50,10 @@ async def main():
         await connection.rollback()
         outer = await connection.begin()
         bridge.async_session_maker = async_sessionmaker(
-            connection, expire_on_commit=False, join_transaction_mode="create_savepoint"
+            connection,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+            sync_session_class=bridge.CommerceSession,
         )
         try:
             async with bridge.async_session_maker() as db:
