@@ -73,7 +73,7 @@ spec:
       labels:
         app: backend
       annotations:
-        mystmere/native-release: "35d517885b56fa4150f9c9547de0295640ccef06"
+        mystmere/native-release: "22b71b72e664bb2eda6bb0e01f99e8b406219854"
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
@@ -87,7 +87,7 @@ spec:
       - name: harbor-creds
       initContainers:
       - name: run-migrations
-        image: registry.techize.co.uk/batchivo/batchivo-backend@sha256:277b3111c6f5c2cb9c77eb726a56b44ef81e317d20c77ae3d9f31a9d875aa521
+        image: registry.techize.co.uk/batchivo/batchivo-backend@sha256:249a041494d2a6a4477c9a1a2ba60dbeee8d5e7974e67a9a0c9bdb0b97c27614
         imagePullPolicy: Always
         command: ["alembic", "upgrade", "heads"]
         securityContext:
@@ -116,7 +116,7 @@ spec:
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
       containers:
       - name: backend
-        image: registry.techize.co.uk/batchivo/batchivo-backend@sha256:277b3111c6f5c2cb9c77eb726a56b44ef81e317d20c77ae3d9f31a9d875aa521
+        image: registry.techize.co.uk/batchivo/batchivo-backend@sha256:249a041494d2a6a4477c9a1a2ba60dbeee8d5e7974e67a9a0c9bdb0b97c27614
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
@@ -161,7 +161,9 @@ spec:
         - name: DATABASE_URL
           value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@postgres.batchivo.svc:5432/batchivo"
         - name: BUILD_SHA
-          value: "35d517885b56fa4150f9c9547de0295640ccef06"
+          value: "22b71b72e664bb2eda6bb0e01f99e8b406219854"
+        - name: COMMERCE_LEGACY_HANDOVER_ENABLED
+          value: "true"
         - name: COMMERCE_MODE
           value: "production"
         - name: COMMERCE_ISOLATED
@@ -169,7 +171,7 @@ spec:
         - name: COMMERCE_PRODUCTION_ENABLED
           value: "true"
         - name: COMMERCE_RELEASE_ID
-          value: "35d517885b56fa4150f9c9547de0295640ccef06"
+          value: "22b71b72e664bb2eda6bb0e01f99e8b406219854"
         - name: COMMERCE_TENANT_ID
           value: "ad62b515-17b3-4830-bcb4-3f4c470c26e2"
         - name: COMMERCE_SALES_CHANNEL_ID
