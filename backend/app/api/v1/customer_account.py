@@ -11,7 +11,7 @@ from uuid import UUID
 logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, desc, func
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -31,8 +31,9 @@ from app.schemas.customer import (
     CustomerUpdate,
     CustomerWithAddresses,
 )
+from app.services.commerce_handover import legacy_customer_write_guard
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(legacy_customer_write_guard)])
 
 
 # ============================================

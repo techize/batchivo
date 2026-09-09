@@ -7,7 +7,7 @@ These endpoints are public (no admin auth required) but require tenant context.
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.customer_dependencies import (
@@ -33,12 +33,17 @@ from app.schemas.customer import (
     CustomerTokenResponse,
     CustomerVerifyEmail,
 )
+from app.services.commerce_handover import (
+    legacy_customer_write_guard,
+    legacy_refresh_write_guard,
+    legacy_shop_write_guard,
+)
 from app.services.email_service import get_email_service
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=CustomerTokenResponse, status_code=201)
+@router.post("/register", response_model=CustomerTokenResponse, status_code=201, dependencies=[Depends(legacy_shop_write_guard)])
 async def register_customer(
     data: CustomerRegister,
     tenant: ShopTenant,
@@ -114,7 +119,7 @@ async def register_customer(
     )
 
 
-@router.post("/login", response_model=CustomerTokenResponse)
+@router.post("/login", response_model=CustomerTokenResponse, dependencies=[Depends(legacy_shop_write_guard)])
 async def login_customer(
     data: CustomerLogin,
     tenant: ShopTenant,
@@ -172,7 +177,7 @@ async def login_customer(
     )
 
 
-@router.post("/refresh", response_model=CustomerTokenResponse)
+@router.post("/refresh", response_model=CustomerTokenResponse, dependencies=[Depends(legacy_refresh_write_guard)])
 async def refresh_token(
     data: CustomerRefreshToken,
     db: AsyncSession = Depends(get_db),
@@ -232,7 +237,7 @@ async def refresh_token(
     )
 
 
-@router.post("/forgot-password", status_code=200)
+@router.post("/forgot-password", status_code=200, dependencies=[Depends(legacy_shop_write_guard)])
 async def forgot_password(
     data: CustomerForgotPassword,
     tenant: ShopTenant,
@@ -276,7 +281,7 @@ async def forgot_password(
     }
 
 
-@router.post("/reset-password", status_code=200)
+@router.post("/reset-password", status_code=200, dependencies=[Depends(legacy_shop_write_guard)])
 async def reset_password(
     data: CustomerResetPassword,
     tenant: ShopTenant,
@@ -324,7 +329,7 @@ async def reset_password(
     }
 
 
-@router.post("/verify-email", status_code=200)
+@router.post("/verify-email", status_code=200, dependencies=[Depends(legacy_shop_write_guard)])
 async def verify_email(
     data: CustomerVerifyEmail,
     tenant: ShopTenant,
@@ -375,7 +380,7 @@ async def verify_email(
     return {"message": "Email verified successfully"}
 
 
-@router.post("/resend-verification", status_code=200)
+@router.post("/resend-verification", status_code=200, dependencies=[Depends(legacy_customer_write_guard)])
 async def resend_verification(
     customer: CurrentCustomer,
     db: AsyncSession = Depends(get_db),
@@ -408,7 +413,7 @@ async def resend_verification(
     return {"message": "Verification email sent"}
 
 
-@router.post("/change-password", status_code=200)
+@router.post("/change-password", status_code=200, dependencies=[Depends(legacy_customer_write_guard)])
 async def change_password(
     data: CustomerChangePassword,
     customer: CurrentCustomer,
