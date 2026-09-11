@@ -57,9 +57,9 @@ async def main():
             product = await db.get(
                 bridge.Product,
                 __import__("uuid").UUID(
-                    next(l for l in snapshot["lines"] if l["line_id"] == finite["line_id"])[
-                        "product_id"
-                    ]
+                    next(
+                        line for line in snapshot["lines"] if line["line_id"] == finite["line_id"]
+                    )["product_id"]
                 ),
             )
             stock = product.units_in_stock

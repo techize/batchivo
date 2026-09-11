@@ -4,6 +4,7 @@ The registry is authoritative; order-number prefixes only detect missing mapping
 Legacy orders keep their existing behavior. Production activation remains a separate
 release with explicit database, provider and version identity checks.
 """
+
 import hashlib
 import json
 import os
@@ -54,14 +55,18 @@ async def dispatch_native_commerce(db, order, tenant, state, tracking_number="",
     try:
         CommerceRuntime.from_environment(os.environ)
     except RuntimeError:
-        raise HTTPException(409, "WooCommerce dispatch adapter requires an activated release") from None
+        raise HTTPException(
+            409, "WooCommerce dispatch adapter requires an activated release"
+        ) from None
     from app.commerce_bridge import DispatchCommand, TENANT, record_dispatch
 
     if tenant.id != TENANT:
         raise HTTPException(404, "Order not found")
     try:
         command = DispatchCommand(
-            event_id=uuid5(NAMESPACE_URL, f"mystmere:{tenant.id}:woocommerce:{woo_id}:fulfilment:{state}:v1"),
+            event_id=uuid5(
+                NAMESPACE_URL, f"mystmere:{tenant.id}:woocommerce:{woo_id}:fulfilment:{state}:v1"
+            ),
             order_id=woo_id,
             state=state,
             tracking_number=tracking_number or "",
@@ -69,6 +74,8 @@ async def dispatch_native_commerce(db, order, tenant, state, tracking_number="",
         )
     except ValueError:
         raise HTTPException(422, "Invalid commerce dispatch details")
-    raw = json.dumps(command.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
+    raw = json.dumps(
+        command.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+    ).encode()
     result = await record_dispatch(command, hashlib.sha256(raw).hexdigest())
     return {"message": f"Order {order.order_number}: {state} recorded", "commerce": result}

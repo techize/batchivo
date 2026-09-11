@@ -244,9 +244,15 @@ class SquareWebhookService:
         # Acknowledge and audit them without becoming a second writable order master.
         payment = event_object.get("payment", {})
         refund = event_object.get("refund", {})
-        identities = {value for value in [payment.get("id"), payment.get("order_id"), refund.get("payment_id")] if value}
+        identities = {
+            value
+            for value in [payment.get("id"), payment.get("order_id"), refund.get("payment_id")]
+            if value
+        }
         if identities:
-            orders = (await self.db.scalars(select(Order).where(Order.payment_id.in_(identities)))).all()
+            orders = (
+                await self.db.scalars(select(Order).where(Order.payment_id.in_(identities)))
+            ).all()
             owned = [(order, await commerce_order_id(self.db, order)) for order in orders]
             commerce = [(order, woo_id) for order, woo_id in owned if woo_id is not None]
             if commerce:
@@ -256,7 +262,9 @@ class SquareWebhookService:
                 webhook_event.order_id = order.id
                 result["order_owner"] = "woocommerce"
                 result["woo_order_id"] = woo_id
-                result["actions"].append("Recorded provider event; WooCommerce commerce workflow owns business updates")
+                result["actions"].append(
+                    "Recorded provider event; WooCommerce commerce workflow owns business updates"
+                )
                 return result
 
         # Route legacy-owned events to their existing handlers.

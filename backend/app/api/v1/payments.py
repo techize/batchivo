@@ -219,7 +219,11 @@ async def get_payment_config(
     )
 
 
-@router.post("/hosted-checkout", response_model=HostedCheckoutResponse, dependencies=[Depends(legacy_shop_write_guard)])
+@router.post(
+    "/hosted-checkout",
+    response_model=HostedCheckoutResponse,
+    dependencies=[Depends(legacy_shop_write_guard)],
+)
 async def create_hosted_checkout(
     request: HostedCheckoutRequest,
     shop_context: ShopContext,
@@ -290,7 +294,9 @@ async def create_hosted_checkout(
     )
 
 
-@router.post("/process", response_model=PaymentResponse, dependencies=[Depends(legacy_shop_write_guard)])
+@router.post(
+    "/process", response_model=PaymentResponse, dependencies=[Depends(legacy_shop_write_guard)]
+)
 async def process_payment(
     request: PaymentRequest,
     shop_context: ShopContext,

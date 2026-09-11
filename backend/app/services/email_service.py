@@ -88,7 +88,9 @@ class EmailService:
                     payload["reply_to"] = reply_to
 
                 async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.post(RESEND_EMAIL_API_URL, json=payload, headers=headers)
+                    response = await client.post(
+                        RESEND_EMAIL_API_URL, json=payload, headers=headers
+                    )
                     response.raise_for_status()
                 return True
             except Exception as e:

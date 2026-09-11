@@ -1,20 +1,13 @@
-# Woodpecker CI — Fast Test Pipeline (no database)
-#
-# Purpose: Fast signal on correctness — lint, unit tests, frontend checks.
-#          No postgres service needed. Completes in ~3-5 min.
-#
-# Architecture:
-#   scan-deps-backend  ──> backend-unit ────┐
-#   scan-deps-frontend ──> frontend ────────┘
-#
-# Triggered by: same conditions as build.yml
+# PR and main validation. No publishing, deployment credentials or production services.
 
 when:
+  - event: pull_request
+    branch: main
   - event: push
     branch: main
-    path:
-      exclude:
-        - 'infrastructure/k8s/**'
+  - event: deployment
+    branch: main
+    evaluate: 'CI_PIPELINE_DEPLOY_TARGET == "build-release"'
 
 variables:
   - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
@@ -40,8 +33,7 @@ steps:
   # ============================================
   backend-unit:
     image: *ci_python_image
-    depends_on:
-      - scan-deps-backend
+    depends_on: []
     environment:
       SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
     commands:
@@ -59,11 +51,11 @@ steps:
   # ============================================
   frontend:
     image: *node_image
-    depends_on:
-      - scan-deps-frontend
+    depends_on: []
     commands:
       - cd frontend
       - npm ci --silent
       - npm run lint
       - npm run typecheck
       - npm run test:ci
+      - npm run build:check

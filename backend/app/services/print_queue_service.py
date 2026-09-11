@@ -323,7 +323,9 @@ class PrintQueueService:
                 try:
                     await verify_commerce_job_work(self.db, job)
                 except HTTPException:
-                    unassigned_reasons.append(f"Job {job.id}: Commerce payment/identity review prevents assignment")
+                    unassigned_reasons.append(
+                        f"Job {job.id}: Commerce payment/identity review prevents assignment"
+                    )
                     continue
                 job.assigned_printer_id = matching_printer.id
                 job.status = JobStatus.QUEUED

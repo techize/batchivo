@@ -542,7 +542,10 @@ async def update_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    if any(getattr(request, field, None) is not None for field in ("status", "tracking_number", "tracking_url")):
+    if any(
+        getattr(request, field, None) is not None
+        for field in ("status", "tracking_number", "tracking_url")
+    ):
         await reject_native_commerce_mutation(db, order)
 
     # Update fields
@@ -646,7 +649,9 @@ async def ship_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    commerce = await dispatch_native_commerce(db, order, tenant, "shipped", request.tracking_number, request.tracking_url)
+    commerce = await dispatch_native_commerce(
+        db, order, tenant, "shipped", request.tracking_number, request.tracking_url
+    )
     if commerce is not None:
         return commerce
 

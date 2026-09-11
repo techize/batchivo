@@ -80,6 +80,8 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
+# Keep the established rule set explicit across Ruff default changes.
+select = ["E4", "E7", "E9", "F"]
 # F821: Undefined name - SQLAlchemy uses string annotations for relationships
 # E402: Module level import not at top - intentional for conditional imports
 ignore = ["F821", "E402"]

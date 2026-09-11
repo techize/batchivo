@@ -43,7 +43,12 @@ from app.services.email_service import get_email_service
 router = APIRouter()
 
 
-@router.post("/register", response_model=CustomerTokenResponse, status_code=201, dependencies=[Depends(legacy_shop_write_guard)])
+@router.post(
+    "/register",
+    response_model=CustomerTokenResponse,
+    status_code=201,
+    dependencies=[Depends(legacy_shop_write_guard)],
+)
 async def register_customer(
     data: CustomerRegister,
     tenant: ShopTenant,
@@ -119,7 +124,9 @@ async def register_customer(
     )
 
 
-@router.post("/login", response_model=CustomerTokenResponse, dependencies=[Depends(legacy_shop_write_guard)])
+@router.post(
+    "/login", response_model=CustomerTokenResponse, dependencies=[Depends(legacy_shop_write_guard)]
+)
 async def login_customer(
     data: CustomerLogin,
     tenant: ShopTenant,
@@ -177,7 +184,11 @@ async def login_customer(
     )
 
 
-@router.post("/refresh", response_model=CustomerTokenResponse, dependencies=[Depends(legacy_refresh_write_guard)])
+@router.post(
+    "/refresh",
+    response_model=CustomerTokenResponse,
+    dependencies=[Depends(legacy_refresh_write_guard)],
+)
 async def refresh_token(
     data: CustomerRefreshToken,
     db: AsyncSession = Depends(get_db),
@@ -380,7 +391,9 @@ async def verify_email(
     return {"message": "Email verified successfully"}
 
 
-@router.post("/resend-verification", status_code=200, dependencies=[Depends(legacy_customer_write_guard)])
+@router.post(
+    "/resend-verification", status_code=200, dependencies=[Depends(legacy_customer_write_guard)]
+)
 async def resend_verification(
     customer: CurrentCustomer,
     db: AsyncSession = Depends(get_db),
@@ -413,7 +426,9 @@ async def resend_verification(
     return {"message": "Verification email sent"}
 
 
-@router.post("/change-password", status_code=200, dependencies=[Depends(legacy_customer_write_guard)])
+@router.post(
+    "/change-password", status_code=200, dependencies=[Depends(legacy_customer_write_guard)]
+)
 async def change_password(
     data: CustomerChangePassword,
     customer: CurrentCustomer,

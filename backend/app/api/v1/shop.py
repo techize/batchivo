@@ -2031,7 +2031,11 @@ async def get_product_reviews(
     )
 
 
-@router.post("/products/{product_id}/reviews", response_model=ShopReviewSubmitResponse, dependencies=[Depends(legacy_product_write_guard)])
+@router.post(
+    "/products/{product_id}/reviews",
+    response_model=ShopReviewSubmitResponse,
+    dependencies=[Depends(legacy_product_write_guard)],
+)
 @limiter.limit("10/minute")
 async def submit_product_review(
     request: Request,
@@ -2118,7 +2122,10 @@ async def submit_product_review(
     )
 
 
-@router.post("/products/{product_id}/reviews/{review_id}/helpful", dependencies=[Depends(legacy_product_write_guard)])
+@router.post(
+    "/products/{product_id}/reviews/{review_id}/helpful",
+    dependencies=[Depends(legacy_product_write_guard)],
+)
 async def mark_review_helpful(
     product_id: str,
     review_id: str,
