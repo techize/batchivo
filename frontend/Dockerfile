@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for React frontend with Vite
 
 # Stage 1: Builder
-FROM registry.techize.co.uk/dockerhub-cache/node:20-alpine AS builder
+FROM registry.techize.co.uk/dockerhub-cache/node@sha256:ab07539e0988b63558ff621f5fbe1077054c39d9809112974fb79993949d41cd AS builder
 
 WORKDIR /app
 
