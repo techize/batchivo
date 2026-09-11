@@ -14,6 +14,7 @@ describe('App routing — inventory redirect', () => {
     // (b) its component is a redirect (renders Navigate pointing at /filaments)
 
     const rootRoute = new RootRoute({ component: () => null })
+    rootRoute.init({ originalIndex: 0 })
 
     // Recreate the same route configuration as inventoryRoute in App.tsx
     const inventoryRoute = new Route({
@@ -34,6 +35,7 @@ describe('App routing — inventory redirect', () => {
 
   it('filamentsRoute renders FilamentLibrary component', () => {
     const rootRoute = new RootRoute({ component: () => null })
+    rootRoute.init({ originalIndex: 0 })
 
     const filamentsRoute = new Route({
       getParentRoute: () => rootRoute,

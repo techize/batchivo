@@ -42,6 +42,8 @@ steps:
       - until pg_isready -h postgres -U test -q 2>/dev/null; do sleep 1; done
       - echo "Postgres ready"
       - echo "=== Creating worker databases ==="
+      # Scratch databases only: avoid synchronous disk flushes for each test DDL.
+      - psql -h postgres -U test -d test_batchivo -c "ALTER SYSTEM SET fsync = 'off'" -c "ALTER SYSTEM SET synchronous_commit = 'off'" -c "SELECT pg_reload_conf()"
       - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i"; done
       - echo "=== Integration + API tests (4 workers) ==="
       - poetry run pytest tests/ --ignore=tests/unit/ -n 4 --dist worksteal --tb=short -q

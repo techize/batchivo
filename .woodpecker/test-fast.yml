@@ -43,6 +43,7 @@ steps:
     image: *ci_python_image
     depends_on: []
     environment:
+      PGPASSWORD: test
       DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
       SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
     commands:
@@ -54,6 +55,8 @@ steps:
       - poetry run ruff format --check .
       - echo "=== Unit tests ==="
       - timeout 60 sh -c 'until pg_isready -h postgres -U test -q; do sleep 1; done'
+      # Scratch databases only: avoid synchronous disk flushes for each test DDL.
+      - psql -h postgres -U test -d test_batchivo -c "ALTER SYSTEM SET fsync = 'off'" -c "ALTER SYSTEM SET synchronous_commit = 'off'" -c "SELECT pg_reload_conf()"
       - poetry run pytest tests/unit/ --tb=short -q
 
   # ============================================
