@@ -5,7 +5,7 @@
  * Includes platform-specific navigation and impersonation banner.
  */
 
-import { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { useImpersonation } from '@/hooks/useImpersonation'

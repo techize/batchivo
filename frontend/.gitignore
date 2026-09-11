@@ -32,3 +32,6 @@ dist-ssr
 
 *storybook.log
 storybook-static
+
+# CI-generated JUnit evidence
+test-results.xml

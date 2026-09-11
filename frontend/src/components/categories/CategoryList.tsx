@@ -501,7 +501,7 @@ export function CategoryList() {
               <Textarea
                 id="description"
                 placeholder="Describe this category..."
-                value={newCategory.description}
+                value={newCategory.description ?? ""}
                 onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
                 rows={3}
               />

@@ -72,7 +72,7 @@ export function SquareSettings() {
     queryFn: getSquareSettings,
   })
 
-  const form = useForm<SquareSettingsFormValues>({
+  const form = useForm<z.input<typeof squareSettingsSchema>, unknown, SquareSettingsFormValues>({
     resolver: zodResolver(squareSettingsSchema),
     defaultValues: {
       enabled: settings?.enabled ?? false,

@@ -59,17 +59,12 @@ export function initSentry(): boolean {
       replaysSessionSampleRate,
       replaysOnErrorSampleRate,
 
+      tracePropagationTargets: ["localhost", /^https:\/\/.*\.batchivo\.com/, /^\/api\//],
+
       // Integrations
       integrations: [
         // Browser tracing for performance
-        Sentry.browserTracingIntegration({
-          // Trace navigation and API calls
-          tracePropagationTargets: [
-            'localhost',
-            /^https:\/\/.*\.batchivo\.com/,
-            /^\/api\//,
-          ],
-        }),
+        Sentry.browserTracingIntegration(),
         // Session replay for debugging
         Sentry.replayIntegration({
           // Mask all text and block all media for privacy in production

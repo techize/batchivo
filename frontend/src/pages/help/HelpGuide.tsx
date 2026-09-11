@@ -59,7 +59,7 @@ function Sidebar({ currentSlug }: { currentSlug: string }) {
         return (
           <Link
             key={guide.slug}
-            to={`/help/${guide.slug}`}
+            to="/help/$slug" params={{ slug: guide.slug }}
             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
               isActive
                 ? 'bg-primary text-primary-foreground'
@@ -177,7 +177,7 @@ export function HelpGuide() {
             <div className="flex items-center justify-between mt-12 pt-6 border-t">
               {prevGuide ? (
                 <Button variant="ghost" asChild>
-                  <Link to={`/help/${prevGuide.slug}`} className="flex items-center gap-2">
+                  <Link to="/help/$slug" params={{ slug: prevGuide.slug }} className="flex items-center gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">{prevGuide.title}</span>
                     <span className="sm:hidden">Previous</span>
@@ -189,7 +189,7 @@ export function HelpGuide() {
 
               {nextGuide ? (
                 <Button variant="ghost" asChild>
-                  <Link to={`/help/${nextGuide.slug}`} className="flex items-center gap-2">
+                  <Link to="/help/$slug" params={{ slug: nextGuide.slug }} className="flex items-center gap-2">
                     <span className="hidden sm:inline">{nextGuide.title}</span>
                     <span className="sm:hidden">Next</span>
                     <ArrowRight className="h-4 w-4" />

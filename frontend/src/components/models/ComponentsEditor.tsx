@@ -57,7 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const componentFormSchema = z.object({
   component_name: z.string().min(1, 'Component name is required').max(200),
-  quantity: z.coerce.number().int().positive('Quantity must be positive'),
+  quantity: z.coerce.number<number | string>().int().positive('Quantity must be positive'),
   unit_cost: z.string().regex(/^\d+(\.\d{1,4})?$/, 'Must be a valid number'),
   supplier: z.string().max(200).optional(),
   notes: z.string().optional(),
@@ -65,7 +65,7 @@ const componentFormSchema = z.object({
 
 const consumableFormSchema = z.object({
   consumable_id: z.string().uuid('Must select a consumable'),
-  quantity: z.coerce.number().int().positive('Quantity must be positive'),
+  quantity: z.coerce.number<number | string>().int().positive('Quantity must be positive'),
 })
 
 type ComponentFormValues = z.infer<typeof componentFormSchema>
@@ -87,7 +87,7 @@ export function ComponentsEditor({ modelId, components }: ComponentsEditorProps)
     queryFn: () => consumablesApi.list({ page: 1, page_size: 100 }),
   })
 
-  const form = useForm<ComponentFormValues>({
+  const form = useForm<z.input<typeof componentFormSchema>, unknown, ComponentFormValues>({
     resolver: zodResolver(componentFormSchema),
     defaultValues: {
       component_name: '',
@@ -98,7 +98,7 @@ export function ComponentsEditor({ modelId, components }: ComponentsEditorProps)
     },
   })
 
-  const consumableForm = useForm<ConsumableFormValues>({
+  const consumableForm = useForm<z.input<typeof consumableFormSchema>, unknown, ConsumableFormValues>({
     resolver: zodResolver(consumableFormSchema),
     defaultValues: {
       consumable_id: '',

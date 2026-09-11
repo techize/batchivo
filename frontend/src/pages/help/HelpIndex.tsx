@@ -64,7 +64,7 @@ function GuideCard({ guide }: { guide: Guide }) {
   const Icon = guideIcons[guide.slug] || Book
 
   return (
-    <Link to={`/help/${guide.slug}`} className="block">
+    <Link to="/help/$slug" params={{ slug: guide.slug }} className="block">
       <Card className="h-full hover:border-primary hover:shadow-md transition-all">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export function HelpIndex() {
             to production runs and order fulfillment.
           </p>
           <Button asChild>
-            <Link to="/help/overview">
+            <Link to="/help/$slug" params={{ slug: "overview" }}>
               Get Started
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

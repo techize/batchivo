@@ -4,6 +4,7 @@
  * Main page for production run management with list and analytics views
  */
 
+import type { ProductionRunDetail } from '@/types/production-run'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -13,15 +14,25 @@ import { VarianceDashboard } from '@/components/charts'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { listProductionRuns } from '@/lib/api/production-runs'
+import { listProductionRuns, getProductionRun } from '@/lib/api/production-runs'
 
 export function ProductionRuns() {
   const [activeTab, setActiveTab] = useState('list')
 
   // Fetch all runs for analytics (separate from paginated list)
-  const { data: analyticsData, isLoading: analyticsLoading, refetch } = useQuery({
+  const { data: analyticsData, isLoading: analyticsLoading, error: analyticsError, refetch } = useQuery({
     queryKey: ['production-runs-analytics'],
-    queryFn: () => listProductionRuns({ limit: 500 }),
+    queryFn: async () => {
+      const page = await listProductionRuns({ limit: 500 })
+      const runs: ProductionRunDetail[] = []
+      // Bound requests so opening analytics cannot flood the backend.
+      for (let offset = 0; offset < page.runs.length; offset += 5) {
+        runs.push(...await Promise.all(
+          page.runs.slice(offset, offset + 5).map(run => getProductionRun(run.id))
+        ))
+      }
+      return { ...page, runs }
+    },
     enabled: activeTab === 'analytics',
   })
 
@@ -62,6 +73,7 @@ export function ProductionRuns() {
           </TabsContent>
 
           <TabsContent value="analytics" className="mt-4">
+            {analyticsError && <p role="alert">Unable to load production analytics. Please try refreshing.</p>}
             <VarianceDashboard
               runs={analyticsData?.runs || []}
               isLoading={analyticsLoading}

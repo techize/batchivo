@@ -70,7 +70,7 @@ import {
 
 const modelFormSchema = z.object({
   model_id: z.string().uuid('Must select a model'),
-  quantity: z.coerce.number().int().positive('Quantity must be positive'),
+  quantity: z.coerce.number<number | string>().int().positive('Quantity must be positive'),
 })
 
 type ModelFormValues = z.infer<typeof modelFormSchema>
@@ -92,7 +92,7 @@ export function ProductModelsEditor({ productId, models }: ProductModelsEditorPr
     queryFn: () => listModels({ limit: 100 }),
   })
 
-  const form = useForm<ModelFormValues>({
+  const form = useForm<z.input<typeof modelFormSchema>, unknown, ModelFormValues>({
     resolver: zodResolver(modelFormSchema),
     defaultValues: {
       model_id: '',

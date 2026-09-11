@@ -59,6 +59,7 @@ api.interceptors.request.use(
           const { access_token, refresh_token, expires_in } = response.data;
           const newTokens = {
             accessToken: access_token,
+            tokenType: response.data.token_type || tokens.tokenType || "bearer",
             refreshToken: refresh_token || tokens.refreshToken,
             expiresAt: Date.now() + expires_in * 1000,
           };

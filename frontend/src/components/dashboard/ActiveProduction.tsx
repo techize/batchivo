@@ -25,8 +25,8 @@ function ActiveRunCard({ run }: { run: ActiveProductionRun }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <Link
-            to="/production-runs/$id"
-            params={{ id: run.id }}
+            to="/production-runs/$runId"
+            params={{ runId: run.id }}
             className="font-medium text-primary hover:underline"
           >
             {run.run_number}

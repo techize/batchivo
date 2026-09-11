@@ -70,7 +70,7 @@ import {
 
 const componentFormSchema = z.object({
   child_product_id: z.string().uuid('Must select a product'),
-  quantity: z.coerce.number().int().positive('Quantity must be positive'),
+  quantity: z.coerce.number<number | string>().int().positive('Quantity must be positive'),
 })
 
 type ComponentFormValues = z.infer<typeof componentFormSchema>
@@ -91,7 +91,7 @@ export function ProductComponentsEditor({ productId, components }: ProductCompon
     queryFn: () => listProducts({ limit: 100, is_active: true }),
   })
 
-  const form = useForm<ComponentFormValues>({
+  const form = useForm<z.input<typeof componentFormSchema>, unknown, ComponentFormValues>({
     resolver: zodResolver(componentFormSchema),
     defaultValues: {
       child_product_id: '',

@@ -78,6 +78,17 @@ const mockSpool = {
   spool_id: 'SPOOL-001',
   material_type_id: 'mat-1',
   material_type_name: 'PLA',
+  material_type_code: 'PLA',
+  tenant_id: 'tenant-1',
+  diameter: 1.75,
+  translucent: false,
+  glow: false,
+  initial_weight: 1000,
+  current_weight: 800,
+  remaining_weight: 800,
+  remaining_percentage: 80,
+  purchased_quantity: 1,
+  spools_remaining: 1,
   brand: 'TestBrand',
   color: 'Red',
   is_active: true,
@@ -105,6 +116,8 @@ const mockMaterialType = {
   print_temp_max: 220,
   bed_temp_min: 50,
   bed_temp_max: 60,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
 }
 
 // Helper to create wrapper with QueryClient

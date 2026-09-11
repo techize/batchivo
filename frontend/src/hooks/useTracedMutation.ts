@@ -8,6 +8,7 @@
 import {
   useMutation,
   type UseMutationOptions,
+  type MutationFunctionContext,
   type UseMutationResult,
 } from '@tanstack/react-query'
 import { withSpan, recordError, getTracer } from '@/lib/telemetry'
@@ -53,7 +54,7 @@ export function useTracedMutation<
   const { spanName, getSpanAttributes, mutationFn, onSuccess, onError, ...rest } =
     options
 
-  const tracedMutationFn = async (variables: TVariables): Promise<TData> => {
+  const tracedMutationFn = async (variables: TVariables, mutationContext: MutationFunctionContext): Promise<TData> => {
     const attributes = getSpanAttributes ? getSpanAttributes(variables) : {}
 
     return withSpan(
@@ -63,7 +64,7 @@ export function useTracedMutation<
         span.setAttribute('mutation.name', spanName)
 
         // Execute the actual mutation
-        const result = await mutationFn!(variables)
+        const result = await mutationFn!(variables, mutationContext)
 
         // Add result attributes if available
         if (result && typeof result === 'object' && 'id' in result) {
@@ -79,23 +80,23 @@ export function useTracedMutation<
   return useMutation({
     ...rest,
     mutationFn: mutationFn ? tracedMutationFn : undefined,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutationContext) => {
       // Record success metric
       const tracer = getTracer()
       const span = tracer.startSpan(`mutation.${spanName}.success`)
       span.setStatus({ code: SpanStatusCode.OK })
       span.end()
 
-      onSuccess?.(data, variables, context)
+      onSuccess?.(data, variables, context, mutationContext)
     },
-    onError: (error, variables, context) => {
+    onError: (error, variables, context, mutationContext) => {
       // Record error in a span
       const tracer = getTracer()
       const span = tracer.startSpan(`mutation.${spanName}.error`)
       recordError(span, error)
       span.end()
 
-      onError?.(error, variables, context)
+      onError?.(error, variables, context, mutationContext)
     },
   })
 }

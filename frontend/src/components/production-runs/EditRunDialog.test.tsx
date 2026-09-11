@@ -10,7 +10,7 @@
  * - Error handling
  */
 
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -53,6 +53,10 @@ const mockInProgressRun: ProductionRunDetail = {
   items: [
     {
       id: 'item-1',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      total_quantity_accounted: 0,
+      unaccounted_quantity: 10,
       production_run_id: 'run-1',
       model_id: 'model-1',
       quantity: 10,
@@ -70,6 +74,10 @@ const mockInProgressRun: ProductionRunDetail = {
   materials: [
     {
       id: 'material-1',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      variance_grams: 0,
+      variance_percentage: 0,
       production_run_id: 'run-1',
       spool_id: 'spool-1',
       estimated_model_weight_grams: 100.0,

@@ -29,8 +29,7 @@ function SpoolAlertCard({ spool }: { spool: LowStockSpool }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <Link
-            to="/inventory/$id"
-            params={{ id: spool.id }}
+            to="/filaments"
             className="font-medium text-sm hover:text-primary hover:underline truncate"
           >
             {spool.spool_id}

@@ -182,7 +182,7 @@ export function EditSpoolDialog({ open, onOpenChange, spoolId }: EditSpoolDialog
     updateMutation.mutate(formData as SpoolUpdate)
   }
 
-  const handleInputChange = (field: keyof SpoolUpdate, value: string | number | boolean | null) => {
+  const handleInputChange = (field: keyof SpoolUpdate, value: string | number | boolean | null | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 

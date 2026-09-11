@@ -156,7 +156,7 @@ export function TenantDetailPage() {
             </Button>
 
             <Button variant="outline" asChild>
-              <Link to={`/platform/tenants/${tenant.id}/modules`}>
+              <Link to="/platform/tenants/$tenantId/modules" params={{ tenantId: tenant.id }}>
                 <Package className="mr-2 h-4 w-4" />
                 Manage Modules
               </Link>
@@ -292,13 +292,13 @@ export function TenantDetailPage() {
                       {shopSettings.enabled ? 'Yes' : 'No'}
                     </Badge>
                   </div>
-                  {shopSettings.shop_name && (
+                  {Boolean(shopSettings.shop_name) && (
                     <div className="flex items-center justify-between border-b pb-2">
                       <span className="text-muted-foreground">Shop Name</span>
                       <span className="font-medium">{shopSettings.shop_name as string}</span>
                     </div>
                   )}
-                  {shopSettings.custom_domain && (
+                  {Boolean(shopSettings.custom_domain) && (
                     <div className="flex items-center justify-between border-b pb-2">
                       <span className="text-muted-foreground flex items-center gap-2">
                         <Globe className="h-4 w-4" />
@@ -306,13 +306,13 @@ export function TenantDetailPage() {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{shopSettings.custom_domain as string}</span>
-                        {shopSettings.custom_domain_verified && (
+                        {Boolean(shopSettings.custom_domain_verified) && (
                           <Badge variant="default" className="text-xs">Verified</Badge>
                         )}
                       </div>
                     </div>
                   )}
-                  {shopSettings.order_prefix && (
+                  {Boolean(shopSettings.order_prefix) && (
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Order Prefix</span>
                       <code className="text-sm bg-muted px-2 py-1 rounded">

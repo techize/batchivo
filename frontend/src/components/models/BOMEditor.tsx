@@ -71,7 +71,7 @@ export function BOMEditor({ modelId, materials }: BOMEditorProps) {
     queryFn: () => spoolsApi.list({ page_size: 100 }),
   })
 
-  const form = useForm<MaterialFormValues>({
+  const form = useForm<z.input<typeof materialFormSchema>, unknown, MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
     defaultValues: {
       spool_id: '',

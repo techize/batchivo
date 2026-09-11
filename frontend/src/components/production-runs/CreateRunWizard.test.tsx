@@ -11,7 +11,7 @@
  * - Weight scaling by quantity
  */
 
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
@@ -46,13 +46,14 @@ const mockSpoolsApiList = spoolsApi.list as Mock
 const mockModel1: Model = {
   id: 'model-1',
   tenant_id: 'tenant-1',
+  production_cost_count: 0,
   sku: 'MODEL-001',
   name: 'Test Widget',
   description: 'A test widget',
   category: 'Widgets',
-  image_url: null,
+  image_url: undefined,
   labor_hours: '1.5',
-  labor_rate_override: null,
+  labor_rate_override: undefined,
   overhead_percentage: '25',
   is_active: true,
   designer: 'John Doe',
@@ -60,7 +61,7 @@ const mockModel1: Model = {
   print_time_minutes: 120,
   prints_per_plate: 5,
   machine: 'Prusa i3 MK3S',
-  last_printed_date: null,
+  last_printed_date: undefined,
   units_in_stock: 0,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -70,21 +71,22 @@ const mockModel1: Model = {
 const mockModel2: Model = {
   id: 'model-2',
   tenant_id: 'tenant-1',
+  production_cost_count: 0,
   sku: 'MODEL-002',
   name: 'Multi-Color Print',
   description: 'Uses multiple materials',
   category: 'Widgets',
-  image_url: null,
+  image_url: undefined,
   labor_hours: '2.0',
-  labor_rate_override: null,
+  labor_rate_override: undefined,
   overhead_percentage: '25',
   is_active: true,
-  designer: null,
-  source: null,
+  designer: undefined,
+  source: undefined,
   print_time_minutes: 300,
   prints_per_plate: 3,
   machine: 'Prusa XL',
-  last_printed_date: null,
+  last_printed_date: undefined,
   units_in_stock: 0,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -227,7 +229,7 @@ const mockSpools: SpoolResponse[] = [
     brand: 'eSun',
     color: 'Blue',
     color_hex: '0000FF',
-    finish: null,
+    finish: undefined,
     diameter: 1.75,
     translucent: false,
     glow: false,
@@ -239,8 +241,8 @@ const mockSpools: SpoolResponse[] = [
     spools_remaining: 1,
     purchase_date: '2024-01-01',
     purchase_price: 25.0,
-    supplier: null,
-    storage_location: null,
+    supplier: undefined,
+    storage_location: undefined,
     notes: '',
     is_active: true,
     created_at: '2024-01-01T00:00:00Z',

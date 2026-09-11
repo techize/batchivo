@@ -114,7 +114,7 @@ describe('useSKUAvailability', () => {
     mockSkuApi.checkAvailability.mockResolvedValue({
       sku: 'PROD-001',
       available: true,
-      entity_type: 'PROD',
+
     })
 
     const { result } = renderHook(() => useSKUAvailability('PROD'), {
@@ -132,8 +132,7 @@ describe('useSKUAvailability', () => {
     mockSkuApi.checkAvailability.mockResolvedValue({
       sku: 'PROD-001',
       available: false,
-      entity_type: 'PROD',
-      existing_entity_id: 'uuid-123',
+
     })
 
     const { result } = renderHook(() => useSKUAvailability('PROD'), {
@@ -143,7 +142,7 @@ describe('useSKUAvailability', () => {
     const checkResult = await result.current.checkSKU('PROD-001')
 
     expect(checkResult.available).toBe(false)
-    expect(checkResult.existing_entity_id).toBe('uuid-123')
+
   })
 
   it('handles check errors', async () => {
@@ -160,7 +159,7 @@ describe('useSKUAvailability', () => {
     mockSkuApi.checkAvailability.mockResolvedValue({
       sku: 'PROD-001',
       available: true,
-      entity_type: 'PROD',
+
     })
 
     const { result } = renderHook(() => useSKUAvailability('PROD'), {
@@ -189,15 +188,16 @@ describe('useSKUWithValidation', () => {
 
   it('combines next SKU and availability checking', async () => {
     mockSkuApi.getNextSKU.mockResolvedValue({
+      entity_type: 'MOD',
       next_sku: 'MOD-010',
       highest_existing: 9,
-      entity_type: 'MOD',
+
     })
 
     mockSkuApi.checkAvailability.mockResolvedValue({
       sku: 'MOD-005',
       available: true,
-      entity_type: 'MOD',
+
     })
 
     const { result } = renderHook(() => useSKUWithValidation('MOD'), {

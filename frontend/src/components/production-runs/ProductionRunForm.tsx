@@ -46,8 +46,8 @@ export function ProductionRunForm() {
       bed_temperature: formData.bed_temperature,
       nozzle_temperature: formData.nozzle_temperature,
       estimated_print_time_hours: formData.estimated_print_time_hours,
-      estimated_total_filament_grams: formData.estimated_total_filament_grams,
-      estimated_total_purge_grams: formData.estimated_total_purge_grams,
+      estimated_model_weight_grams: formData.estimated_model_weight_grams,
+      estimated_flushed_grams: formData.estimated_flushed_grams,
       notes: formData.notes,
     }
 
@@ -173,19 +173,19 @@ export function ProductionRunForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="estimated_total_filament_grams">
+                <Label htmlFor="estimated_model_weight_grams">
                   Filament Weight (g)
                 </Label>
                 <Input
-                  id="estimated_total_filament_grams"
+                  id="estimated_model_weight_grams"
                   type="number"
                   step="0.1"
                   placeholder="e.g., 125.5"
-                  value={formData.estimated_total_filament_grams || ''}
+                  value={formData.estimated_model_weight_grams || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      estimated_total_filament_grams: e.target.value
+                      estimated_model_weight_grams: e.target.value
                         ? parseFloat(e.target.value)
                         : undefined,
                     })
@@ -194,17 +194,17 @@ export function ProductionRunForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="estimated_total_purge_grams">Purge/Waste (g)</Label>
+                <Label htmlFor="estimated_flushed_grams">Purge/Waste (g)</Label>
                 <Input
-                  id="estimated_total_purge_grams"
+                  id="estimated_flushed_grams"
                   type="number"
                   step="0.1"
                   placeholder="e.g., 15.0"
-                  value={formData.estimated_total_purge_grams || ''}
+                  value={formData.estimated_flushed_grams || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      estimated_total_purge_grams: e.target.value
+                      estimated_flushed_grams: e.target.value
                         ? parseFloat(e.target.value)
                         : undefined,
                     })

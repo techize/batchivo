@@ -46,7 +46,7 @@ export function Step4FirstProduct({
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<Step4FormData>({
+  } = useForm<z.input<typeof step4Schema>, unknown, Step4FormData>({
     resolver: zodResolver(step4Schema),
     defaultValues: {
       skip: false,

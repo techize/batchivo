@@ -72,11 +72,11 @@ export function calculateVarianceStats(runs: ProductionRun[]): VarianceStats {
 /**
  * Filter runs by date range
  */
-export function filterRunsByDateRange(
-  runs: ProductionRun[],
+export function filterRunsByDateRange<T extends ProductionRun>(
+  runs: T[],
   startDate?: Date,
   endDate?: Date
-): ProductionRun[] {
+): T[] {
   return runs.filter((run) => {
     const runDate = new Date(run.started_at)
     if (startDate && runDate < startDate) return false

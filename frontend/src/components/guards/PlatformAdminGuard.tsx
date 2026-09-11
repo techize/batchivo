@@ -5,7 +5,7 @@
  * Redirects non-admins to the dashboard.
  */
 
-import { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { Navigate } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { Loader2, ShieldAlert } from 'lucide-react'

@@ -45,6 +45,10 @@ def mock_db():
     """Create mock async database session."""
     db = AsyncMock()
     db.execute = AsyncMock()
+    # SQLAlchemy scalars() is awaited; ScalarResult.all() is synchronous.
+    scalar_result = MagicMock()
+    scalar_result.all.return_value = []
+    db.scalars = AsyncMock(return_value=scalar_result)
     db.commit = AsyncMock()
     db.flush = AsyncMock()
     db.refresh = AsyncMock()
@@ -234,24 +238,24 @@ class TestSignatureVerification:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_empty_key_skips_validation(self, webhook_service):
-        """Test that missing key skips validation."""
+    async def test_empty_key_rejects_signature(self, webhook_service):
+        """Test that missing key rejects validation."""
         body = b'{"type": "payment.created"}'
         url = "https://example.com/webhooks/square"
 
         result = await webhook_service.verify_signature(body, "any", "", url)
 
-        assert result is True
+        assert result is False
 
     @pytest.mark.asyncio
-    async def test_none_key_skips_validation(self, webhook_service):
-        """Test that None key skips validation."""
+    async def test_none_key_rejects_signature(self, webhook_service):
+        """Test that None key rejects validation."""
         body = b'{"type": "payment.created"}'
         url = "https://example.com/webhooks/square"
 
         result = await webhook_service.verify_signature(body, "any", None, url)
 
-        assert result is True
+        assert result is False
 
     @pytest.mark.asyncio
     async def test_missing_signature_returns_false(self, webhook_service):

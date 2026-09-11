@@ -100,7 +100,7 @@ export function AddPurchaseDialog({ open, onOpenChange, consumableId }: AddPurch
     createMutation.mutate(formData as ConsumablePurchaseCreate)
   }
 
-  const handleInputChange = (field: keyof ConsumablePurchaseCreate, value: string | number | boolean | null) => {
+  const handleInputChange = (field: keyof ConsumablePurchaseCreate, value: string | number | boolean | null | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 

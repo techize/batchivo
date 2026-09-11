@@ -482,7 +482,7 @@ export function DesignerList() {
               <Textarea
                 id="description"
                 placeholder="About this designer..."
-                value={newDesigner.description}
+                value={newDesigner.description ?? ""}
                 onChange={(e) => setNewDesigner({ ...newDesigner, description: e.target.value })}
                 rows={3}
               />

@@ -85,7 +85,7 @@ describe('skuApi', () => {
       const mockResponse = {
         sku: 'PROD-001',
         available: true,
-        entity_type: 'PROD',
+
       }
       mockApiClient.get.mockResolvedValue(mockResponse)
 
@@ -99,22 +99,21 @@ describe('skuApi', () => {
       const mockResponse = {
         sku: 'PROD-001',
         available: false,
-        entity_type: 'PROD',
-        existing_entity_id: 'uuid-123',
+
       }
       mockApiClient.get.mockResolvedValue(mockResponse)
 
       const result = await skuApi.checkAvailability('PROD', 'PROD-001')
 
       expect(result.available).toBe(false)
-      expect(result.existing_entity_id).toBe('uuid-123')
+
     })
 
     it('encodes SKU with special characters', async () => {
       const mockResponse = {
         sku: 'PROD-001/A',
         available: true,
-        entity_type: 'PROD',
+
       }
       mockApiClient.get.mockResolvedValue(mockResponse)
 
@@ -127,7 +126,7 @@ describe('skuApi', () => {
       const mockResponse = {
         sku: 'PROD 001',
         available: true,
-        entity_type: 'PROD',
+
       }
       mockApiClient.get.mockResolvedValue(mockResponse)
 

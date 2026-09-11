@@ -55,20 +55,15 @@ export function initTelemetry(): void {
       headers: {},
     })
 
-    // Create tracer provider
     tracerProvider = new WebTracerProvider({
       resource,
-    })
-
-    // Add batch span processor for efficient export
-    tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(exporter, {
+      spanProcessors: [new BatchSpanProcessor(exporter, {
         maxQueueSize: 100,
         maxExportBatchSize: 10,
         scheduledDelayMillis: 500,
         exportTimeoutMillis: 30000,
-      })
-    )
+      })],
+    })
 
     // Register the provider globally
     tracerProvider.register({
@@ -92,7 +87,7 @@ export function initTelemetry(): void {
             if (request instanceof Request) {
               span.setAttribute('http.request.url', request.url)
             }
-            if (response) {
+            if (typeof response?.status === 'number') {
               span.setAttribute('http.response.status_code', response.status)
             }
           },

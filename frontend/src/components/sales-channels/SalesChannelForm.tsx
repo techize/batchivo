@@ -83,7 +83,7 @@ export function SalesChannelForm({ channel, mode }: SalesChannelFormProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const form = useForm<SalesChannelFormValues>({
+  const form = useForm<z.input<typeof salesChannelFormSchema>, unknown, SalesChannelFormValues>({
     resolver: zodResolver(salesChannelFormSchema),
     defaultValues: {
       name: channel?.name || '',

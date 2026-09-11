@@ -65,7 +65,7 @@ export function EtsySettings() {
     queryFn: getEtsySettings,
   })
 
-  const form = useForm<EtsySettingsFormValues>({
+  const form = useForm<z.input<typeof etsySettingsSchema>, unknown, EtsySettingsFormValues>({
     resolver: zodResolver(etsySettingsSchema),
     defaultValues: {
       enabled: settings?.enabled ?? false,

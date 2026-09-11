@@ -61,6 +61,7 @@ interface CustomTooltipProps {
     value: number
     color: string
     dataKey: string
+    payload?: ChartDataPoint
   }>
   label?: string
 }

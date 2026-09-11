@@ -270,7 +270,7 @@ export function calculateEstimatedTotalWeight(
   materials: ProductionRunMaterialCreate[]
 ): number {
   return materials.reduce((total, material) => {
-    return total + material.estimated_weight_grams + material.estimated_purge_grams;
+    return total + material.estimated_model_weight_grams + material.estimated_flushed_grams;
   }, 0);
 }
 
@@ -281,7 +281,7 @@ export function calculateEstimatedMaterialCost(
   materials: ProductionRunMaterialCreate[]
 ): number {
   return materials.reduce((total, material) => {
-    const weight = material.estimated_weight_grams + material.estimated_purge_grams;
+    const weight = material.estimated_model_weight_grams + material.estimated_flushed_grams;
     return total + weight * material.cost_per_gram;
   }, 0);
 }

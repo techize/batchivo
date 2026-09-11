@@ -51,7 +51,7 @@ export function Step1BusinessInfo({ initialData, onSubmit, isLoading }: Step1Bus
     watch,
     setValue,
     formState: { errors },
-  } = useForm<Step1FormData>({
+  } = useForm<z.input<typeof step1Schema>, unknown, Step1FormData>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
       business_name: initialData?.business_name || '',

@@ -50,6 +50,10 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
+  readonly root = null
+  readonly rootMargin = "0px"
+  readonly thresholds = [0]
+  takeRecords = vi.fn(() => [])
   observe = vi.fn()
   unobserve = vi.fn()
   disconnect = vi.fn()
@@ -57,6 +61,10 @@ global.IntersectionObserver = class IntersectionObserver {
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
+  readonly root = null
+  readonly rootMargin = "0px"
+  readonly thresholds = [0]
+  takeRecords = vi.fn(() => [])
   observe = vi.fn()
   unobserve = vi.fn()
   disconnect = vi.fn()
