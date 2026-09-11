@@ -6,6 +6,9 @@ FROM registry.techize.co.uk/dockerhub-cache/python:3.12-alpine AS builder
 
 WORKDIR /app
 
+# Bound retries for transient package-download stalls observed in cluster builds.
+ENV POETRY_REQUESTS_TIMEOUT=60 POETRY_REQUESTS_MAX_RETRIES=3
+
 # Install build dependencies for Python packages that need compilation
 RUN apk add --no-cache \
     gcc \
@@ -14,13 +17,14 @@ RUN apk add --no-cache \
     postgresql-dev
 
 # Install Poetry 2.x for PEP 621 support
-RUN pip install --no-cache-dir poetry>=2.0.0
+RUN pip install --no-cache-dir 'poetry>=2.0.0'
 
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies to a virtual environment (--no-root skips installing the project itself)
 RUN poetry config virtualenvs.in-project true && \
+    poetry config virtualenvs.options.no-pip true && \
     poetry install --only main --no-root --no-interaction --no-ansi
 
 # Stage 2: Runtime
@@ -28,19 +32,24 @@ FROM registry.techize.co.uk/dockerhub-cache/python:3.12-alpine
 
 WORKDIR /app
 
-# Update packages, install runtime dependencies, and upgrade pip
+# Update packages and install runtime libraries. Package installation happens
+# only in the builder; remove runtime pip and its bundled installer dependencies.
 # --ignore alpine-baselayout: 3.7.2+
 # k8s service-account secrets in Kaniko are read-only
 RUN apk upgrade --no-cache --ignore alpine-baselayout && \
     apk add --no-cache libpq && \
     apk upgrade --no-cache libpq && \
-    pip install --no-cache-dir --upgrade pip
+    python -m pip uninstall --yes pip && \
+    rm -rf /usr/local/lib/python3.12/ensurepip
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
 
 # Add venv to PATH
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Guard against reintroducing installer tooling into the immutable runtime.
+RUN python -c "import importlib.util; assert importlib.util.find_spec('pip') is None"
 
 # Copy application code
 COPY app /app/app

@@ -6,6 +6,8 @@
 # Last forced rebuild: 2026-03-23 (pipeline 133 was canceled; triggering fresh build)
 FROM python:3.12-slim
 
+ENV POETRY_REQUESTS_TIMEOUT=60 POETRY_REQUESTS_MAX_RETRIES=3
+
 # Use HTTPS for Debian mirrors; plain HTTP downloads failed in the cluster.
 RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
     && apt-get -o Acquire::Retries=3 update -qq \
@@ -20,4 +22,4 @@ WORKDIR /app
 # becomes a fast local verification (~5s vs ~2-3 min).
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true \
-    && poetry install --no-interaction --quiet --extras dev --no-root
+    && poetry install --no-interaction --no-ansi --extras dev --no-root

@@ -22,6 +22,13 @@ GitHub reports the actual PR contexts as `ci/woodpecker/pr/test-fast` and
 merging. Single-owner policy removes the impossible second-person/code-owner
 approval requirement; it does not waive tests or security checks.
 
+The Woodpecker repository setting **Allow deployments** must be enabled for this
+workflow. It was enabled on 11 September 2026 after confirming that `techize` was
+the sole collaborator with push access. Other approval and trust settings were
+preserved. Reassess this setting when granting another user repository write
+access: deployment events may receive release-only secrets. See the
+[Woodpecker project settings documentation](https://woodpecker-ci.org/docs/usage/project-settings).
+
 Publishing is a separate owner-triggered action on a successful main pipeline:
 
 ```sh
