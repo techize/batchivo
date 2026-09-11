@@ -14,30 +14,33 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import func, select, desc
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth.dependencies import ShopContext, ShopTenant
+from app.core.rate_limit import limiter
 from app.database import get_db
 from app.models.category import Category, product_categories
 from app.models.designer import Designer
-from app.models.order import Order as OrderModel, OrderItem as OrderItemModel, OrderStatus
+from app.models.order import Order as OrderModel
+from app.models.order import OrderItem as OrderItemModel
+from app.models.order import OrderStatus
 from app.models.product import Product
 from app.models.review import Review
-from app.services.cart import CartService, get_cart_service, CartItem
+from app.services.cart import CartItem, CartService, get_cart_service
 from app.services.checkout_session import CheckoutSessionService, get_checkout_session_service
+from app.services.commerce_handover import legacy_product_write_guard, legacy_shop_write_guard
+from app.services.search_service import SearchService, get_search_service
+from app.services.shipping_service import ShippingService, get_shipping_service
 from app.services.stock_reservation import (
+    ReservationItem,
     StockReservationService,
     get_stock_reservation_service,
-    ReservationItem,
 )
-from app.services.shipping_service import ShippingService, get_shipping_service
-from app.services.search_service import SearchService, get_search_service
-from app.core.rate_limit import limiter
 
 router = APIRouter()
 
@@ -1216,7 +1219,7 @@ async def validate_discount(
     )
 
 
-@router.post("/checkout/create-payment")
+@router.post("/checkout/create-payment", dependencies=[Depends(legacy_shop_write_guard)])
 @limiter.limit("10/minute")
 async def create_checkout_session(
     http_request: Request,
@@ -1337,7 +1340,7 @@ async def create_checkout_session(
     }
 
 
-@router.post("/checkout/complete")
+@router.post("/checkout/complete", dependencies=[Depends(legacy_shop_write_guard)])
 @limiter.limit("5/minute")
 async def complete_checkout(
     http_request: Request,
@@ -1351,10 +1354,14 @@ async def complete_checkout(
     """Complete checkout with payment. Tenant resolved from X-Shop-Hostname header."""
     shop_tenant, channel = shop_context
     from app.schemas.payment import (
-        PaymentRequest,
-        CustomerDetails,
-        ShippingAddress as PaymentShippingAddress,
         CartItem as PaymentCartItem,
+    )
+    from app.schemas.payment import (
+        CustomerDetails,
+        PaymentRequest,
+    )
+    from app.schemas.payment import (
+        ShippingAddress as PaymentShippingAddress,
     )
     from app.services.square_payment import get_payment_service
 
@@ -1408,7 +1415,7 @@ async def complete_checkout(
     if not result.success:
         # Record payment failure metric
         try:
-            from app.observability.metrics import record_payment_processed, record_error
+            from app.observability.metrics import record_error, record_payment_processed
 
             record_payment_processed(
                 tenant_id="",  # Unknown at this point
@@ -1505,7 +1512,7 @@ async def complete_checkout(
     # Record discount usage if a discount was applied
     if session.discount_code and session.discount_amount > 0:
         try:
-            from app.api.v1.discounts import record_discount_usage, get_discount_code_by_code
+            from app.api.v1.discounts import get_discount_code_by_code, record_discount_usage
 
             discount_code_record = await get_discount_code_by_code(
                 db=db,
@@ -1644,16 +1651,22 @@ class PublicOrder(BaseModel):
 async def get_order(
     order_number: str,
     email: str,
+    shop_context: ShopContext,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get order by number and email (for verification)."""
-    # Find order with matching order_number and email
+    """Look up an order only in the resolved storefront and sales channel."""
+    tenant, channel = shop_context
+    response.headers["Cache-Control"] = "private, no-store"
+    # Number/email verification never permits crossing storefront boundaries.
     result = await db.execute(
         select(OrderModel)
         .options(selectinload(OrderModel.items))
         .where(
             OrderModel.order_number == order_number,
             OrderModel.customer_email == email.lower().strip(),
+            OrderModel.tenant_id == tenant.id,
+            OrderModel.sales_channel_id == channel.id,
         )
     )
     db_order = result.scalar_one_or_none()
@@ -1664,7 +1677,7 @@ async def get_order(
     return {
         "data": PublicOrder(
             order_number=db_order.order_number,
-            status=db_order.status.value,
+            status=db_order.status,
             customer_name=db_order.customer_name,
             shipping_method=db_order.shipping_method or "Standard",
             shipping_cost=db_order.shipping_cost,
@@ -1706,10 +1719,11 @@ async def get_product_image(
     This endpoint proxies image requests through /api/v1/shop/images/
     and works with both local storage and S3/MinIO.
     """
-    from app.services.image_storage import get_image_storage, ImageStorageError
-    from app.models.product_image import ProductImage
-    from email.utils import formatdate, parsedate_to_datetime
     import calendar
+    from email.utils import formatdate, parsedate_to_datetime
+
+    from app.models.product_image import ProductImage
+    from app.services.image_storage import ImageStorageError, get_image_storage
 
     image_url = f"/uploads/products/{product_id}/{image_filename}"
 
@@ -2017,7 +2031,11 @@ async def get_product_reviews(
     )
 
 
-@router.post("/products/{product_id}/reviews", response_model=ShopReviewSubmitResponse)
+@router.post(
+    "/products/{product_id}/reviews",
+    response_model=ShopReviewSubmitResponse,
+    dependencies=[Depends(legacy_product_write_guard)],
+)
 @limiter.limit("10/minute")
 async def submit_product_review(
     request: Request,
@@ -2104,7 +2122,10 @@ async def submit_product_review(
     )
 
 
-@router.post("/products/{product_id}/reviews/{review_id}/helpful")
+@router.post(
+    "/products/{product_id}/reviews/{review_id}/helpful",
+    dependencies=[Depends(legacy_product_write_guard)],
+)
 async def mark_review_helpful(
     product_id: str,
     review_id: str,

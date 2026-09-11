@@ -125,7 +125,7 @@ export function ProductForm({ product, mode }: ProductFormProps) {
     queryFn: () => listDesigners({ limit: 100 }),
   })
 
-  const form = useForm<ProductFormValues>({
+  const form = useForm<z.input<typeof productFormSchema>, unknown, ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       sku: product?.sku || '',

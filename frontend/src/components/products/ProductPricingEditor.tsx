@@ -95,7 +95,7 @@ export function ProductPricingEditor({ productId, pricing, makeCost }: ProductPr
     queryFn: () => listSalesChannels({ limit: 100 }),
   })
 
-  const form = useForm<PricingFormValues>({
+  const form = useForm<z.input<typeof pricingFormSchema>, unknown, PricingFormValues>({
     resolver: zodResolver(pricingFormSchema),
     defaultValues: {
       sales_channel_id: '',

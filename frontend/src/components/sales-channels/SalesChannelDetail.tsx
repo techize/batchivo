@@ -17,7 +17,7 @@ import {
 } from '@/lib/api/sales-channels'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardDescription, CardHeader } from '@/components/ui/card'
+import { CardContent, CardTitle, Card, CardDescription, CardHeader } from '@/components/ui/card'
 import {
   AlertDialog,
   AlertDialogCancel,

@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderStatus
+from app.services.commerce_order_ownership import commerce_order_id
 from app.models.payment_log import PaymentLog, PaymentLogOperation, PaymentLogStatus
 from app.models.webhook_event import (
     WebhookDeadLetter,
@@ -67,8 +68,8 @@ class SquareWebhookService:
             True if signature is valid, False otherwise
         """
         if not webhook_key:
-            logger.warning("Webhook signature key not configured, skipping validation")
-            return True
+            logger.warning("Webhook signature key not configured; rejecting notification")
+            return False
 
         if not signature:
             logger.warning("Missing webhook signature header")
@@ -103,6 +104,9 @@ class SquareWebhookService:
         Returns:
             dict with processing status and details
         """
+        if not signature_valid:
+            return {"status": "rejected", "message": "Webhook signature validation required"}
+
         event_type = event_data.get("type", "unknown")
         event_id = event_data.get("event_id") or self._generate_event_id(event_data)
 
@@ -236,7 +240,34 @@ class SquareWebhookService:
 
         result = {"event_type": event_type, "actions": []}
 
-        # Route to appropriate handler
+        # Existing Square subscriptions also receive events for new Woo purchases.
+        # Acknowledge and audit them without becoming a second writable order master.
+        payment = event_object.get("payment", {})
+        refund = event_object.get("refund", {})
+        identities = {
+            value
+            for value in [payment.get("id"), payment.get("order_id"), refund.get("payment_id")]
+            if value
+        }
+        if identities:
+            orders = (
+                await self.db.scalars(select(Order).where(Order.payment_id.in_(identities)))
+            ).all()
+            owned = [(order, await commerce_order_id(self.db, order)) for order in orders]
+            commerce = [(order, woo_id) for order, woo_id in owned if woo_id is not None]
+            if commerce:
+                if len(orders) != 1:
+                    raise RuntimeError("Payment identity has ambiguous order ownership")
+                order, woo_id = commerce[0]
+                webhook_event.order_id = order.id
+                result["order_owner"] = "woocommerce"
+                result["woo_order_id"] = woo_id
+                result["actions"].append(
+                    "Recorded provider event; WooCommerce commerce workflow owns business updates"
+                )
+                return result
+
+        # Route legacy-owned events to their existing handlers.
         if event_type == "payment.created":
             await self._handle_payment_created(event_object, webhook_event, result)
         elif event_type == "payment.updated":

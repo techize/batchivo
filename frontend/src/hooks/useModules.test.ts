@@ -21,7 +21,7 @@ import { getModules } from '@/lib/api/modules'
 const mockGetModules = vi.mocked(getModules)
 
 const mockModulesResponse = {
-  tenant_type: 'three_d_print',
+  tenant_type: 'three_d_print' as const,
   modules: [
     {
       name: 'inventory',
@@ -62,7 +62,7 @@ const mockModulesResponse = {
 
 const mockKnittingResponse = {
   ...mockModulesResponse,
-  tenant_type: 'hand_knitting',
+  tenant_type: 'hand_knitting' as const,
 }
 
 describe('useModules', () => {

@@ -35,7 +35,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "squareup>=42.0.0",
     "slowapi>=0.1.9",
-    "starlette (==0.49.3)",
+    "starlette>=1.3.1,<2",
     "boto3>=1.35.0",
     "paho-mqtt>=2.1.0",
     "dnspython>=2.7.0",
@@ -80,6 +80,8 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
+# Keep the established rule set explicit across Ruff default changes.
+select = ["E4", "E7", "E9", "F"]
 # F821: Undefined name - SQLAlchemy uses string annotations for relationships
 # E402: Module level import not at top - intentional for conditional imports
 ignore = ["F821", "E402"]

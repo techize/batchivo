@@ -9,11 +9,11 @@
  * - Pagination
  */
 
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SpoolList } from './SpoolList'
-import type { SpoolListResponse, Spool } from '@/types/spool'
+import type { SpoolListResponse, SpoolResponse as Spool } from '@/types/spool'
 import { spoolsApi, materialTypesApi } from '@/lib/api/spools'
 
 // Mock API functions

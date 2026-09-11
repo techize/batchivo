@@ -15,7 +15,7 @@ import {
 import type { ProductionRun, ProductionRunDetail } from '@/types/production-run'
 
 // Mock production run factory
-function createMockRun(overrides: Partial<ProductionRun> = {}): ProductionRun {
+function createMockRun(overrides: Partial<ProductionRunDetail> = {}): ProductionRunDetail {
   return {
     id: 'run-1',
     run_number: 'RUN-001',
@@ -28,7 +28,14 @@ function createMockRun(overrides: Partial<ProductionRun> = {}): ProductionRun {
     variance_percentage: 5,
     duration_hours: 2,
     printer_name: 'Printer 1',
-    printer_id: 'printer-1',
+    tenant_id: 'tenant-1',
+    is_reprint: false,
+    materials: [],
+    total_items_planned: 0,
+    total_items_successful: 0,
+    total_items_failed: 0,
+    total_material_cost: 0,
+    total_estimated_cost: 0,
     items: [],
     created_at: '2024-01-15T10:00:00Z',
     updated_at: '2024-01-15T12:00:00Z',
@@ -48,7 +55,7 @@ describe('calculateVarianceStats', () => {
   it('returns zeros for non-completed runs', () => {
     const runs = [
       createMockRun({ status: 'in_progress', variance_grams: null, variance_percentage: null }),
-      createMockRun({ status: 'pending', variance_grams: null, variance_percentage: null }),
+      createMockRun({ status: 'cancelled', variance_grams: null, variance_percentage: null }),
     ]
     const stats = calculateVarianceStats(runs)
     expect(stats.totalRuns).toBe(2)

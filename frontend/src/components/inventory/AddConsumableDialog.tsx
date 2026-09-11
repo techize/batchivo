@@ -106,7 +106,7 @@ export function AddConsumableDialog({ open, onOpenChange }: AddConsumableDialogP
     createMutation.mutate(formData as ConsumableTypeCreate)
   }
 
-  const handleInputChange = (field: keyof ConsumableTypeCreate, value: string | number | boolean | null) => {
+  const handleInputChange = (field: keyof ConsumableTypeCreate, value: string | number | boolean | null | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 

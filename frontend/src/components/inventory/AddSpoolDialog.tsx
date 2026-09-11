@@ -277,7 +277,7 @@ export function AddSpoolDialog({ open, onOpenChange }: AddSpoolDialogProps) {
     createMutation.mutate(formData as SpoolCreate)
   }
 
-  const handleInputChange = (field: keyof SpoolCreate, value: string | number | boolean | null) => {
+  const handleInputChange = (field: keyof SpoolCreate, value: string | number | boolean | null | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 

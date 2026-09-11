@@ -648,7 +648,7 @@ function Step1BasicInfo({
       const defaults = modelDefaults[item.model_id]
       if (defaults) {
         // Time: (print_time_minutes / prints_per_plate) * quantity
-        const timePerItem = defaults.print_time_minutes / defaults.prints_per_plate
+        const timePerItem = (defaults.print_time_minutes ?? 0) / Math.max(1, defaults.prints_per_plate)
         totalTime += (timePerItem * item.quantity) / 60 // Convert to hours
 
         // Weight: Sum of BOM materials * quantity

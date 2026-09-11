@@ -85,7 +85,7 @@ export function Step3ShopSetup({ initialData, onSubmit, onBack, isLoading }: Ste
     watch,
     setValue,
     formState: { errors },
-  } = useForm<Step3FormData>({
+  } = useForm<z.input<typeof step3Schema>, unknown, Step3FormData>({
     resolver: zodResolver(step3Schema),
     defaultValues: {
       shop_display_name: initialData?.shop_display_name || '',

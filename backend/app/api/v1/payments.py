@@ -12,17 +12,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import ShopContext
 from app.config import get_settings
 from app.database import get_db
-from app.models.order import Order as OrderModel, OrderItem as OrderItemModel, OrderStatus
+from app.models.order import Order as OrderModel
+from app.models.order import OrderItem as OrderItemModel
+from app.models.order import OrderStatus
 from app.models.product import Product
 from app.schemas.payment import (
     HostedCheckoutRequest,
     HostedCheckoutResponse,
+    PaymentError,
     PaymentRequest,
     PaymentResponse,
-    PaymentError,
 )
-from app.services.square_payment import SquarePaymentService, get_payment_service
+from app.services.commerce_handover import legacy_shop_write_guard
 from app.services.email_service import get_email_service
+from app.services.square_payment import SquarePaymentService, get_payment_service
 
 router = APIRouter()
 settings = get_settings()
@@ -216,7 +219,11 @@ async def get_payment_config(
     )
 
 
-@router.post("/hosted-checkout", response_model=HostedCheckoutResponse)
+@router.post(
+    "/hosted-checkout",
+    response_model=HostedCheckoutResponse,
+    dependencies=[Depends(legacy_shop_write_guard)],
+)
 async def create_hosted_checkout(
     request: HostedCheckoutRequest,
     shop_context: ShopContext,
@@ -287,7 +294,9 @@ async def create_hosted_checkout(
     )
 
 
-@router.post("/process", response_model=PaymentResponse)
+@router.post(
+    "/process", response_model=PaymentResponse, dependencies=[Depends(legacy_shop_write_guard)]
+)
 async def process_payment(
     request: PaymentRequest,
     shop_context: ShopContext,
@@ -557,7 +566,7 @@ async def square_webhook(
     - payment.created, payment.updated, payment.failed
     - refund.created, refund.updated
 
-    Returns 200 immediately to acknowledge receipt (Square requires this).
+    Acknowledge completed or duplicate processing; return 503 on failure so Square retries.
     """
     import json
     import logging
@@ -604,20 +613,23 @@ async def square_webhook(
             signature_valid=signature_valid,
         )
 
-        return WebhookResponse(
-            status=result.get("status", "received"),
-            event_id=result.get("event_id"),
-            message=result.get("message"),
-        )
+    except Exception:
+        # A database failure may precede creation of the receipt. Never claim
+        # durable acceptance without evidence; let the provider retry delivery.
+        logger.error("Square webhook processing unavailable; requesting provider retry")
+        raise HTTPException(
+            status_code=503, detail="Webhook processing unavailable", headers={"Retry-After": "60"}
+        ) from None
 
-    except Exception as e:
-        # Log error but return 200 - we've received the webhook
-        # The webhook event is recorded and can be retried
-        logger.error(f"Error in webhook processing: {e}")
-        return WebhookResponse(
-            status="received",
-            message="Event recorded, will be processed asynchronously",
+    if result.get("status") in {"failed", "processing"}:
+        raise HTTPException(
+            status_code=503, detail="Webhook processing incomplete", headers={"Retry-After": "60"}
         )
+    return WebhookResponse(
+        status=result.get("status", "received"),
+        event_id=result.get("event_id"),
+        message=result.get("message"),
+    )
 
 
 # Legacy handler functions kept for test compatibility

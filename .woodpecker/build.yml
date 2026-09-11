@@ -1,24 +1,14 @@
-# Woodpecker CI — Build + Deploy Pipeline
-#
-# Purpose: Get code live as fast as possible.
-#          This pipeline does ONE thing: build images and update manifests.
-#          Tests, dep scans, and image scans all run concurrently in test.yml.
-#
-# Architecture:
-#   build-backend  ──┐
-#   build-frontend ──┴──> deploy-staging ──> deploy-production
-#
-# Expected time: ~4-7 min on warm Kaniko cache (code-only change)
-#                ~8-12 min on cold cache (dep change)
-#
-# Triggered by: push to main (excluding k8s-only changes — ArgoCD handles those directly)
+# Owner-triggered image publishing, after all validation succeeds.
+# Promotion uses a separate manifest PR; this workflow never edits live manifests.
 
 when:
-  - event: push
+  - event: deployment
     branch: main
-    path:
-      exclude:
-        - 'infrastructure/k8s/**'
+    evaluate: 'CI_PIPELINE_DEPLOY_TARGET == "build-release"'
+
+depends_on:
+  - test-fast
+  - test-integration
 
 steps:
   # ============================================
@@ -70,92 +60,24 @@ steps:
           --export-cache type=registry,ref=registry.techize.co.uk/batchivo/batchivo-frontend-cache,mode=max \
           --output type=image,name=registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA},push=true
 
-  # ============================================
-  # Deploy to Staging
-  # Updates k8s manifest → ArgoCD auto-syncs the rest
-  # ============================================
-  deploy-staging:
-    image: registry.techize.co.uk/dockerhub-cache/alpine/git:latest
-    depends_on:
-      - build-backend
-      - build-frontend
+  scan-image-backend:
+    image: registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+    depends_on: [build-backend]
     environment:
-      GIT_AUTHOR_NAME: woodpecker-ci[bot]
-      GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@batchivo
-      GIT_COMMITTER_NAME: woodpecker-ci[bot]
-      GIT_COMMITTER_EMAIL: woodpecker-ci[bot]@batchivo
-      GITHUB_TOKEN:
-        from_secret: github_token
+      TRIVY_USERNAME:
+        from_secret: docker_username
+      TRIVY_PASSWORD:
+        from_secret: docker_password
     commands:
-      - apk add --no-cache sed curl
-      - cd /woodpecker/src/github.com/techize/batchivo
-      - echo "=== Deploying to STAGING ==="
-      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/staging/deployment.yaml'
-      - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
-      - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
-      - git add infrastructure/k8s/staging/deployment.yaml
-      - |
-        for i in 1 2 3; do
-          git pull --rebase origin main || true
-          git diff --staged --quiet && echo "No staging changes to commit" && exit 0
-          if git commit -m "cd(staging): update backend image to $CI_COMMIT_SHA" && git push origin main; then
-            echo "Successfully pushed staging manifest update"
-            exit 0
-          fi
-          echo "Attempt $i failed, retrying in 5s..."
-          git reset HEAD~1 2>/dev/null || true
-          sleep 5
-        done
-        echo "Failed after 3 attempts"
-        exit 1
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-backend:${CI_COMMIT_SHA}
 
-  # ============================================
-  # Deploy to Production
-  # Updates both backend + frontend manifests → ArgoCD syncs
-  # ============================================
-  deploy-production:
-    image: registry.techize.co.uk/dockerhub-cache/alpine/git:latest
-    depends_on:
-      - deploy-staging
+  scan-image-frontend:
+    image: registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+    depends_on: [build-frontend]
     environment:
-      GIT_AUTHOR_NAME: woodpecker-ci[bot]
-      GIT_AUTHOR_EMAIL: woodpecker-ci[bot]@batchivo
-      GIT_COMMITTER_NAME: woodpecker-ci[bot]
-      GIT_COMMITTER_EMAIL: woodpecker-ci[bot]@batchivo
-      GITHUB_TOKEN:
-        from_secret: github_token
+      TRIVY_USERNAME:
+        from_secret: docker_username
+      TRIVY_PASSWORD:
+        from_secret: docker_password
     commands:
-      - apk add --no-cache sed
-      - cd /woodpecker/src/github.com/techize/batchivo
-      - echo "=== Deploying to PRODUCTION ==="
-      - BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-backend:.*|image: registry.techize.co.uk/batchivo/batchivo-backend:$CI_COMMIT_SHA|g" infrastructure/k8s/backend/deployment.yaml'
-      - 'sed -i "s|image: registry.techize.co.uk/batchivo/batchivo-frontend:.*|image: registry.techize.co.uk/batchivo/batchivo-frontend:$CI_COMMIT_SHA|g" infrastructure/k8s/frontend/deployment.yaml'
-      - 'sed -i "/name: BUILD_SHA/{n;s|value:.*|value: \"$CI_COMMIT_SHA\"|}" infrastructure/k8s/backend/deployment.yaml'
-      - 'sed -i "/name: BUILD_DATE/{n;s|value:.*|value: \"$BUILD_DATE\"|}" infrastructure/k8s/backend/deployment.yaml'
-      - 'sed -i "/name: VITE_BUILD_SHA/{n;s|value:.*|value: \"$CI_COMMIT_SHA\"|}" infrastructure/k8s/frontend/deployment.yaml'
-      - 'sed -i "/name: VITE_BUILD_DATE/{n;s|value:.*|value: \"$BUILD_DATE\"|}" infrastructure/k8s/frontend/deployment.yaml'
-      - git config --global --add safe.directory /woodpecker/src/github.com/techize/batchivo
-      - git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/techize/batchivo.git
-      - git add infrastructure/k8s/backend/deployment.yaml infrastructure/k8s/frontend/deployment.yaml
-      - |
-        for i in 1 2 3; do
-          git pull --rebase origin main || true
-          git diff --staged --quiet && echo "No production changes to commit" && exit 0
-          if git commit -m "cd(prod): update image tags to $CI_COMMIT_SHA" && git push origin main; then
-            echo "Successfully pushed production manifest update"
-            exit 0
-          fi
-          echo "Attempt $i failed, retrying in 5s..."
-          git reset HEAD~1 2>/dev/null || true
-          sleep 5
-        done
-        echo "Failed after 3 attempts"
-        exit 1
-
-# Notes:
-# - Staging health check removed — staging.batchivo.com DNS not yet configured, was wasting 60s per run.
-#   Re-add once staging is live: poll https://staging.batchivo.com/health between the two deploy steps.
-# - Image security scans (Trivy) run in test.yml after tests complete — not a deploy gate here.
-# - volumes disabled 2026-03-17 — Woodpecker agent next-bef0abaa4a DNS name bug
-# - 2026-03-22 — if pipelines fail with "cannot ack workflow", restart woodpecker-server pod (SQLite queue corruption after 5+ days uptime)
+      - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed registry.techize.co.uk/batchivo/batchivo-frontend:${CI_COMMIT_SHA}

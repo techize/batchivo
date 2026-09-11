@@ -93,16 +93,16 @@ const bulkSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/)
     .optional()
     .or(z.literal('')),
-  diameter: z.coerce.number().min(0.1).max(5).optional(),
-  extruder_temp: z.coerce.number().int().min(150).max(320).optional(),
-  bed_temp: z.coerce.number().int().min(0).max(120).optional(),
-  density: z.coerce.number().min(0.5).max(2.5).optional(),
+  diameter: z.coerce.number<number | string>().min(0.1).max(5).optional(),
+  extruder_temp: z.coerce.number<number | string>().int().min(150).max(320).optional(),
+  bed_temp: z.coerce.number<number | string>().int().min(0).max(120).optional(),
+  density: z.coerce.number<number | string>().min(0.5).max(2.5).optional(),
   pattern: z.string().optional(),
   translucent: z.boolean().optional(),
   glow: z.boolean().optional(),
   spool_type: z.string().optional(),
-  quantity: z.coerce.number().int().min(1, 'Must add at least 1 spool').max(20, 'Maximum 20 spools per batch'),
-  initial_weight: z.coerce.number().positive(),
+  quantity: z.coerce.number<number | string>().int().min(1, 'Must add at least 1 spool').max(20, 'Maximum 20 spools per batch'),
+  initial_weight: z.coerce.number<number | string>().positive(),
 })
 
 const batchEntrySchema = z.object({
@@ -140,7 +140,7 @@ export function AddFilamentDialog({ open, onOpenChange }: AddFilamentDialogProps
   const [sharedWeight, setSharedWeight] = useState(1000)
   const [batchRows, setBatchRows] = useState<BatchRowEntry[]>([])
 
-  const bulkForm = useForm<BulkFormValues>({
+  const bulkForm = useForm<z.input<typeof bulkSchema>, unknown, BulkFormValues>({
     resolver: zodResolver(bulkSchema),
     defaultValues: {
       quantity: 1,
@@ -148,7 +148,7 @@ export function AddFilamentDialog({ open, onOpenChange }: AddFilamentDialogProps
     },
   })
 
-  const batchForm = useForm<BatchEntryFormValues>({
+  const batchForm = useForm<z.input<typeof batchEntrySchema>, unknown, BatchEntryFormValues>({
     resolver: zodResolver(batchEntrySchema),
     defaultValues: {
       brand: '',
@@ -244,7 +244,7 @@ export function AddFilamentDialog({ open, onOpenChange }: AddFilamentDialogProps
   }
 
   const handleQuantityChange = (delta: number) => {
-    const current = bulkForm.getValues('quantity') ?? 1
+    const current = Number(bulkForm.getValues('quantity') ?? 1)
     bulkForm.setValue('quantity', Math.max(1, Math.min(20, current + delta)))
   }
 

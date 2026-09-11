@@ -1,5 +1,5 @@
-import { ReactElement, ReactNode } from 'react'
-import { render, RenderOptions } from '@testing-library/react'
+import { type ReactElement, type ReactNode } from 'react'
+import { render, type RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Create a fresh QueryClient for each test to prevent state leakage

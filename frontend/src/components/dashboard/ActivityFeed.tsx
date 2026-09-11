@@ -80,8 +80,7 @@ function ActivityItem({ item }: { item: RecentActivityItem }) {
         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
           {item.spool_id && (
             <Link
-              to="/inventory/$id"
-              params={{ id: item.spool_id }}
+              to="/filaments"
               className="hover:text-primary hover:underline"
             >
               {item.spool_id}
@@ -92,8 +91,8 @@ function ActivityItem({ item }: { item: RecentActivityItem }) {
             <>
               <span>•</span>
               <Link
-                to="/production-runs/$id"
-                params={{ id: item.production_run_id! }}
+                to="/production-runs/$runId"
+                params={{ runId: item.production_run_id! }}
                 className="hover:text-primary hover:underline"
               >
                 {item.run_number}

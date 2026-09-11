@@ -14,7 +14,7 @@ export interface Category {
   tenant_id: string
   name: string
   slug: string
-  description?: string
+  description?: string | null
   image_url?: string
   parent_id?: string
   display_order: number
@@ -32,7 +32,7 @@ export interface CategoryListResponse {
 export interface CategoryCreateRequest {
   name: string
   slug?: string
-  description?: string
+  description?: string | null
   image_url?: string
   parent_id?: string
   display_order?: number
@@ -42,7 +42,7 @@ export interface CategoryCreateRequest {
 export interface CategoryUpdateRequest {
   name?: string
   slug?: string
-  description?: string
+  description?: string | null
   image_url?: string | null
   parent_id?: string | null
   display_order?: number

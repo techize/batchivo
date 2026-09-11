@@ -128,7 +128,7 @@ export function TeamSettings() {
     queryFn: listTenantMembers,
   })
 
-  const form = useForm<InviteFormValues>({
+  const form = useForm<z.input<typeof inviteFormSchema>, unknown, InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: {
       email: '',

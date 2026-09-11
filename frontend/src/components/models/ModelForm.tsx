@@ -128,7 +128,7 @@ export function ModelForm({ model, mode }: ModelFormProps) {
     return combined.sort()
   }, [modelsData])
 
-  const form = useForm<ModelFormValues>({
+  const form = useForm<z.input<typeof modelFormSchema>, unknown, ModelFormValues>({
     resolver: zodResolver(modelFormSchema),
     defaultValues: {
       sku: model?.sku || '',

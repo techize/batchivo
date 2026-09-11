@@ -14,6 +14,7 @@ describe('App routing — inventory redirect', () => {
     // (b) its component is a redirect (renders Navigate pointing at /filaments)
 
     const rootRoute = new RootRoute({ component: () => null })
+    rootRoute.init({ originalIndex: 0 })
 
     // Recreate the same route configuration as inventoryRoute in App.tsx
     const inventoryRoute = new Route({
@@ -22,17 +23,19 @@ describe('App routing — inventory redirect', () => {
       component: () => <Navigate to="/filaments" />,
     })
 
-    expect(inventoryRoute.options.path).toBe('/inventory')
+    inventoryRoute.init({ originalIndex: 0 })
+    expect(inventoryRoute.fullPath).toBe('/inventory')
 
     // The component renders a Navigate element targeting /filaments
     // We verify this by calling the component function and checking the JSX it returns
-    const InventoryComponent = inventoryRoute.options.component as () => React.ReactElement
+    const InventoryComponent = inventoryRoute.options.component as () => React.ReactElement<{ to: string }>
     const element = InventoryComponent()
     expect(element.props.to).toBe('/filaments')
   })
 
   it('filamentsRoute renders FilamentLibrary component', () => {
     const rootRoute = new RootRoute({ component: () => null })
+    rootRoute.init({ originalIndex: 0 })
 
     const filamentsRoute = new Route({
       getParentRoute: () => rootRoute,
@@ -41,7 +44,8 @@ describe('App routing — inventory redirect', () => {
     })
 
     // The filaments route is registered at /filaments — the canonical path
-    expect(filamentsRoute.options.path).toBe('/filaments')
+    filamentsRoute.init({ originalIndex: 1 })
+    expect(filamentsRoute.fullPath).toBe('/filaments')
 
     // Inventory and filaments are separate paths (redirect + destination)
     const inventoryRoute = new Route({
@@ -49,6 +53,7 @@ describe('App routing — inventory redirect', () => {
       path: '/inventory',
       component: () => <Navigate to="/filaments" />,
     })
-    expect(inventoryRoute.options.path).not.toBe(filamentsRoute.options.path)
+    inventoryRoute.init({ originalIndex: 0 })
+    expect(inventoryRoute.fullPath).not.toBe(filamentsRoute.fullPath)
   })
 })

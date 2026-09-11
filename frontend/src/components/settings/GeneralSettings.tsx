@@ -48,7 +48,7 @@ export function GeneralSettings() {
     queryFn: getTenant,
   })
 
-  const form = useForm<TenantFormValues>({
+  const form = useForm<z.input<typeof tenantFormSchema>, unknown, TenantFormValues>({
     resolver: zodResolver(tenantFormSchema),
     defaultValues: {
       name: tenant?.name ?? '',

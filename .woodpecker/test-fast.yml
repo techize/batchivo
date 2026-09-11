@@ -1,25 +1,26 @@
-# Woodpecker CI — Fast Test Pipeline (no database)
-#
-# Purpose: Fast signal on correctness — lint, unit tests, frontend checks.
-#          No postgres service needed. Completes in ~3-5 min.
-#
-# Architecture:
-#   scan-deps-backend  ──> backend-unit ────┐
-#   scan-deps-frontend ──> frontend ────────┘
-#
-# Triggered by: same conditions as build.yml
+# PR and main validation. No publishing, deployment credentials or production services.
 
 when:
+  - event: pull_request
+    branch: main
   - event: push
     branch: main
-    path:
-      exclude:
-        - 'infrastructure/k8s/**'
+  - event: deployment
+    branch: main
+    evaluate: 'CI_PIPELINE_DEPLOY_TARGET == "build-release"'
 
 variables:
   - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
-  - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
+  - &node_image registry.techize.co.uk/dockerhub-cache/node@sha256:ab07539e0988b63558ff621f5fbe1077054c39d9809112974fb79993949d41cd
   - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+
+services:
+  postgres:
+    image: registry.techize.co.uk/dockerhub-cache/postgres@sha256:20edbde7749f822887a1a022ad526fde0a47d6b2be9a8364433605cf65099416
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_batchivo
 
 steps:
   scan-deps-backend:
@@ -36,13 +37,14 @@ steps:
 
   # ============================================
   # Backend: Lint + Unit Tests (~3-5 min)
-  # Pure logic tests — no database required.
+  # Includes database-backed unit fixtures in an ephemeral PostgreSQL service.
   # ============================================
   backend-unit:
     image: *ci_python_image
-    depends_on:
-      - scan-deps-backend
+    depends_on: []
     environment:
+      PGPASSWORD: test
+      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
       SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
     commands:
       - cd backend
@@ -52,6 +54,9 @@ steps:
       - poetry run ruff check .
       - poetry run ruff format --check .
       - echo "=== Unit tests ==="
+      - timeout 60 sh -c 'until pg_isready -h postgres -U test -q; do sleep 1; done'
+      # Scratch databases only: avoid synchronous disk flushes for each test DDL.
+      - psql -h postgres -U test -d test_batchivo -c "ALTER SYSTEM SET fsync = 'off'" -c "ALTER SYSTEM SET synchronous_commit = 'off'" -c "SELECT pg_reload_conf()"
       - poetry run pytest tests/unit/ --tb=short -q
 
   # ============================================
@@ -59,11 +64,11 @@ steps:
   # ============================================
   frontend:
     image: *node_image
-    depends_on:
-      - scan-deps-frontend
+    depends_on: []
     commands:
       - cd frontend
       - npm ci --silent
       - npm run lint
       - npm run typecheck
       - npm run test:ci
+      - npm run build:check

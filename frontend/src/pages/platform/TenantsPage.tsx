@@ -155,7 +155,7 @@ export function TenantsPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="sm" asChild>
-                              <Link to={`/platform/tenants/${tenant.id}`}>
+                              <Link to="/platform/tenants/$tenantId" params={{ tenantId: tenant.id }}>
                                 View
                                 <ArrowRight className="ml-1 h-4 w-4" />
                               </Link>

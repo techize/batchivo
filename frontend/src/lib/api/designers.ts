@@ -13,7 +13,7 @@ export interface Designer {
   id: string
   name: string
   slug: string
-  description?: string
+  description?: string | null
   logo_url?: string
   website_url?: string
   social_links?: Record<string, string>
@@ -35,7 +35,7 @@ export interface DesignerListResponse {
 export interface DesignerCreateRequest {
   name: string
   slug?: string
-  description?: string
+  description?: string | null
   logo_url?: string
   website_url?: string
   social_links?: Record<string, string>
@@ -49,7 +49,7 @@ export interface DesignerCreateRequest {
 export interface DesignerUpdateRequest {
   name?: string
   slug?: string
-  description?: string
+  description?: string | null
   logo_url?: string | null
   website_url?: string | null
   social_links?: Record<string, string> | null

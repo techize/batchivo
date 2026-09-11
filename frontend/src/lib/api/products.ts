@@ -83,7 +83,7 @@ export interface Product {
   name: string
   description?: string
   packaging_cost: string
-  packaging_consumable_id?: string
+  packaging_consumable_id?: string | null
   packaging_quantity: number
   assembly_minutes: number
   units_in_stock: number
@@ -188,7 +188,7 @@ export interface ProductCreateRequest {
   name: string
   description?: string
   packaging_cost?: string
-  packaging_consumable_id?: string
+  packaging_consumable_id?: string | null
   packaging_quantity?: number
   assembly_minutes?: number
   units_in_stock?: number
@@ -196,9 +196,9 @@ export interface ProductCreateRequest {
   models?: ProductModelCreateRequest[]
   child_products?: ProductComponentCreateRequest[]
   // Product specifications
-  weight_grams?: number
-  size_cm?: string
-  print_time_hours?: string
+  weight_grams?: number | null
+  size_cm?: string | null
+  print_time_hours?: string | null
 }
 
 /**

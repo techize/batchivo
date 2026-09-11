@@ -94,7 +94,9 @@ describe('Settings Page', () => {
       pending: 0,
       processing: 0,
       shipped: 0,
-      completed: 0,
+      delivered: 0,
+      refunded: 0,
+      total: 0,
       cancelled: 0,
     })
   })

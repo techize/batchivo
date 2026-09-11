@@ -38,6 +38,7 @@ export interface Module {
   status: ModuleStatus;
   routes: ModuleRoute[];
   order: number;
+  settings?: Record<string, unknown>;
   settings_schema?: Record<string, unknown>;
 }
 

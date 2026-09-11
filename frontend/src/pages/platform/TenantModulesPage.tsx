@@ -161,7 +161,7 @@ export function TenantModulesPage() {
       <div className="space-y-6">
         {/* Back Navigation */}
         <Button variant="ghost" asChild>
-          <Link to={`/platform/tenants/${tenantId}`}>
+          <Link to="/platform/tenants/$tenantId" params={{ tenantId: tenantId }}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to {tenant.name}
           </Link>
