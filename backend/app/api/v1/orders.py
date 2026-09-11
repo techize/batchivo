@@ -16,6 +16,10 @@ from app.models.order import Order, OrderItem, OrderStatus
 from app.models.product import Product
 from app.models.sales_channel import SalesChannel
 from app.auth.dependencies import CurrentTenant, RequireAdmin
+from app.services.commerce_order_ownership import (
+    dispatch_native_commerce,
+    reject_native_commerce_mutation,
+)
 
 router = APIRouter()
 
@@ -538,6 +542,9 @@ async def update_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    if any(getattr(request, field, None) is not None for field in ("status", "tracking_number", "tracking_url")):
+        await reject_native_commerce_mutation(db, order)
+
     # Update fields
     if request.status is not None:
         valid_statuses = [
@@ -638,6 +645,10 @@ async def ship_order(
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    commerce = await dispatch_native_commerce(db, order, tenant, "shipped", request.tracking_number, request.tracking_url)
+    if commerce is not None:
+        return commerce
 
     if order.status not in [OrderStatus.PENDING, OrderStatus.PROCESSING]:
         raise HTTPException(
@@ -809,6 +820,10 @@ async def deliver_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    commerce = await dispatch_native_commerce(db, order, tenant, "delivered")
+    if commerce is not None:
+        return commerce
+
     if order.status != OrderStatus.SHIPPED:
         raise HTTPException(
             status_code=400,
@@ -872,6 +887,8 @@ async def fulfill_order(
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    await reject_native_commerce_mutation(db, order)
 
     # Only pending/processing orders can be fulfilled
     if order.status not in [OrderStatus.PENDING, OrderStatus.PROCESSING]:
@@ -992,6 +1009,8 @@ async def refund_order(
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    await reject_native_commerce_mutation(db, order)
 
     # Validate order can be refunded
     if order.status == OrderStatus.REFUNDED:
@@ -1125,6 +1144,8 @@ async def cancel_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    await reject_native_commerce_mutation(db, order)
+
     # Only pending/processing orders can be cancelled
     if order.status not in [OrderStatus.PENDING, OrderStatus.PROCESSING]:
         raise HTTPException(
@@ -1205,6 +1226,8 @@ async def resend_order_email(
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    await reject_native_commerce_mutation(db, order)
 
     email_service = get_email_service()
     email_sent = False

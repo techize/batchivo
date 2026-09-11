@@ -356,7 +356,8 @@ class TestEventTypeHandling:
 
                 assert response.status_code == 200
                 # Unhandled events are logged and processed gracefully
-                assert response.json()["status"] in ("received", "processed")
+                assert response.json()["status"] == "rejected"
+                mock_db.execute.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_event_without_type_returns_200(self, app, mock_db):
@@ -655,33 +656,68 @@ class TestWebhookErrorHandling:
     """Tests for error handling during webhook processing."""
 
     @pytest.mark.asyncio
-    async def test_handler_exception_does_not_fail_webhook(self, app, mock_db):
-        """Test that handler exceptions don't cause webhook to fail."""
-        mock_settings = MagicMock()
-        mock_settings.square_webhook_signature_key = None
+    async def test_database_exception_requests_provider_retry(self, app, mock_db, mock_settings):
+        """A signed event must not be acknowledged if no receipt can be stored."""
+        mock_db.execute.side_effect = Exception("Database error containing private data")
+        body = json.dumps(create_payment_updated_event()).encode()
+        signature = generate_signature(
+            body,
+            mock_settings.square_webhook_signature_key,
+            "http://testserver/payments/webhooks/square",
+        )
+        from app.database import get_db
 
-        # Make the db query raise an exception
-        mock_db.execute.side_effect = Exception("Database error")
-
-        event = create_payment_updated_event()
-        body = json.dumps(event).encode()
-
-        with patch("app.api.v1.payments.get_settings", return_value=mock_settings):
+        app.dependency_overrides[get_db] = lambda: mock_db
+        with patch("app.api.v1.payments.settings", mock_settings):
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://testserver"
             ) as client:
-                from app.database import get_db
-
-                app.dependency_overrides[get_db] = lambda: mock_db
-
                 response = await client.post(
                     "/payments/webhooks/square",
                     content=body,
+                    headers={"x-square-hmacsha256-signature": signature},
                 )
+        assert response.status_code == 503
+        assert response.headers["retry-after"] == "60"
+        assert "private data" not in response.text
+        mock_db.execute.assert_awaited_once()
 
-                # Should still return 200 even if handler fails
-                assert response.status_code == 200
-                assert response.json()["status"] == "received"
+    @pytest.mark.parametrize(
+        "status,expected",
+        [("failed", 503), ("processing", 503), ("processed", 200), ("duplicate", 200)],
+    )
+    @pytest.mark.asyncio
+    async def test_processing_result_controls_acknowledgement(
+        self, app, mock_db, mock_settings, status, expected
+    ):
+        body = json.dumps(
+            {"type": "some.unhandled.event", "event_id": "test-event", "data": {}}
+        ).encode()
+        signature = generate_signature(
+            body,
+            mock_settings.square_webhook_signature_key,
+            "http://testserver/payments/webhooks/square",
+        )
+        from app.database import get_db
+
+        app.dependency_overrides[get_db] = lambda: mock_db
+        with (
+            patch("app.api.v1.payments.settings", mock_settings),
+            patch(
+                "app.services.square_webhook_service.SquareWebhookService.process_webhook",
+                new=AsyncMock(return_value={"status": status, "event_id": "test-event"}),
+            ) as process,
+        ):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://testserver"
+            ) as client:
+                response = await client.post(
+                    "/payments/webhooks/square",
+                    content=body,
+                    headers={"x-square-hmacsha256-signature": signature},
+                )
+        assert response.status_code == expected
+        assert process.call_args.kwargs["signature_valid"] is True
 
 
 # ============================================
@@ -712,8 +748,8 @@ class TestWebhookIntegration:
     """Integration-style tests for webhook endpoint."""
 
     @pytest.mark.asyncio
-    async def test_full_payment_created_flow(self, app, mock_db):
-        """Test complete flow for payment.created event."""
+    async def test_unsigned_payment_never_reaches_database(self, app, mock_db):
+        """Unsigned payment events cannot mutate orders."""
         mock_settings = MagicMock()
         mock_settings.square_webhook_signature_key = None
 
@@ -736,7 +772,8 @@ class TestWebhookIntegration:
                 assert response.status_code == 200
                 # Response now includes additional fields from the robust webhook service
                 data = response.json()
-                assert data["status"] in ["received", "processed", "duplicate"]
+                assert data["status"] == "rejected"
+                mock_db.execute.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_full_refund_flow_updates_order(self, app, mock_db, mock_order):

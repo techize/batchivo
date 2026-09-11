@@ -634,9 +634,9 @@ class TestCompleteCheckout:
 class TestOrderLookup:
     """Tests for order status lookup."""
 
-    async def test_get_order_not_found(self, client: AsyncClient):
+    async def test_get_order_not_found(self, shop_client: AsyncClient):
         """Test looking up non-existent order."""
-        response = await client.get(
+        response = await shop_client.get(
             "/api/v1/shop/orders/MF-99999999-999",
             params={"email": "test@example.com"},
         )
@@ -644,7 +644,7 @@ class TestOrderLookup:
 
     async def test_get_order_wrong_email(
         self,
-        client: AsyncClient,
+        shop_client: AsyncClient,
         db_session: AsyncSession,
         test_tenant: Tenant,
         sales_channel: SalesChannel,
@@ -673,7 +673,7 @@ class TestOrderLookup:
         db_session.add(order)
         await db_session.commit()
 
-        response = await client.get(
+        response = await shop_client.get(
             "/api/v1/shop/orders/MF-20240101-001",
             params={"email": "wrong@example.com"},
         )
