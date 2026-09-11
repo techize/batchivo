@@ -1,11 +1,12 @@
 # Batchivo single-owner releases
 
-## Status (11 September 2026)
+## Handover sequence
 
 PR #202 introduces real Woodpecker PR validation and includes the native commerce
-source already deployed in production. Branch policy migration and removal of the
-Argo commit pin remain pending successful validation. Do not bypass the old rules
-while this transition is incomplete.
+source already deployed in production. Keep the Argo commit pin until the PR has
+passed its required checks, merged normally, and its Kubernetes tree has been
+verified against the running release. The PR and the shop operations handover
+report record the current migration status. Do not bypass validation.
 
 ## Validation and publishing
 
@@ -56,3 +57,22 @@ established `E4`, `E7`, `E9`, `F` rules to prevent dependency upgrades silently
 changing lint policy. Existing SQLAlchemy relationship/conditional-import ignores
 are retained. Source was formatted and genuine selected-rule failures fixed.
 See https://astral.sh/blog/ruff-v0.16.0.
+
+## CI host log capture
+
+The k3s nodes need sufficient inotify capacity for Kubernetes log streams. The
+shop operations repository owns `commerce/scripts/configure-ci-log-limits.py`
+and its node preimage report. It persists a minimum of 1,024 instances and
+524,288 watches in `/etc/sysctl.d/90-woodpecker-inotify.conf`, without reducing
+higher existing limits. It does not restart services. Scratch CI databases use
+`fsync=off` and `synchronous_commit=off`; production database settings are untouched.
+
+## Validation scope
+
+The legacy integration suite includes pre-existing skipped cases (rate-limiter
+isolation, SQLite-era return fixtures and unfinished historical endpoints). A
+green CI run does not mean those skipped scenarios were exercised. Preserve their
+counts in release evidence and use the commerce sandbox/browser acceptance suite
+for changes to payments, orders, fulfilment or stock. Dependency lock updates here
+do not patch the already-running image; a new image needs its own isolated release
+acceptance before promotion.
