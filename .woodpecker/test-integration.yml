@@ -45,4 +45,3 @@ steps:
       - for i in 0 1 2 3; do psql -h postgres -U test -d test_batchivo -c "CREATE DATABASE test_batchivo_gw$i"; done
       - echo "=== Integration + API tests (4 workers) ==="
       - poetry run pytest tests/ --ignore=tests/unit/ -n 4 --dist worksteal --tb=short -q
-

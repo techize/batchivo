@@ -11,8 +11,16 @@ when:
 
 variables:
   - &ci_python_image registry.techize.co.uk/batchivo/ci-python:3.12
-  - &node_image registry.techize.co.uk/dockerhub-cache/node:20-slim
+  - &node_image registry.techize.co.uk/dockerhub-cache/node@sha256:ab07539e0988b63558ff621f5fbe1077054c39d9809112974fb79993949d41cd
   - &trivy_image registry.techize.co.uk/dockerhub-cache/aquasec/trivy:0.55.0
+
+services:
+  postgres:
+    image: registry.techize.co.uk/dockerhub-cache/postgres:15
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_batchivo
 
 steps:
   scan-deps-backend:
@@ -29,12 +37,13 @@ steps:
 
   # ============================================
   # Backend: Lint + Unit Tests (~3-5 min)
-  # Pure logic tests — no database required.
+  # Includes database-backed unit fixtures in an ephemeral PostgreSQL service.
   # ============================================
   backend-unit:
     image: *ci_python_image
     depends_on: []
     environment:
+      DATABASE_URL: postgresql+psycopg://test:test@postgres:5432/test_batchivo
       SECRET_KEY: test-secret-key-for-ci-testing-minimum-32-chars
     commands:
       - cd backend
@@ -44,6 +53,7 @@ steps:
       - poetry run ruff check .
       - poetry run ruff format --check .
       - echo "=== Unit tests ==="
+      - timeout 60 sh -c 'until pg_isready -h postgres -U test -q; do sleep 1; done'
       - poetry run pytest tests/unit/ --tb=short -q
 
   # ============================================
