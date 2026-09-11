@@ -6,6 +6,9 @@ FROM registry.techize.co.uk/dockerhub-cache/python:3.12-alpine AS builder
 
 WORKDIR /app
 
+# Bound retries for transient package-download stalls observed in cluster builds.
+ENV POETRY_REQUESTS_TIMEOUT=60 POETRY_REQUESTS_MAX_RETRIES=3
+
 # Install build dependencies for Python packages that need compilation
 RUN apk add --no-cache \
     gcc \
@@ -14,15 +17,15 @@ RUN apk add --no-cache \
     postgresql-dev
 
 # Install Poetry 2.x for PEP 621 support
-RUN pip install --no-cache-dir poetry>=2.0.0
+RUN pip install --no-cache-dir 'poetry>=2.0.0'
 
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies to a virtual environment (--no-root skips installing the project itself)
 RUN poetry config virtualenvs.in-project true && \
-    poetry install --only main --no-root --no-interaction --no-ansi && \
-    .venv/bin/python -m pip uninstall --yes pip
+    poetry config virtualenvs.options.no-pip true && \
+    poetry install --only main --no-root --no-interaction --no-ansi
 
 # Stage 2: Runtime
 FROM registry.techize.co.uk/dockerhub-cache/python:3.12-alpine
