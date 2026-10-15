@@ -125,6 +125,8 @@ spec:
           initContainers:
           - name: mc-installer
             image: registry.techize.co.uk/dockerhub-cache/minio/mc:RELEASE.2025-02-15T10-36-16Z
+            # minio/mc was removed from Docker Hub (MinIO OSS archived); use the copy cached on the node
+            imagePullPolicy: IfNotPresent
             command: ["sh", "-c", "cp /usr/bin/mc /mc-bin/mc && chmod 755 /mc-bin/mc"]
             securityContext:
               runAsUser: 0
