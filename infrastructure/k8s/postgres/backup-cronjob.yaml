@@ -122,10 +122,12 @@ spec:
           nodeSelector:
             kubernetes.io/hostname: k3s-node03-lab
           restartPolicy: OnFailure
+          imagePullSecrets:
+          - name: harbor-creds
           initContainers:
           - name: mc-installer
-            image: registry.techize.co.uk/dockerhub-cache/minio/mc:RELEASE.2025-02-15T10-36-16Z
-            # minio/mc was removed from Docker Hub (MinIO OSS archived); use the copy cached on the node
+            image: registry.techize.co.uk/batchivo/minio-mc:RELEASE.2025-02-15T10-36-16Z
+            # minio/mc was removed from Docker Hub (MinIO OSS archived); pinned copy kept in Harbor batchivo project
             imagePullPolicy: IfNotPresent
             command: ["sh", "-c", "cp /usr/bin/mc /mc-bin/mc && chmod 755 /mc-bin/mc"]
             securityContext:

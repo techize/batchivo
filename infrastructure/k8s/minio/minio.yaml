@@ -64,9 +64,12 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      imagePullSecrets:
+      - name: harbor-creds
       initContainers:
       - name: create-bucket
-        image: registry.techize.co.uk/dockerhub-cache/minio/mc:RELEASE.2025-02-15T10-36-16Z
+        image: registry.techize.co.uk/batchivo/minio-mc:RELEASE.2025-02-15T10-36-16Z
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -93,7 +96,8 @@ spec:
               key: MINIO_ROOT_PASSWORD
       containers:
       - name: minio
-        image: registry.techize.co.uk/dockerhub-cache/minio/minio:latest
+        image: registry.techize.co.uk/batchivo/minio:RELEASE.2025-09-07T16-13-09Z
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -167,9 +171,12 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+      imagePullSecrets:
+      - name: harbor-creds
       containers:
       - name: mc
-        image: registry.techize.co.uk/dockerhub-cache/minio/mc:RELEASE.2025-02-15T10-36-16Z
+        image: registry.techize.co.uk/batchivo/minio-mc:RELEASE.2025-02-15T10-36-16Z
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
