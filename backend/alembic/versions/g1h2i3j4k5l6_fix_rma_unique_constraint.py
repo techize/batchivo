@@ -15,7 +15,10 @@ import sqlalchemy as sa
 revision = "g1h2i3j4k5l6"
 down_revision = "f0g1h2i3j4k5"
 branch_labels = None
-depends_on = None
+# return_requests is created on a sibling branch (d4e5f6g7h8i9); without this
+# explicit dependency, alembic may apply this migration before that branch,
+# since the two branches only share a common ancestor, not a direct edge.
+depends_on = "d4e5f6g7h8i9"
 
 
 def constraint_exists(constraint_name: str) -> bool:

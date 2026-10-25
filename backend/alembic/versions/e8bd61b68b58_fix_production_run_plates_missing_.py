@@ -19,98 +19,128 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def column_exists(table_name: str, column_name: str) -> bool:
+    """Check if a column exists in a table."""
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = :table AND column_name = :column
+            )
+        """),
+        {"table": table_name, "column": column_name},
+    )
+    return result.scalar()
+
+
 def upgrade() -> None:
     """Upgrade schema."""
     # Fix production_run_plates table missing columns
     # These columns were added to the model but migrations were modified after being applied
+    #
+    # This migration is idempotent - it checks if columns exist before adding
+    # them, since a fresh database may already have them from an earlier
+    # migration in the chain.
 
     # Add prints_per_plate column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "prints_per_plate",
-            sa.Integer(),
-            nullable=False,
-            server_default="1",
-            comment="How many items per single plate",
-        ),
-    )
+    if not column_exists("production_run_plates", "prints_per_plate"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "prints_per_plate",
+                sa.Integer(),
+                nullable=False,
+                server_default="1",
+                comment="How many items per single plate",
+            ),
+        )
 
     # Add estimated_material_weight_grams column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "estimated_material_weight_grams",
-            sa.Numeric(10, 2),
-            nullable=True,
-            comment="Estimated material weight per plate",
-        ),
-    )
+    if not column_exists("production_run_plates", "estimated_material_weight_grams"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "estimated_material_weight_grams",
+                sa.Numeric(10, 2),
+                nullable=True,
+                comment="Estimated material weight per plate",
+            ),
+        )
 
     # Add started_at column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "started_at",
-            sa.DateTime(timezone=True),
-            nullable=True,
-            comment="When plate printing started",
-        ),
-    )
+    if not column_exists("production_run_plates", "started_at"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "started_at",
+                sa.DateTime(timezone=True),
+                nullable=True,
+                comment="When plate printing started",
+            ),
+        )
 
     # Add completed_at column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "completed_at",
-            sa.DateTime(timezone=True),
-            nullable=True,
-            comment="When plate printing completed",
-        ),
-    )
+    if not column_exists("production_run_plates", "completed_at"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "completed_at",
+                sa.DateTime(timezone=True),
+                nullable=True,
+                comment="When plate printing completed",
+            ),
+        )
 
     # Add actual_print_time_minutes column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "actual_print_time_minutes", sa.Integer(), nullable=True, comment="Actual print time"
-        ),
-    )
+    if not column_exists("production_run_plates", "actual_print_time_minutes"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "actual_print_time_minutes",
+                sa.Integer(),
+                nullable=True,
+                comment="Actual print time",
+            ),
+        )
 
     # Add actual_material_weight_grams column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "actual_material_weight_grams",
-            sa.Numeric(10, 2),
-            nullable=True,
-            comment="Actual material used",
-        ),
-    )
+    if not column_exists("production_run_plates", "actual_material_weight_grams"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "actual_material_weight_grams",
+                sa.Numeric(10, 2),
+                nullable=True,
+                comment="Actual material used",
+            ),
+        )
 
     # Add successful_prints column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "successful_prints",
-            sa.Integer(),
-            nullable=False,
-            server_default="0",
-            comment="Number of successful prints from this plate",
-        ),
-    )
+    if not column_exists("production_run_plates", "successful_prints"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "successful_prints",
+                sa.Integer(),
+                nullable=False,
+                server_default="0",
+                comment="Number of successful prints from this plate",
+            ),
+        )
 
     # Add failed_prints column
-    op.add_column(
-        "production_run_plates",
-        sa.Column(
-            "failed_prints",
-            sa.Integer(),
-            nullable=False,
-            server_default="0",
-            comment="Number of failed prints from this plate",
-        ),
-    )
+    if not column_exists("production_run_plates", "failed_prints"):
+        op.add_column(
+            "production_run_plates",
+            sa.Column(
+                "failed_prints",
+                sa.Integer(),
+                nullable=False,
+                server_default="0",
+                comment="Number of failed prints from this plate",
+            ),
+        )
 
 
 def downgrade() -> None:

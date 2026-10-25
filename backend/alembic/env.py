@@ -1,7 +1,12 @@
 """Alembic environment configuration for async SQLAlchemy."""
 
 import asyncio
+import sys
 from logging.config import fileConfig
+
+if sys.platform == "win32":
+    # psycopg's async mode requires SelectorEventLoop; Windows defaults to ProactorEventLoop
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection

@@ -22,47 +22,100 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def column_exists(table_name: str, column_name: str) -> bool:
+    """Check if a column exists in a table."""
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = :table AND column_name = :column
+            )
+        """),
+        {"table": table_name, "column": column_name},
+    )
+    return result.scalar()
+
+
+def index_exists(index_name: str) -> bool:
+    """Check if an index exists."""
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_indexes WHERE indexname = :name
+            )
+        """),
+        {"name": index_name},
+    )
+    return result.scalar()
+
+
+def constraint_exists(constraint_name: str) -> bool:
+    """Check if a constraint exists."""
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.table_constraints
+                WHERE constraint_name = :name
+            )
+        """),
+        {"name": constraint_name},
+    )
+    return result.scalar()
+
+
 def upgrade() -> None:
+    # This migration is idempotent - it checks if columns/constraints/indexes
+    # exist before adding them, since this branch may merge with another
+    # that already added some of these.
+
     # Add customer_id column to orders (optional FK to customers)
-    op.add_column(
-        "orders",
-        sa.Column(
-            "customer_id",
-            postgresql.UUID(as_uuid=True),
-            nullable=True,
-            comment="Reference to customer account if logged in",
-        ),
-    )
-    op.create_foreign_key(
-        "fk_orders_customer_id",
-        "orders",
-        "customers",
-        ["customer_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
-    op.create_index("ix_orders_customer_id", "orders", ["customer_id"])
+    if not column_exists("orders", "customer_id"):
+        op.add_column(
+            "orders",
+            sa.Column(
+                "customer_id",
+                postgresql.UUID(as_uuid=True),
+                nullable=True,
+                comment="Reference to customer account if logged in",
+            ),
+        )
+    if not constraint_exists("fk_orders_customer_id"):
+        op.create_foreign_key(
+            "fk_orders_customer_id",
+            "orders",
+            "customers",
+            ["customer_id"],
+            ["id"],
+            ondelete="SET NULL",
+        )
+    if not index_exists("ix_orders_customer_id"):
+        op.create_index("ix_orders_customer_id", "orders", ["customer_id"])
 
     # Add discount columns to orders
-    op.add_column(
-        "orders",
-        sa.Column(
-            "discount_code",
-            sa.String(50),
-            nullable=True,
-            comment="Applied discount code",
-        ),
-    )
-    op.add_column(
-        "orders",
-        sa.Column(
-            "discount_amount",
-            sa.Numeric(10, 2),
-            server_default="0.00",
-            nullable=False,
-            comment="Discount amount applied",
-        ),
-    )
+    if not column_exists("orders", "discount_code"):
+        op.add_column(
+            "orders",
+            sa.Column(
+                "discount_code",
+                sa.String(50),
+                nullable=True,
+                comment="Applied discount code",
+            ),
+        )
+    if not column_exists("orders", "discount_amount"):
+        op.add_column(
+            "orders",
+            sa.Column(
+                "discount_amount",
+                sa.Numeric(10, 2),
+                server_default="0.00",
+                nullable=False,
+                comment="Discount amount applied",
+            ),
+        )
 
 
 def downgrade() -> None:
