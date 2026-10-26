@@ -51,7 +51,7 @@ spec:
       containers:
       # GitHub Actions Runner
       - name: runner
-        image: registry.techize.co.uk/dockerhub-cache/myoung34/github-runner:latest
+        image: registry.techize.co.uk/dockerhub-cache/myoung34/github-runner:debian-trixie@sha256:63aaa7e09f4e0a83ccf0a279a6f5541d25f48729df1a4cbfe7d600c90610b1e4  # runner 2.338.1, node24 v24.22.1, libbrotli1 1.1.0-2+deb13u1 (CVE-2026-111497)
         imagePullPolicy: Always
         envFrom:
           - configMapRef:
