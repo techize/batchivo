@@ -5,6 +5,11 @@ metadata:
   namespace: batchivo
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: cloudflared
@@ -19,7 +24,7 @@ spec:
         runAsGroup: 65532
       containers:
       - name: cloudflared
-        image: cloudflare/cloudflared:2026.7.3
+        image: cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39  # fixes compromised eMudhra cert trust (CF advisory 2026-10-26; need >=2026.10.2)
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
