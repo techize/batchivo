@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: buildkitd
-          image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:latest
+          image: registry.techize.co.uk/dockerhub-cache/moby/buildkit:v0.34.2@sha256:c5f8862f52499773af85bc07695b2379ef08e8002352b0df2c4864c91d78dabe  # Alpine 3.23.7, brotli-libs 1.2.1-r0 (CVE-2026-111497)
           args:
             - --addr
             - tcp://0.0.0.0:1234
